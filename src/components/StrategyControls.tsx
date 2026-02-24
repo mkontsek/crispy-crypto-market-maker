@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useBotStore } from "@/stores/botStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { AlertTriangle } from "lucide-react";
+
+const KILL_CONFIRM_TIMEOUT_MS = 3_000;
 
 export function StrategyControls() {
   const {
@@ -37,7 +39,7 @@ export function StrategyControls() {
       setKillConfirm(false);
     } else {
       setKillConfirm(true);
-      killTimerRef.current = setTimeout(() => setKillConfirm(false), 3_000);
+      killTimerRef.current = setTimeout(() => setKillConfirm(false), KILL_CONFIRM_TIMEOUT_MS);
     }
   }
 
