@@ -5,7 +5,7 @@ import { useBotStore } from "@/stores/botStore";
 import { Button } from "@/components/ui/button";
 import { EXAMPLE_STRATEGY_CODE } from "@/lib/mockData";
 import { Play, Square, RotateCcw } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -23,6 +23,10 @@ export function StrategyEditor() {
   const [code, setCode] = useState(EXAMPLE_STRATEGY_CODE);
 
   const isRunning = editorStatus === "running";
+
+  const handleCodeChange = useCallback((v: string | undefined) => {
+    setCode(v ?? "");
+  }, []);
 
   function handleRunStop() {
     setEditorStatus(isRunning ? "stopped" : "running");
@@ -103,7 +107,7 @@ export function StrategyEditor() {
           language="typescript"
           theme="vs-dark"
           value={code}
-          onChange={(v) => setCode(v ?? "")}
+          onChange={handleCodeChange}
           options={{
             fontSize: 12,
             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
