@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 
 import { useBotStore } from '@/stores/botStore';
 import Link from 'next/link';
+import { Logo } from './logo';
 
 export function GlobalHeader() {
     const {
@@ -26,7 +27,7 @@ export function GlobalHeader() {
             <div className="flex h-14 items-center justify-between px-6">
                 {/* Brand */}
                 <div className="flex items-center gap-3">
-                    <Activity className="size-5 text-electric-blue" />
+                    <Logo className="text-electric-blue" />
                     <Link href="/">
                         <Button
                             variant="ghost"

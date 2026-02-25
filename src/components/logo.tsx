@@ -1,22 +1,15 @@
-export function CrispyWordmark({ className = '' }: { className?: string }) {
+import Image from 'next/image';
+
+export function Logo({ className = '' }: { className?: string }) {
     return (
-        <div className={`flex items-center gap-3 ${className}`}>
-            <img
-                src="/logo.svg"
+        <div className={`flex items-center gap-3 ${className} text-lg`}>
+            <Image
+                src="/logo.png"
                 alt="Crispy Logo"
                 width={32}
                 height={32}
                 style={{ display: 'block' }}
             />
-            <span
-                className="text-2xl font-bold text-white"
-                style={{
-                    fontFamily: 'Geist, sans-serif',
-                    letterSpacing: '-0.02em',
-                }}
-            >
-                Crispy
-            </span>
         </div>
     );
 }
