@@ -1,0 +1,66 @@
+<svg
+    viewBox="0 0 32 32"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+>
+    <defs>
+        <linearGradient id="faviconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#00E5FF" />
+            <stop offset="100%" stopColor="#00E599" />
+        </linearGradient>
+    </defs>
+
+    <!-- Background for favicon visibility -->
+    <rect width="32" height="32" fill="#0A0E27" rx="6" />
+
+    <!-- Outer hexagon frame -->
+    <path
+        d="M16 3L27.7 9V23L16 29L4.3 23V9L16 3Z"
+        stroke="url(#faviconGradient)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    />
+
+    <!-- Inner C shape -->
+    <path
+        d="M21 10L20.2 9.2H12L9 12V20L12 23H20.2L21 22.2"
+        stroke="url(#faviconGradient)"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    />
+
+    <!-- Market making spreads -->
+    <line
+        x1="15"
+        y1="14"
+        x2="12"
+        y2="14"
+        stroke="#00E599"
+        strokeWidth="1"
+        strokeLinecap="round"
+    />
+    <line
+        x1="15"
+        y1="16"
+        x2="11"
+        y2="16"
+        stroke="url(#faviconGradient)"
+        strokeWidth="1"
+        strokeLinecap="round"
+    />
+    <line
+        x1="15"
+        y1="18"
+        x2="12"
+        y2="18"
+        stroke="#FF6B6B"
+        strokeWidth="1"
+        strokeLinecap="round"
+    />
+
+    <!-- Accent corners -->
+    <circle cx="21" cy="10" r="1" fill="url(#faviconGradient)" />
+    <circle cx="21" cy="22" r="1" fill="url(#faviconGradient)" />
+</svg>
