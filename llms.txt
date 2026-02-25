@@ -1,0 +1,102 @@
+# Crispy Crypto Market Maker
+
+## Project Overview
+A professional crypto market maker dashboard built with Next.js and React. Advanced trading tools, real-time market data, and intelligent order execution for crypto traders.
+
+## Technology Stack
+- **Framework**: Next.js with TypeScript
+- **Frontend**: React (Functional Components only)
+- **UI Components**: ShadCN design system
+- **Styling**: Tailwind CSS with SCSS modules
+- **State Management**: Zustand with immer middleware
+- **Data Fetching**: TanStack Query (@tanstack/react-query)
+- **Forms**: React Hook Form v7
+- **Package Manager**: pnpm (not npm or yarn)
+- **Deployment**: Vercel
+- **ORM**: Prisma (when needed)
+
+## Project Structure
+```
+src/
+├── app/               # Next.js app directory
+│   ├── dashboard/     # Dashboard page
+│   ├── layout.tsx     # Root layout with metadata
+│   ├── page.tsx       # Home page
+│   ├── providers.tsx  # Context/Provider setup
+│   └── styles/        # Global styles
+├── components/        # React components
+│   ├── ui/            # Reusable UI components (ShadCN)
+│   └── ...feature components
+├── lib/               # Utilities and helpers
+│   ├── mockData.ts
+│   └── utils.ts
+└── stores/            # Zustand stores
+    └── botStore.ts
+```
+
+## Key Features
+- Strategy editor and selector
+- Order book ladder visualization
+- Inventory skew gauge
+- Real-time market data display
+- Exchange integration
+- Trading strategy comparison
+
+## Development Guidelines
+
+### Code Style & Conventions
+- **Naming**: kebab-case (folders, packages), camelCase (functions/vars), PascalCase (components/types)
+- **Imports**: Use relative imports within packages, absolute aliases (`@business/feature`) across packages
+- **Components**: Functional components only, prefer named imports
+- **Styling**: Use Tailwind CSS + SCSS modules (PascalCase.module.scss)
+- **Assets**: SVG preferred for UI, stored in `public/assets/`
+
+### State Management
+- **Global/Shared**: Zustand stores in `stores/` folder
+- **Local/Scoped**: React Context or component-level useState
+- **Side Effects**: Use `useWatch` from React Hook Form for cross-field logic
+
+### Data Fetching & Mutations
+- **Queries**: Use `useQuery` with `staleTime: 0` for fresh data
+- **Mutations**: Use `useMutation` with proper loading/error states
+- **Refetch**: Use `refetch()` for retries, `invalidateQueries()` for known changes
+- **Pagination**: Use `useInfiniteQuery` for paginated endpoints
+
+### Forms
+- Use **React Hook Form v7** with ShadCN wrappers
+- Use **Zod** for validation with factory patterns
+- Keep form values flat, matching UI structure
+- Use violation matcher utility for backend error mapping
+
+### Security
+- Sanitize URL parameters and user inputs using `sanitize()` utility
+- Never commit secrets; use environment variables
+- Use Stripe for billing (Checkout for hosted, SDK for client-side)
+
+### Testing & Quality
+- Follow ESLint and Prettier rules
+- Avoid multiline ternaries; prefer `&&` for conditionals
+- No `lodash.uniqueId()` for React keys; use resource IDs or `useId()`
+
+## Key Dependencies & Versions
+Refer to `package.json` for exact versions.
+
+## Environment & Configuration
+- Configuration: `next.config.ts`, `tsconfig.json`, `eslint.config.js`
+- Styling: `postcss.config.mjs`, `tailwind.config.ts`
+- Components: `components.json` (ShadCN config)
+
+## How to Contribute
+1. Interview to clarify requirements before planning
+2. Follow git commit instructions (see `.github/git-commit-instructions.md`)
+3. Refer to copilot instructions (see `.github/copilot-instructions.md`) for patterns
+4. Use pnpm for all package management
+5. Ensure ESLint and Prettier checks pass
+
+## For LLM Context
+- Always use `pnpm` for package operations
+- Prefer TypeScript with strict typing
+- Follow the established patterns in existing code
+- Ask for clarification on ambiguous requirements
+- Reference the copilot instructions for detailed patterns and workflows
+
