@@ -77,6 +77,7 @@ pnpm typecheck
 ### 1) Web on Vercel
 
 - Create a Vercel project with **Root Directory** set to `apps/web`.
+- Vercel will automatically detect `pnpm` from the `pnpm-lock.yaml` file.
 - Add environment variables:
   - `ENGINE_HTTP_URL` (for example `https://engine.your-domain.com`)
   - `ENGINE_WS_URL` (for example `wss://engine.your-domain.com/stream`)
@@ -84,8 +85,10 @@ pnpm typecheck
 - Deploy from Git or with CLI:
 
 ```bash
-vercel --cwd apps/web
+vercel
 ```
+
+**Note**: The `vercel.json` in `apps/web` configures pnpm as the package manager and sets the correct build command for the monorepo.
 
 ### 2) Rust engine as a container
 

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -23,14 +23,13 @@ function resolveNextPath(rawNext: string | null) {
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const nextPath = resolveNextPath(searchParams.get('next'));
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
+    const rawNext = new URLSearchParams(window.location.search).get('next');
+    const nextPath = resolveNextPath(rawNext);
     document.cookie = `${DEMO_AUTH_COOKIE}=1; Path=/; Max-Age=86400; SameSite=Lax`;
     router.push(nextPath);
   };
