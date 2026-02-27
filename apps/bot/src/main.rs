@@ -7,19 +7,19 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use futures_util::StreamExt;
 use tokio::{
     net::TcpListener,
     sync::{RwLock, broadcast},
 };
-use tokio_tungstenite::connect_async;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
+mod exchange;
 mod models;
 mod state;
 mod utils;
 
-use models::{ExchangeFeedPayload, ExchangeOrderRequest, ExchangeOrderResponse, HedgeRequest, MMConfig, PauseRequest};
+use exchange::{exchange_ws_loop, place_exchange_orders};
+use models::{HedgeRequest, MMConfig, PauseRequest};
 use state::{EngineState, PairState};
 use utils::{apply_ratio, quote_notional_rate_fp};
 
@@ -122,75 +122,6 @@ async fn main() {
     }
 }
 
-/// Connects to the exchange WebSocket feed and keeps the bot state updated with
-/// the latest market prices. Reconnects automatically on disconnect.
-async fn exchange_ws_loop(exchange_ws_url: String, bot_state: Arc<RwLock<EngineState>>) {
-    loop {
-        info!("connecting to exchange at {exchange_ws_url}");
-        match connect_async(&exchange_ws_url).await {
-            Ok((mut ws_stream, _)) => {
-                info!("connected to exchange");
-                while let Some(msg) = ws_stream.next().await {
-                    match msg {
-                        Ok(tokio_tungstenite::tungstenite::Message::Text(text)) => {
-                            match serde_json::from_str::<ExchangeFeedPayload>(&text) {
-                                Ok(feed) => {
-                                    let mut guard = bot_state.write().await;
-                                    guard.update_from_exchange(feed);
-                                }
-                                Err(e) => {
-                                    warn!("exchange feed parse error: {e}");
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            error!("exchange ws error: {e}");
-                            break;
-                        }
-                        _ => {}
-                    }
-                }
-                {
-                    let mut guard = bot_state.write().await;
-                    guard.exchange_connected = false;
-                }
-                warn!("exchange disconnected, reconnecting in 1s");
-            }
-            Err(e) => {
-                error!("exchange ws connect error: {e}");
-            }
-        }
-        tokio::time::sleep(Duration::from_secs(1)).await;
-    }
-}
-
-/// Sends a batch of orders to the exchange HTTP API and collects fill responses.
-async fn place_exchange_orders(
-    client: &reqwest::Client,
-    exchange_api_url: &str,
-    orders: Vec<ExchangeOrderRequest>,
-) -> Vec<ExchangeOrderResponse> {
-    let mut fills = Vec::new();
-    for order in orders {
-        match client
-            .post(format!("{exchange_api_url}/orders"))
-            .json(&order)
-            .send()
-            .await
-        {
-            Ok(resp) => {
-                if let Ok(fill) = resp.json::<ExchangeOrderResponse>().await {
-                    fills.push(fill);
-                }
-            }
-            Err(e) => {
-                warn!("failed to place order: {e}");
-            }
-        }
-    }
-    fills
-}
-
 async fn ws_stream_handler(
     ws: WebSocketUpgrade,
     State(app_state): State<AppState>,
@@ -291,4 +222,3 @@ async fn health(State(app_state): State<AppState>) -> Json<serde_json::Value> {
         "quotes": state.total_quotes,
     }))
 }
-
