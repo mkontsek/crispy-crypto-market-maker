@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 const DEMO_AUTH_COOKIE = 'crispy_demo_auth';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const isAuthenticated = request.cookies.get(DEMO_AUTH_COOKIE)?.value === '1';
 
   if (isAuthenticated) {
