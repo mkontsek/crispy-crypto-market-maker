@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Side {
+  buy
+  sell
+}
+
+model Fill {
+  id             String               @id @default(cuid())
+  pair           String
+  side           Side
+  price          Float
+  size           Float
+  midAtFill      Float
+  realizedSpread Float
+  adverseSelection Boolean            @default(false)
+  createdAt      DateTime             @default(now())
+
+  adverseSelectionLog AdverseSelectionLog?
+
+  @@index([pair, createdAt])
+}
+
+model Quote {
+  id               String   @id @default(cuid())
+  pair             String
+  bid              Float
+  ask              Float
+  mid              Float
+  spreadBps        Float
+  inventorySkew    Float
+  quoteRefreshRate Float
+  filled           Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  @@index([pair, createdAt])
+}
+
+model Inventory {
+  id             String   @id @default(cuid())
+  pair           String
+  inventory      Float
+  normalizedSkew Float
+  createdAt      DateTime @default(now())
+
+  @@index([pair, createdAt])
+}
+
+model PnLSnapshot {
+  id                   String   @id @default(cuid())
+  totalPnl             Float
+  realizedSpread       Float
+  hedgingCosts         Float
+  adverseSelectionRate Float
+  fillRate             Float
+  createdAt            DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model MMConfig {
+  id                       String   @id @default(cuid())
+  pair                     String   @unique
+  baseSpreadBps            Float
+  volatilityMultiplier     Float
+  maxInventory             Float
+  inventorySkewSensitivity Float
+  quoteRefreshIntervalMs   Int
+  enabled                  Boolean  @default(true)
+  hedgingEnabled           Boolean  @default(false)
+  hedgeThreshold           Float
+  hedgeExchange            String
+  updatedAt                DateTime @updatedAt
+}
+
+model AdverseSelectionLog {
+  id           String   @id @default(cuid())
+  fillId       String   @unique
+  pair         String
+  movedAgainst Boolean
+  moveBps      Float
+  createdAt    DateTime @default(now())
+
+  fill Fill @relation(fields: [fillId], references: [id], onDelete: Cascade)
+
+  @@index([pair, createdAt])
+}

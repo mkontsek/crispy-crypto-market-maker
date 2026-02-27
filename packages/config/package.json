@@ -1,0 +1,15 @@
+{
+  "name": "@crispy/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./eslint/base": "./eslint/base.mjs",
+    "./typescript/base": "./typescript/base.json"
+  },
+  "scripts": {
+    "build": "echo 'config package ready'",
+    "lint": "echo 'config lint skipped'",
+    "typecheck": "echo 'config typecheck skipped'"
+  }
+}

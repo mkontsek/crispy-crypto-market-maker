@@ -1,0 +1,25 @@
+import type { z } from 'zod';
+
+import {
+  engineStreamSchema,
+  exchangeHealthSchema,
+  fillSchema,
+  hedgeRequestSchema,
+  inventorySnapshotSchema,
+  mmConfigSchema,
+  mmPairConfigSchema,
+  pausePairRequestSchema,
+  pnlSnapshotSchema,
+  quoteSnapshotSchema,
+} from './schemas';
+
+export type QuoteSnapshot = z.infer<typeof quoteSnapshotSchema>;
+export type Fill = z.infer<typeof fillSchema>;
+export type InventorySnapshot = z.infer<typeof inventorySnapshotSchema>;
+export type PnLSnapshot = z.infer<typeof pnlSnapshotSchema>;
+export type ExchangeHealth = z.infer<typeof exchangeHealthSchema>;
+export type MMPairConfig = z.infer<typeof mmPairConfigSchema>;
+export type MMConfig = z.infer<typeof mmConfigSchema>;
+export type EngineStreamPayload = z.infer<typeof engineStreamSchema>;
+export type PausePairRequest = z.infer<typeof pausePairRequestSchema>;
+export type HedgeRequest = z.infer<typeof hedgeRequestSchema>;
