@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Crispy Crypto Market Maker
 
-## Getting Started
+Crispy is a monorepo demo of a market-making platform with a Rust engine and a Next.js BFF/frontend.
 
-First, run the development server:
+## Monorepo layout
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+.
+├── apps
+│   ├── engine   # Rust (Axum + Tokio) stream + command API
+│   └── web      # Next.js 16 App Router (BFF + UI)
+├── packages
+│   ├── config   # shared lint/ts config artifacts
+│   ├── db       # Prisma schema + Prisma client export
+│   └── shared   # shared TS types + Zod schemas/constants
+├── turbo.json
+└── pnpm-workspace.yaml
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Engine interfaces
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- WebSocket stream: `ws://127.0.0.1:8080/stream`
+- HTTP command API: `http://127.0.0.1:8081`
+  - `POST /config`
+  - `POST /pairs/:id/pause`
+  - `POST /hedge`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Web API routes
 
-## Learn More
+- `GET /api/quotes`
+- `GET /api/fills`
+- `GET /api/pnl`
+- `GET /api/inventory`
+- `POST /api/config`
+- `POST /api/pairs/:id/pause`
+- `POST /api/hedge`
+- `GET /api/stream` (SSE fan-out from engine stream)
 
-To learn more about Next.js, take a look at the following resources:
+## Getting started
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm install
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Terminal 1:
 
-## Deploy on Vercel
+```bash
+cd apps/engine
+cargo run
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Terminal 2:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm --filter @crispy/web dev
+```
+
+## Workspace scripts
+
+```bash
+pnpm dev
+pnpm lint
+pnpm build
+pnpm typecheck
+```
