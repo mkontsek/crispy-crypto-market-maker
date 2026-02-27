@@ -3,6 +3,44 @@ use serde::{Deserialize, Serialize};
 pub const PAIRS: [&str; 3] = ["BTC/USDT", "ETH/USDT", "SOL/USDT"];
 pub const EXCHANGES: [&str; 3] = ["Binance", "Bybit", "OKX"];
 
+/// Market data received from the exchange over its WebSocket feed.
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExchangePairData {
+    pub pair: String,
+    pub mid: i64,
+    pub volatility: f64,
+}
+
+/// Top-level payload broadcast by the exchange's WS feed.
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExchangeFeedPayload {
+    pub pairs: Vec<ExchangePairData>,
+}
+
+/// Request sent to exchange to place an order.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExchangeOrderRequest {
+    pub pair: String,
+    pub side: String,
+    pub price: i64,
+    pub size: i64,
+}
+
+/// Response from exchange after placing an order.
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExchangeOrderResponse {
+    pub pair: String,
+    pub side: String,
+    pub filled: bool,
+    pub fill_price: i64,
+    pub fill_size: i64,
+    pub adverse_selection: bool,
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PairConfig {

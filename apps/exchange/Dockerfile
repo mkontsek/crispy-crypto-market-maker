@@ -8,7 +8,7 @@ RUN cargo build --release
 
 FROM debian:bookworm-slim AS runtime
 
-COPY --from=builder /app/target/release/crispy-engine /usr/local/bin/crispy-engine
+COPY --from=builder /app/target/release/crispy-exchange /usr/local/bin/crispy-exchange
 
-EXPOSE 8080 8081
-CMD ["crispy-engine"]
+EXPOSE 8082 8083
+CMD ["crispy-exchange"]

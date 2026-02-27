@@ -144,12 +144,12 @@ export function MarketMakerDashboard() {
         <div>
           <h1 className="text-xl font-semibold">Crispy Crypto Market Maker</h1>
           <p className="text-sm text-slate-400">
-            Next.js BFF + Rust engine simulator with real-time SSE relayed metrics.
+            Market maker bot connected to a simulated exchange — real-time metrics via Next.js BFF + SSE.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge tone={connected ? 'success' : 'danger'}>
-            {connected ? 'engine live' : 'engine offline'}
+            {connected ? 'bot live' : 'bot offline'}
           </Badge>
           {configMutation.isPending || pairActionMutation.isPending ? (
             <Badge tone="warning">Applying changes...</Badge>

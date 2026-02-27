@@ -7,7 +7,7 @@ export function ExchangeHealthSection({ health }: { health: ExchangeHealth[] }) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Exchange Health Monitor</CardTitle>
+        <CardTitle>Exchange Connectivity (via Bot)</CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <table className="w-full min-w-[620px] text-sm">

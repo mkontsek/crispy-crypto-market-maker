@@ -7,45 +7,80 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use futures_util::StreamExt;
 use tokio::{
     net::TcpListener,
     sync::{RwLock, broadcast},
 };
-use tracing::{error, info};
+use tokio_tungstenite::connect_async;
+use tracing::{error, info, warn};
 
 mod models;
 mod state;
 mod utils;
 
-use models::{HedgeRequest, MMConfig, PauseRequest};
+use models::{ExchangeFeedPayload, ExchangeOrderRequest, ExchangeOrderResponse, HedgeRequest, MMConfig, PauseRequest};
 use state::{EngineState, PairState};
 use utils::{apply_ratio, quote_notional_rate_fp};
+
+const DEFAULT_EXCHANGE_WS_URL: &str = "ws://127.0.0.1:8082/feed";
+const DEFAULT_EXCHANGE_API_URL: &str = "http://127.0.0.1:8083";
 
 #[derive(Clone)]
 struct AppState {
     state: Arc<RwLock<EngineState>>,
     stream_tx: broadcast::Sender<String>,
+    exchange_api_url: String,
 }
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
+    let exchange_ws_url = std::env::var("EXCHANGE_WS_URL")
+        .unwrap_or_else(|_| DEFAULT_EXCHANGE_WS_URL.to_string());
+    let exchange_api_url = std::env::var("EXCHANGE_API_URL")
+        .unwrap_or_else(|_| DEFAULT_EXCHANGE_API_URL.to_string());
+
     let (stream_tx, _) = broadcast::channel(128);
     let app_state = AppState {
         state: Arc::new(RwLock::new(EngineState::new())),
         stream_tx,
+        exchange_api_url,
     };
 
+    // Exchange WebSocket listener: subscribes to the exchange feed and updates
+    // mid prices / volatility in bot state whenever new market data arrives.
+    let exchange_bot_state = app_state.state.clone();
+    tokio::spawn(async move {
+        exchange_ws_loop(exchange_ws_url, exchange_bot_state).await;
+    });
+
+    // Bot tick loop: every 250 ms, compute MM quotes, place orders on the exchange,
+    // process any fills, then broadcast the updated bot stream payload.
     let stream_state = app_state.clone();
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_millis(250));
+        let http_client = reqwest::Client::new();
         loop {
             interval.tick().await;
+
+            // 1. Compute orders to place (requires write lock to update bid/ask).
+            let orders = {
+                let mut guard = stream_state.state.write().await;
+                guard.compute_orders()
+            };
+
+            // 2. Place orders on the exchange (async, no lock held).
+            let exchange_fills =
+                place_exchange_orders(&http_client, &stream_state.exchange_api_url, orders).await;
+
+            // 3. Apply fills and build the stream payload (write lock).
             let payload = {
                 let mut guard = stream_state.state.write().await;
-                guard.build_payload()
+                guard.build_payload(exchange_fills)
             };
+
             if let Ok(serialized) = serde_json::to_string(&payload) {
                 let _ = stream_state.stream_tx.send(serialized);
             }
@@ -70,8 +105,8 @@ async fn main() {
         .await
         .expect("bind api listener");
 
-    info!("engine stream listening on ws://0.0.0.0:8080/stream");
-    info!("engine api listening on http://0.0.0.0:8081");
+    info!("bot stream listening on ws://0.0.0.0:8080/stream");
+    info!("bot api listening on http://0.0.0.0:8081");
 
     tokio::select! {
         result = axum::serve(ws_listener, ws_app) => {
@@ -87,6 +122,75 @@ async fn main() {
     }
 }
 
+/// Connects to the exchange WebSocket feed and keeps the bot state updated with
+/// the latest market prices. Reconnects automatically on disconnect.
+async fn exchange_ws_loop(exchange_ws_url: String, bot_state: Arc<RwLock<EngineState>>) {
+    loop {
+        info!("connecting to exchange at {exchange_ws_url}");
+        match connect_async(&exchange_ws_url).await {
+            Ok((mut ws_stream, _)) => {
+                info!("connected to exchange");
+                while let Some(msg) = ws_stream.next().await {
+                    match msg {
+                        Ok(tokio_tungstenite::tungstenite::Message::Text(text)) => {
+                            match serde_json::from_str::<ExchangeFeedPayload>(&text) {
+                                Ok(feed) => {
+                                    let mut guard = bot_state.write().await;
+                                    guard.update_from_exchange(feed);
+                                }
+                                Err(e) => {
+                                    warn!("exchange feed parse error: {e}");
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            error!("exchange ws error: {e}");
+                            break;
+                        }
+                        _ => {}
+                    }
+                }
+                {
+                    let mut guard = bot_state.write().await;
+                    guard.exchange_connected = false;
+                }
+                warn!("exchange disconnected, reconnecting in 1s");
+            }
+            Err(e) => {
+                error!("exchange ws connect error: {e}");
+            }
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+}
+
+/// Sends a batch of orders to the exchange HTTP API and collects fill responses.
+async fn place_exchange_orders(
+    client: &reqwest::Client,
+    exchange_api_url: &str,
+    orders: Vec<ExchangeOrderRequest>,
+) -> Vec<ExchangeOrderResponse> {
+    let mut fills = Vec::new();
+    for order in orders {
+        match client
+            .post(format!("{exchange_api_url}/orders"))
+            .json(&order)
+            .send()
+            .await
+        {
+            Ok(resp) => {
+                if let Ok(fill) = resp.json::<ExchangeOrderResponse>().await {
+                    fills.push(fill);
+                }
+            }
+            Err(e) => {
+                warn!("failed to place order: {e}");
+            }
+        }
+    }
+    fills
+}
+
 async fn ws_stream_handler(
     ws: WebSocketUpgrade,
     State(app_state): State<AppState>,
@@ -97,7 +201,7 @@ async fn ws_stream_handler(
 async fn handle_ws_socket(mut socket: WebSocket, app_state: AppState) {
     let initial_payload = {
         let mut state = app_state.state.write().await;
-        state.build_payload()
+        state.build_payload(vec![])
     };
 
     if let Ok(initial) = serde_json::to_string(&initial_payload) {
@@ -181,8 +285,10 @@ async fn health(State(app_state): State<AppState>) -> Json<serde_json::Value> {
     let state = app_state.state.read().await;
     Json(serde_json::json!({
         "status": "ok",
+        "exchangeConnected": state.exchange_connected,
         "trackedPairs": state.pairs.len(),
         "fills": state.total_fills,
         "quotes": state.total_quotes,
     }))
 }
+
