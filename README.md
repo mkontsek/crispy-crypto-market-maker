@@ -1,31 +1,54 @@
 # Crispy Crypto Market Maker
 
-Crispy is a monorepo demo of a market-making platform with a Rust engine and a Next.js BFF/frontend.
+Crispy is a monorepo demo of a market-making platform with two Rust services and a Next.js BFF/frontend.
+
+## Architecture
+
+```
+Web/Dashboard  ──────────►  Bot (market maker)  ──────────►  Exchange
+(Next.js BFF)               ws://8080  http://8081          ws://8082  http://8083
+```
+
+- **Exchange** (`apps/exchange`): Simulates a crypto exchange with fake data generation.
+  Can be swapped for a real exchange adapter that connects to Binance, Bybit, OKX, etc.
+- **Bot** (`apps/bot`): Market maker bot that connects to the exchange, calculates quotes,
+  places orders, tracks inventory, PnL and hedging. Exposes a WebSocket stream and HTTP
+  command API consumed by the web frontend.
+- **Web** (`apps/web`): Next.js 16 BFF + UI. Relays the bot's stream over SSE to the browser.
 
 ## Monorepo layout
 
 ```
 .
 ├── apps
-│   ├── engine   # Rust (Axum + Tokio) stream + command API
-│   └── web      # Next.js 16 App Router (BFF + UI)
+│   ├── exchange  # Rust (Axum + Tokio) simulated exchange — WS feed + order API
+│   ├── bot       # Rust (Axum + Tokio) market maker bot — connects to exchange, exposes stream
+│   └── web       # Next.js 16 App Router (BFF + UI)
 ├── packages
-│   ├── config   # shared lint/ts config artifacts
-│   ├── db       # Prisma schema + Prisma client export
-│   └── shared   # shared TS types + Zod schemas/constants
+│   ├── config    # shared lint/ts config artifacts
+│   ├── db        # Prisma schema + Prisma client export
+│   └── shared    # shared TS types + Zod schemas/constants
 ├── infra
-│   └── postgres # PostgreSQL container image
+│   └── postgres  # PostgreSQL container image
 ├── turbo.json
 └── pnpm-workspace.yaml
 ```
 
-## Engine interfaces
+## Exchange interfaces
+
+- WebSocket feed: `ws://127.0.0.1:8082/feed`
+- HTTP order API: `http://127.0.0.1:8083`
+  - `POST /orders` — place an order; returns fill result (fake mode: probability-based fill)
+  - `GET /health`
+
+## Bot interfaces
 
 - WebSocket stream: `ws://127.0.0.1:8080/stream`
 - HTTP command API: `http://127.0.0.1:8081`
   - `POST /config`
   - `POST /pairs/:id/pause`
   - `POST /hedge`
+  - `GET /health`
 
 ## Web API routes
 
@@ -36,7 +59,7 @@ Crispy is a monorepo demo of a market-making platform with a Rust engine and a N
 - `POST /api/config`
 - `POST /api/pairs/:id/pause`
 - `POST /api/hedge`
-- `GET /api/stream` (SSE fan-out from engine stream)
+- `GET /api/stream` (SSE fan-out from bot stream)
 
 ## Getting started
 
@@ -44,14 +67,21 @@ Crispy is a monorepo demo of a market-making platform with a Rust engine and a N
 pnpm install
 ```
 
-Terminal 1:
+Terminal 1 (exchange):
 
 ```bash
-cd apps/engine
+cd apps/exchange
 cargo run
 ```
 
-Terminal 2:
+Terminal 2 (bot):
+
+```bash
+cd apps/bot
+cargo run
+```
+
+Terminal 3 (web):
 
 ```bash
 pnpm --filter @crispy/web dev
@@ -79,8 +109,8 @@ pnpm typecheck
 - Create a Vercel project with **Root Directory** set to `apps/web`.
 - Vercel will automatically detect `pnpm` from the `pnpm-lock.yaml` file.
 - Add environment variables:
-  - `ENGINE_HTTP_URL` (for example `https://engine.your-domain.com`)
-  - `ENGINE_WS_URL` (for example `wss://engine.your-domain.com/stream`)
+  - `ENGINE_HTTP_URL` (URL of the bot's HTTP API, e.g. `https://bot.your-domain.com`)
+  - `ENGINE_WS_URL` (URL of the bot's WS stream, e.g. `wss://bot.your-domain.com/stream`)
   - `DATABASE_URL` (Postgres connection string)
 - Deploy from Git or with CLI:
 
@@ -90,20 +120,37 @@ vercel
 
 **Note**: The `vercel.json` in `apps/web` configures pnpm as the package manager and sets the correct build command for the monorepo.
 
-### 2) Rust engine as a container
+### 2) Exchange as a container
 
 Build and run:
 
 ```bash
-docker build -t crispy-engine ./apps/engine
-docker run --rm -p 8080:8080 -p 8081:8081 crispy-engine
+docker build -t crispy-exchange ./apps/exchange
+docker run --rm -p 8082:8082 -p 8083:8083 crispy-exchange
 ```
 
-`apps/engine/Dockerfile` exposes:
+`apps/exchange/Dockerfile` exposes:
+- `8082` WebSocket feed (`/feed`)
+- `8083` HTTP API (`/orders`, `/health`)
+
+### 3) Bot as a container
+
+Build and run (point it at the exchange):
+
+```bash
+docker build -t crispy-bot ./apps/bot
+docker run --rm \
+  -e EXCHANGE_WS_URL=ws://exchange:8082/feed \
+  -e EXCHANGE_API_URL=http://exchange:8083 \
+  -p 8080:8080 -p 8081:8081 \
+  crispy-bot
+```
+
+`apps/bot/Dockerfile` exposes:
 - `8080` WebSocket stream (`/stream`)
 - `8081` HTTP API (`/config`, `/pairs/:id/pause`, `/hedge`, `/health`)
 
-### 3) PostgreSQL as a container (or managed DB)
+### 4) PostgreSQL as a container (or managed DB)
 
 For production, a managed Postgres service is recommended. For containerized/self-hosted usage:
 
@@ -118,7 +165,7 @@ Use the resulting connection string as `DATABASE_URL`.
 
 Best results come from:
 - **Vercel** for `apps/web`
-- **Container platform** (Fly.io/Render/ECS/Kubernetes) for `apps/engine`
+- **Container platform** (Fly.io/Render/ECS/Kubernetes) for `apps/exchange` and `apps/bot`
 - **Managed Postgres** for persistence
 
-Then set Vercel env vars to the engine and database endpoints.
+Then set Vercel env vars to the bot and database endpoints.
