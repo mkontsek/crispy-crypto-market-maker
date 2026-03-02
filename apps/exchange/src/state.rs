@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 
-use crate::models::{MarketDataPayload, OrderRequest, OrderResponse, PAIRS, PairMarketData};
+use crate::models::{MarketDataPayload, OrderRequest, OrderResponse, PairMarketData, PAIRS};
 use crate::utils::{apply_bps, chrono_string, to_price_fp};
 
 pub struct PairMarket {

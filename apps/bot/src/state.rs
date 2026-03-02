@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
-use crate::models::{
-    ExchangeFeedPayload, ExchangeOrderRequest, MMConfig, PAIRS, PairConfig,
-};
+use crate::models::{ExchangeFeedPayload, ExchangeOrderRequest, MMConfig, PairConfig, PAIRS};
 use crate::utils::{from_price_fp, from_size_fp, to_price_fp, to_size_fp};
 
 mod payload;
@@ -148,5 +146,4 @@ impl EngineState {
 
         orders
     }
-
 }
