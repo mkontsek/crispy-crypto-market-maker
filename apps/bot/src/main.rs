@@ -9,7 +9,7 @@ use axum::{
 };
 use tokio::{
     net::TcpListener,
-    sync::{RwLock, broadcast},
+    sync::{broadcast, RwLock},
 };
 use tracing::{error, info};
 
@@ -37,10 +37,10 @@ struct AppState {
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let exchange_ws_url = std::env::var("EXCHANGE_WS_URL")
-        .unwrap_or_else(|_| DEFAULT_EXCHANGE_WS_URL.to_string());
-    let exchange_api_url = std::env::var("EXCHANGE_API_URL")
-        .unwrap_or_else(|_| DEFAULT_EXCHANGE_API_URL.to_string());
+    let exchange_ws_url =
+        std::env::var("EXCHANGE_WS_URL").unwrap_or_else(|_| DEFAULT_EXCHANGE_WS_URL.to_string());
+    let exchange_api_url =
+        std::env::var("EXCHANGE_API_URL").unwrap_or_else(|_| DEFAULT_EXCHANGE_API_URL.to_string());
 
     let (stream_tx, _) = broadcast::channel(128);
     let app_state = AppState {

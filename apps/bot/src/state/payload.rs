@@ -1,9 +1,9 @@
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 use tracing::error;
 
 use crate::models::{
-    EXCHANGES, EngineStreamPayload, ExchangeHealth, ExchangeOrderResponse, Fill,
-    InventorySnapshot, PnLSnapshot, QuoteSnapshot,
+    EngineStreamPayload, ExchangeHealth, ExchangeOrderResponse, Fill, InventorySnapshot,
+    PnLSnapshot, QuoteSnapshot, EXCHANGES,
 };
 use crate::utils::{
     apply_ratio, chrono_string, normalize_inventory, quote_notional_fp, quote_notional_rate_fp,
@@ -165,7 +165,9 @@ impl EngineState {
 
         let pnl = PnLSnapshot {
             timestamp: now.clone(),
-            total_pnl: self.total_realized_spread.saturating_sub(self.hedging_costs),
+            total_pnl: self
+                .total_realized_spread
+                .saturating_sub(self.hedging_costs),
             realized_spread: self.total_realized_spread,
             hedging_costs: self.hedging_costs,
             adverse_selection_rate,

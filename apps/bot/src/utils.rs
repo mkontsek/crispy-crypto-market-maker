@@ -51,4 +51,3 @@ pub fn chrono_string() -> String {
         .as_millis();
     now.to_string()
 }
-

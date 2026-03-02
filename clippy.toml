@@ -1,0 +1,20 @@
+# Clippy configuration for crispy-crypto-market-maker
+
+# Warn on common issues
+cognitive-complexity-threshold = 30
+too-many-arguments-threshold = 7
+type-complexity-threshold = 250
+single-char-binding-names-threshold = 4
+too-many-lines-threshold = 300
+
+# Pedantic lints (can be strict, but helpful)
+# Run with: cargo clippy -- -W clippy::pedantic
+
+# Allow certain lints that may be too strict
+# Uncomment to allow specific lints:
+# allowed-lints = [
+#     "clippy::missing_errors_doc",
+#     "clippy::missing_panics_doc",
+#     "clippy::module_name_repetitions",
+# ]
+

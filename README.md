@@ -100,6 +100,7 @@ pnpm dev
 pnpm lint
 pnpm build
 pnpm typecheck
+pnpm check:lines  # Enforce 300-line file limit
 ```
 
 ## Deploying (recommended)

@@ -9,7 +9,7 @@ use axum::{
 };
 use tokio::{
     net::TcpListener,
-    sync::{RwLock, broadcast},
+    sync::{broadcast, RwLock},
 };
 use tracing::{error, info};
 
