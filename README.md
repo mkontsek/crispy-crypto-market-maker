@@ -63,28 +63,18 @@ Web/Dashboard  ──────────►  Bot (market maker)  ───�
 
 ## Getting started
 
+### Prerequisites
+
+Install dependencies:
+
 ```bash
 pnpm install
 ```
 
-Terminal 1 (exchange):
+Install `cargo-watch` for auto-reloading Rust services during development:
 
 ```bash
-cd apps/exchange
-cargo run
-```
-
-Terminal 2 (bot):
-
-```bash
-cd apps/bot
-cargo run
-```
-
-Terminal 3 (web):
-
-```bash
-pnpm --filter @crispy/web dev
+cargo install cargo-watch
 ```
 
 Copy web env template for local development:
@@ -93,14 +83,62 @@ Copy web env template for local development:
 cp apps/web/.env.example apps/web/.env.local
 ```
 
+### Development (watch mode)
+
+**Option 1: All services in one command (background processes)**
+
+```bash
+pnpm run dev:all
+```
+
+**Option 2: Individual terminals with watch mode**
+
+Terminal 1 (exchange with auto-reload):
+
+```bash
+pnpm run dev:exchange
+```
+
+Terminal 2 (bot with auto-reload):
+
+```bash
+pnpm run dev:bot
+```
+
+Terminal 3 (web with hot reload):
+
+```bash
+pnpm run dev:web
+```
+
+**Option 3: Manual mode (no auto-reload)**
+
+```bash
+cd apps/exchange && cargo run
+cd apps/bot && cargo run
+pnpm --filter @crispy/web dev
+```
+
 ## Workspace scripts
 
 ```bash
-pnpm dev
-pnpm lint
-pnpm build
-pnpm typecheck
-pnpm check:lines  # Enforce 300-line file limit
+# Development
+pnpm dev            # Turbo parallel dev for web packages
+pnpm dev:all        # All services (exchange + bot + web) in background
+pnpm dev:exchange   # Exchange in watch mode
+pnpm dev:bot        # Bot in watch mode
+pnpm dev:web        # Web only in dev mode
+
+# Build
+pnpm build          # Turbo build for web packages
+pnpm build:exchange # Exchange release build
+pnpm build:bot      # Bot release build
+
+# Quality
+pnpm lint           # Turbo lint for web packages
+pnpm lint:rust      # Clippy for Rust services
+pnpm typecheck      # TypeScript type checking
+pnpm check:lines    # Enforce 300-line file limit
 ```
 
 ## Deploying (recommended)

@@ -1,3 +1,4 @@
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 pub const PAIRS: [&str; 3] = ["BTC/USDT", "ETH/USDT", "SOL/USDT"];
@@ -9,7 +10,8 @@ pub const EXCHANGES: [&str; 3] = ["Binance", "Bybit", "OKX"];
 pub struct ExchangePairData {
     pub pair: String,
     pub mid: i64,
-    pub volatility: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub volatility: Decimal,
 }
 
 /// Top-level payload broadcast by the exchange's WS feed.
@@ -45,14 +47,19 @@ pub struct ExchangeOrderResponse {
 #[serde(rename_all = "camelCase")]
 pub struct PairConfig {
     pub pair: String,
-    pub base_spread_bps: f64,
-    pub volatility_multiplier: f64,
-    pub max_inventory: f64,
-    pub inventory_skew_sensitivity: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub base_spread_bps: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub volatility_multiplier: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub max_inventory: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub inventory_skew_sensitivity: Decimal,
     pub quote_refresh_interval_ms: u64,
     pub enabled: bool,
     pub hedging_enabled: bool,
-    pub hedge_threshold: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub hedge_threshold: Decimal,
     pub hedge_exchange: String,
 }
 
@@ -68,10 +75,13 @@ pub struct QuoteSnapshot {
     pub bid: i64,
     pub ask: i64,
     pub mid: i64,
-    pub spread_bps: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub spread_bps: Decimal,
     pub inventory_skew: i64,
-    pub quote_refresh_rate: f64,
-    pub volatility: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub quote_refresh_rate: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub volatility: Decimal,
     pub paused: bool,
     pub updated_at: String,
 }
@@ -95,7 +105,8 @@ pub struct Fill {
 pub struct InventorySnapshot {
     pub pair: String,
     pub inventory: i64,
-    pub normalized_skew: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub normalized_skew: Decimal,
     pub timestamp: String,
 }
 
@@ -106,8 +117,10 @@ pub struct PnLSnapshot {
     pub total_pnl: i64,
     pub realized_spread: i64,
     pub hedging_costs: i64,
-    pub adverse_selection_rate: f64,
-    pub fill_rate: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub adverse_selection_rate: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub fill_rate: Decimal,
 }
 
 #[derive(Clone, Serialize)]
@@ -115,8 +128,10 @@ pub struct PnLSnapshot {
 pub struct ExchangeHealth {
     pub pair: String,
     pub exchange: String,
-    pub tick_latency_ms: f64,
-    pub feed_staleness_ms: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub tick_latency_ms: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub feed_staleness_ms: Decimal,
     pub connected: bool,
 }
 

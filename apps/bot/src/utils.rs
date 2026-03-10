@@ -1,20 +1,30 @@
+use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
+
 pub const PRICE_SCALE: i64 = 10_000;
 pub const SIZE_SCALE: i64 = 1_000_000;
 
-pub fn to_price_fp(value: f64) -> i64 {
-    (value * PRICE_SCALE as f64).round() as i64
+pub fn to_price_fp(value: Decimal) -> i64 {
+    (value * Decimal::from(PRICE_SCALE))
+        .round()
+        .to_i64()
+        .expect("price conversion overflow")
 }
 
-pub fn from_price_fp(value: i64) -> f64 {
-    value as f64 / PRICE_SCALE as f64
+pub fn from_price_fp(value: i64) -> Decimal {
+    Decimal::from(value) / Decimal::from(PRICE_SCALE)
 }
 
-pub fn to_size_fp(value: f64) -> i64 {
-    (value * SIZE_SCALE as f64).round() as i64
+pub fn to_size_fp(value: Decimal) -> i64 {
+    (value * Decimal::from(SIZE_SCALE))
+        .round()
+        .to_i64()
+        .expect("size conversion overflow")
 }
 
-pub fn from_size_fp(value: i64) -> f64 {
-    value as f64 / SIZE_SCALE as f64
+pub fn from_size_fp(value: i64) -> Decimal {
+    Decimal::from(value) / Decimal::from(SIZE_SCALE)
 }
 
 pub fn apply_ratio(value_fp: i64, numerator: i64, denominator: i64) -> i64 {
@@ -35,11 +45,11 @@ pub fn quote_notional_rate_fp(
         / (SIZE_SCALE as i128 * denominator as i128)) as i64
 }
 
-pub fn normalize_inventory(inventory_fp: i64, max_inventory: f64) -> f64 {
-    if max_inventory == 0.0 {
-        0.0
+pub fn normalize_inventory(inventory_fp: i64, max_inventory: Decimal) -> Decimal {
+    if max_inventory.is_zero() {
+        Decimal::ZERO
     } else {
-        (from_size_fp(inventory_fp) / max_inventory).clamp(-1.5, 1.5)
+        (from_size_fp(inventory_fp) / max_inventory).clamp(dec!(-1.5), dec!(1.5))
     }
 }
 

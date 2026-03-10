@@ -1,10 +1,14 @@
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 
-pub const PAIRS: [(&str, f64); 3] = [
-    ("BTC/USDT", 62_000.0),
-    ("ETH/USDT", 3_450.0),
-    ("SOL/USDT", 140.0),
-];
+pub fn default_pairs() -> [(&'static str, Decimal); 3] {
+    [
+        ("BTC/USDT", dec!(62000)),
+        ("ETH/USDT", dec!(3450)),
+        ("SOL/USDT", dec!(140)),
+    ]
+}
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -13,8 +17,10 @@ pub struct PairMarketData {
     pub mid: i64,
     pub bid: i64,
     pub ask: i64,
-    pub spread_bps: f64,
-    pub volatility: f64,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub spread_bps: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub volatility: Decimal,
 }
 
 #[derive(Clone, Serialize)]

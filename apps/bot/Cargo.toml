@@ -14,3 +14,5 @@ tracing-subscriber = { version = "0.3.19", features = ["fmt", "env-filter"] }
 tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
 reqwest = { version = "0.12", features = ["json"] }
 futures-util = "0.3"
+rust_decimal = { version = "1.36.0", features = ["serde-with-float"] }
+rust_decimal_macros = "1.36.0"
