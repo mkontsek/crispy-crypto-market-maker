@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use rand::{thread_rng, Rng};
+use rand::{rng, RngExt};
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -45,7 +45,7 @@ impl ExchangeState {
     }
 
     pub fn tick(&mut self) -> MarketDataPayload {
-        let mut rng = thread_rng();
+        let mut rng = rng();
         let now = chrono_string();
         let mut pair_data = Vec::new();
 
@@ -53,8 +53,8 @@ impl ExchangeState {
             // Random walk price simulation (only in fake mode; a real exchange would
             // derive mid from the actual order book)
             if self.fake {
-                market.volatility = Decimal::from(rng.gen_range(600..1600)) / dec!(1000);
-                market.mid = apply_bps(market.mid, rng.gen_range(-8..=8));
+                market.volatility = Decimal::from(rng.random_range(600..1600)) / dec!(1000);
+                market.mid = apply_bps(market.mid, rng.random_range(-8..=8));
             }
 
             let spread_abs = market.mid * market.spread_bps / dec!(10_000) / dec!(2);
@@ -82,7 +82,7 @@ impl ExchangeState {
     /// In fake mode, fills are probability-based. In real mode this would
     /// forward the order to the upstream exchange and return its response.
     pub fn place_order(&self, req: &OrderRequest) -> OrderResponse {
-        let mut rng = thread_rng();
+        let mut rng = rng();
 
         let volatility = self
             .pairs
@@ -94,8 +94,8 @@ impl ExchangeState {
         .round()
         .to_u32()
         .expect("fill probability out of range");
-        let filled = self.fake && rng.gen_ratio(fill_probability, 10_000);
-        let adverse_selection = filled && rng.gen_ratio(32, 100);
+        let filled = self.fake && rng.random_ratio(fill_probability, 10_000);
+        let adverse_selection = filled && rng.random_ratio(32, 100);
 
         OrderResponse {
             pair: req.pair.clone(),
