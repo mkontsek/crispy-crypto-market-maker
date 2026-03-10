@@ -22,7 +22,7 @@ mod utils;
 use exchange::{exchange_ws_loop, place_exchange_orders};
 use models::{HedgeRequest, MMConfig, PauseRequest};
 use state::{EngineState, PairState};
-use utils::{apply_ratio, quote_notional_rate_fp};
+use utils::{apply_ratio, quote_notional_rate};
 
 const DEFAULT_EXCHANGE_WS_URL: &str = "ws://127.0.0.1:8082/feed";
 const DEFAULT_EXCHANGE_API_URL: &str = "http://127.0.0.1:8083";
@@ -198,8 +198,8 @@ async fn manual_hedge(
         let mid = pair_state.mid;
         pair_state.inventory = apply_ratio(pair_state.inventory, 25, 100);
         let inventory_after = pair_state.inventory;
-        let hedge_cost = quote_notional_rate_fp(mid, pre.abs(), 8, 100_000);
-        state.hedging_costs = state.hedging_costs.saturating_add(hedge_cost);
+        let hedge_cost = quote_notional_rate(mid, pre.abs(), 8, 100_000);
+        state.hedging_costs += hedge_cost;
 
         return Json(serde_json::json!({
             "pair": payload.pair,

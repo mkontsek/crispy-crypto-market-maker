@@ -8,8 +8,7 @@ use crate::models::{
     PnLSnapshot, QuoteSnapshot, EXCHANGES,
 };
 use crate::utils::{
-    apply_ratio, chrono_string, normalize_inventory, quote_notional_fp, quote_notional_rate_fp,
-    to_size_fp,
+    apply_ratio, chrono_string, normalize_inventory, quote_notional, quote_notional_rate,
 };
 
 use super::EngineState;
@@ -57,9 +56,7 @@ impl EngineState {
 
             self.fill_seq = self.fill_seq.saturating_add(1);
             self.total_fills = self.total_fills.saturating_add(1);
-            self.total_realized_spread = self
-                .total_realized_spread
-                .saturating_add(quote_notional_fp(realized_spread, fill_size));
+            self.total_realized_spread += quote_notional(realized_spread, fill_size);
 
             fills.push(Fill {
                 id: format!("fill-{}", self.fill_seq),
@@ -105,15 +102,14 @@ impl EngineState {
                 continue;
             }
 
-            if pair.inventory.abs() > to_size_fp(cfg.max_inventory) {
+            if pair.inventory.abs() > cfg.max_inventory {
                 pair.paused = true;
                 error!("inventory limit breached for {}", cfg.pair);
             }
 
-            if cfg.hedging_enabled && pair.inventory.abs() > to_size_fp(cfg.hedge_threshold) {
-                let hedging_cost =
-                    quote_notional_rate_fp(pair.mid, pair.inventory.abs(), 1, 10_000);
-                self.hedging_costs = self.hedging_costs.saturating_add(hedging_cost);
+            if cfg.hedging_enabled && pair.inventory.abs() > cfg.hedge_threshold {
+                let hedging_cost = quote_notional_rate(pair.mid, pair.inventory.abs(), 1, 10_000);
+                self.hedging_costs += hedging_cost;
                 pair.inventory = apply_ratio(pair.inventory, 55, 100);
             }
 
@@ -167,9 +163,7 @@ impl EngineState {
 
         let pnl = PnLSnapshot {
             timestamp: now.clone(),
-            total_pnl: self
-                .total_realized_spread
-                .saturating_sub(self.hedging_costs),
+            total_pnl: self.total_realized_spread - self.hedging_costs,
             realized_spread: self.total_realized_spread,
             hedging_costs: self.hedging_costs,
             adverse_selection_rate,

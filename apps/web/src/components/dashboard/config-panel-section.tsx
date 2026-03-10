@@ -45,7 +45,7 @@ export function ConfigPanelSection({
           <div key={pairConfig.pair} className="rounded border border-slate-800 p-3 text-sm">
             <div className="mb-2 font-semibold">{pairConfig.pair}</div>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-              <NumberField
+              <DecimalField
                 label="Base spread bps"
                 value={pairConfig.baseSpreadBps}
                 onChange={(value) =>
@@ -54,7 +54,7 @@ export function ConfigPanelSection({
                   })
                 }
               />
-              <NumberField
+              <DecimalField
                 label="Vol multiplier"
                 value={pairConfig.volatilityMultiplier}
                 onChange={(value) =>
@@ -63,7 +63,7 @@ export function ConfigPanelSection({
                   })
                 }
               />
-              <NumberField
+              <DecimalField
                 label="Max inventory"
                 value={pairConfig.maxInventory}
                 onChange={(value) =>
@@ -72,7 +72,7 @@ export function ConfigPanelSection({
                   })
                 }
               />
-              <NumberField
+              <DecimalField
                 label="Skew sensitivity"
                 value={pairConfig.inventorySkewSensitivity}
                 onChange={(value) =>
@@ -90,7 +90,7 @@ export function ConfigPanelSection({
                   })
                 }
               />
-              <NumberField
+              <DecimalField
                 label="Hedge threshold"
                 value={pairConfig.hedgeThreshold}
                 onChange={(value) =>
@@ -167,6 +167,29 @@ function NumberField({
         type="number"
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
+      />
+    </label>
+  );
+}
+
+function DecimalField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="space-y-1">
+      <span className="block text-xs text-slate-400">{label}</span>
+      <input
+        className="h-9 w-full rounded border border-slate-700 bg-slate-900 px-2"
+        type="text"
+        inputMode="decimal"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
       />
     </label>
   );

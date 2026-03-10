@@ -28,7 +28,7 @@ export function QuoteHistorySection({ entries }: { entries: QuoteHistoryEntry[] 
                 <td className="py-2">{entry.pair}</td>
                 <td className="py-2">{priceFromFp(entry.bid).toFixed(2)}</td>
                 <td className="py-2">{priceFromFp(entry.ask).toFixed(2)}</td>
-                <td className="py-2">{entry.spreadBps.toFixed(2)}</td>
+                <td className="py-2">{priceFromFp(entry.spreadBps).toFixed(2)}</td>
                 <td className="py-2">{priceFromFp(entry.inventorySkew).toFixed(3)}</td>
                 <td className="py-2">
                   <Badge tone={entry.status === 'filled' ? 'success' : 'default'}>

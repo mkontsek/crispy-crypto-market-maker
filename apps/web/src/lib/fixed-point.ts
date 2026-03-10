@@ -1,9 +1,11 @@
-import { PRICE_SCALE, SIZE_SCALE } from '@crispy/shared';
-
-export function priceFromFp(value: number) {
-  return value / PRICE_SCALE;
+export function priceFromFp(value: string) {
+  return Number(value);
 }
 
-export function sizeFromFp(value: number) {
-  return value / SIZE_SCALE;
+export function sizeFromFp(value: string) {
+  return Number(value);
+}
+
+export function ratioFromDecimal(value: string) {
+  return Number(value);
 }

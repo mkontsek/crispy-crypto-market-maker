@@ -2,7 +2,7 @@ import type { InventorySnapshot, QuoteSnapshot } from '@crispy/shared';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { sizeFromFp } from '@/lib/fixed-point';
+import { ratioFromDecimal, sizeFromFp } from '@/lib/fixed-point';
 
 function tone(skew: number) {
   if (Math.abs(skew) < 0.4) return 'bg-emerald-500';
@@ -33,7 +33,8 @@ export function InventoryMonitorSection({
       <CardContent className="space-y-4">
         {inventory.map((item) => {
           const quote = quoteMap.get(item.pair);
-          const width = Math.min(Math.abs(item.normalizedSkew) * 100, 100);
+          const normalizedSkew = ratioFromDecimal(item.normalizedSkew);
+          const width = Math.min(Math.abs(normalizedSkew) * 100, 100);
           const isBusy = pendingPair === item.pair;
 
           return (
@@ -41,12 +42,12 @@ export function InventoryMonitorSection({
               <div className="mb-2 flex items-center justify-between text-sm">
                 <span className="font-medium">{item.pair}</span>
                 <span>
-                  inventory {sizeFromFp(item.inventory).toFixed(3)} | skew {item.normalizedSkew.toFixed(2)}
+                  inventory {sizeFromFp(item.inventory).toFixed(3)} | skew {normalizedSkew.toFixed(2)}
                 </span>
               </div>
               <div className="h-2 rounded bg-slate-800">
                 <div
-                  className={`${tone(item.normalizedSkew)} h-2 rounded`}
+                  className={`${tone(normalizedSkew)} h-2 rounded`}
                   style={{ width: `${width}%` }}
                 />
               </div>

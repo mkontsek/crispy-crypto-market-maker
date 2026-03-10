@@ -8,23 +8,22 @@ use rust_decimal_macros::dec;
 use crate::models::{
     default_pairs, MarketDataPayload, OrderRequest, OrderResponse, PairMarketData,
 };
-use crate::utils::{apply_bps, chrono_string, from_price_fp, to_price_fp};
+use crate::utils::{apply_bps, chrono_string};
 
 pub struct PairMarket {
-    pub mid: i64,
-    pub bid: i64,
-    pub ask: i64,
+    pub mid: Decimal,
+    pub bid: Decimal,
+    pub ask: Decimal,
     pub spread_bps: Decimal,
     pub volatility: Decimal,
 }
 
 impl PairMarket {
     pub fn new(mid: Decimal) -> Self {
-        let mid_fp = to_price_fp(mid);
         Self {
-            mid: mid_fp,
-            bid: apply_bps(mid_fp, -3),
-            ask: apply_bps(mid_fp, 3),
+            mid,
+            bid: apply_bps(mid, -3),
+            ask: apply_bps(mid, 3),
             spread_bps: dec!(6),
             volatility: Decimal::ONE,
         }
@@ -58,8 +57,7 @@ impl ExchangeState {
                 market.mid = apply_bps(market.mid, rng.gen_range(-8..=8));
             }
 
-            let spread_abs =
-                to_price_fp(from_price_fp(market.mid) * market.spread_bps / dec!(10_000) / dec!(2));
+            let spread_abs = market.mid * market.spread_bps / dec!(10_000) / dec!(2);
             market.bid = market.mid - spread_abs;
             market.ask = market.mid + spread_abs;
 
@@ -167,8 +165,7 @@ impl ExchangeState {
         let volatility = self
             .pairs
             .get(&req.pair)
-            .map(|m| m.volatility)
-            .unwrap_or(Decimal::ONE);
+            .map_or(Decimal::ONE, |m| m.volatility);
 
         let fill_probability = ((dec!(0.16) + volatility / dec!(15)).clamp(dec!(0.12), dec!(0.35))
             * dec!(10_000))
