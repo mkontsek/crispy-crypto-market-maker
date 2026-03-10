@@ -137,6 +137,8 @@ export function MarketMakerDashboard() {
   const config = streamPayload?.config ?? quotesQuery.data?.config ?? null;
   const connected = streamConnected || quotesQuery.data?.connected || false;
   const pendingPair = pairActionMutation.variables?.pair ?? null;
+  const quoteHistoryEntries =
+    liveQuoteHistory.length > 0 ? liveQuoteHistory : (quotesQuery.data?.quoteHistory ?? []);
 
   return (
     <main className="mx-auto max-w-7xl space-y-4 p-4">
@@ -173,9 +175,7 @@ export function MarketMakerDashboard() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <QuoteHistorySection
-          entries={liveQuoteHistory.length > 0 ? liveQuoteHistory : quotesQuery.data?.quoteHistory ?? []}
-        />
+        <QuoteHistorySection entries={quoteHistoryEntries} />
         <ConfigPanelSection
           config={config}
           saving={configMutation.isPending}

@@ -1,7 +1,8 @@
-import { pausePairRequestSchema } from '@crispy/shared';
+import { pairSchema, pausePairRequestSchema } from '@crispy/shared';
 import { NextResponse } from 'next/server';
 
 import { forwardEnginePost } from '@/server/engine-http';
+import { sanitize } from '@/lib/sanitize';
 
 export const runtime = 'nodejs';
 
@@ -10,6 +11,17 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const parsedPair = pairSchema.safeParse(sanitize(id));
+  if (!parsedPair.success) {
+    return NextResponse.json(
+      {
+        error: 'invalid pair id',
+        details: parsedPair.error.flatten(),
+      },
+      { status: 400 }
+    );
+  }
+
   const body = await request.json();
   const parsed = pausePairRequestSchema.safeParse(body);
   if (!parsed.success) {
@@ -24,7 +36,7 @@ export async function POST(
 
   try {
     const response = await forwardEnginePost(
-      `/pairs/${encodeURIComponent(id)}/pause`,
+      `/pairs/${encodeURIComponent(parsedPair.data)}/pause`,
       parsed.data
     );
     return NextResponse.json(response.body, { status: response.status });

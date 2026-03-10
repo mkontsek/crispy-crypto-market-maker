@@ -64,7 +64,7 @@ impl EngineState {
                 side: if taker_buy { "sell" } else { "buy" }.to_string(),
                 price: fill_price,
                 size: fill_size,
-                mid_at_fill: pair.mid,
+                mid: pair.mid,
                 realized_spread,
                 adverse_selection: fill_resp.adverse_selection,
                 timestamp: now.clone(),

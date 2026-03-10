@@ -1,12 +1,27 @@
+import { pairSchema } from '@crispy/shared';
 import { NextResponse } from 'next/server';
 
 import { getRelaySnapshot } from '@/server/engine-relay';
+import { sanitize } from '@/lib/sanitize';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const pair = searchParams.get('pair');
+  const rawPair = searchParams.get('pair');
+  const pair = rawPair ? sanitize(rawPair) : null;
+  if (pair !== null) {
+    const parsedPair = pairSchema.safeParse(pair);
+    if (!parsedPair.success) {
+      return NextResponse.json(
+        {
+          error: 'invalid pair query param',
+          details: parsedPair.error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
+  }
   const page = Number(searchParams.get('page') ?? '1');
   const pageSize = Number(searchParams.get('pageSize') ?? '25');
 
