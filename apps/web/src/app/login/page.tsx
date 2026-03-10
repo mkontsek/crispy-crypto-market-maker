@@ -62,7 +62,7 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 required
-                defaultValue="demo"
+                defaultValue="MyDemoPassword123!#"
                 className="h-9 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none ring-cyan-400 placeholder:text-slate-500 focus:ring-2"
               />
             </div>
