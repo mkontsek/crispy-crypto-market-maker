@@ -1,4 +1,4 @@
-use rand::{thread_rng, Rng};
+use rand::{rng, RngExt};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use tracing::error;
@@ -19,7 +19,7 @@ impl EngineState {
         &mut self,
         exchange_fills: Vec<ExchangeOrderResponse>,
     ) -> EngineStreamPayload {
-        let mut rng = thread_rng();
+        let mut rng = rng();
         let mut quotes = Vec::new();
         let mut fills = Vec::new();
         let mut inventory = Vec::new();
@@ -136,14 +136,14 @@ impl EngineState {
             // Simulate exchange connectivity metrics (bot's perspective of the exchange).
             for exchange in EXCHANGES {
                 let feed_staleness_ms = if self.exchange_connected {
-                    Decimal::from(rng.gen_range(50..1200)) / dec!(10)
+                    Decimal::from(rng.random_range(50..1200)) / dec!(10)
                 } else {
-                    Decimal::from(rng.gen_range(1800..5000)) / dec!(10)
+                    Decimal::from(rng.random_range(1800..5000)) / dec!(10)
                 };
                 exchange_health.push(ExchangeHealth {
                     pair: cfg.pair.clone(),
                     exchange: exchange.to_string(),
-                    tick_latency_ms: Decimal::from(rng.gen_range(40..260)) / dec!(10),
+                    tick_latency_ms: Decimal::from(rng.random_range(40..260)) / dec!(10),
                     feed_staleness_ms,
                     connected: feed_staleness_ms < dec!(180),
                 });

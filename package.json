@@ -18,6 +18,6 @@
     "check:lines": "./scripts/check-file-lines.sh"
   },
   "devDependencies": {
-    "turbo": "2.5.8"
+    "turbo": "2.8.15"
   }
 }
