@@ -14,12 +14,15 @@ pub fn default_pairs() -> [(&'static str, Decimal); 3] {
 #[serde(rename_all = "camelCase")]
 pub struct PairMarketData {
     pub pair: String,
-    pub mid: i64,
-    pub bid: i64,
-    pub ask: i64,
-    #[serde(with = "rust_decimal::serde::float")]
+    #[serde(with = "rust_decimal::serde::str")]
+    pub mid: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub bid: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub ask: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
     pub spread_bps: Decimal,
-    #[serde(with = "rust_decimal::serde::float")]
+    #[serde(with = "rust_decimal::serde::str")]
     pub volatility: Decimal,
 }
 
@@ -36,8 +39,10 @@ pub struct MarketDataPayload {
 pub struct OrderRequest {
     pub pair: String,
     pub side: String,
-    pub price: i64,
-    pub size: i64,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub price: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub size: Decimal,
 }
 
 #[derive(Clone, Serialize)]
@@ -46,7 +51,9 @@ pub struct OrderResponse {
     pub pair: String,
     pub side: String,
     pub filled: bool,
-    pub fill_price: i64,
-    pub fill_size: i64,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub fill_price: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub fill_size: Decimal,
     pub adverse_selection: bool,
 }

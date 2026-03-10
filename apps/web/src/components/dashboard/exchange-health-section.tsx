@@ -2,6 +2,7 @@ import type { ExchangeHealth } from '@crispy/shared';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { priceFromFp } from '@/lib/fixed-point';
 
 export function ExchangeHealthSection({ health }: { health: ExchangeHealth[] }) {
   return (
@@ -25,12 +26,12 @@ export function ExchangeHealthSection({ health }: { health: ExchangeHealth[] }) 
               <tr
                 key={`${entry.pair}-${entry.exchange}`}
                 className="border-t border-slate-800"
-              >
-                <td className="py-2">{entry.pair}</td>
-                <td className="py-2">{entry.exchange}</td>
-                <td className="py-2">{entry.tickLatencyMs.toFixed(1)}</td>
-                <td className="py-2">{entry.feedStalenessMs.toFixed(1)}</td>
-                <td className="py-2">
+                >
+                  <td className="py-2">{entry.pair}</td>
+                  <td className="py-2">{entry.exchange}</td>
+                  <td className="py-2">{priceFromFp(entry.tickLatencyMs).toFixed(1)}</td>
+                  <td className="py-2">{priceFromFp(entry.feedStalenessMs).toFixed(1)}</td>
+                  <td className="py-2">
                   <Badge tone={entry.connected ? 'success' : 'danger'}>
                     {entry.connected ? 'healthy' : 'stale'}
                   </Badge>

@@ -2,7 +2,7 @@ import type { Fill, PnLSnapshot } from '@crispy/shared';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { priceFromFp, sizeFromFp } from '@/lib/fixed-point';
+import { priceFromFp, ratioFromDecimal, sizeFromFp } from '@/lib/fixed-point';
 
 export function PnlPerformanceSection({
   pnl,
@@ -23,10 +23,10 @@ export function PnlPerformanceSection({
           <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-5">
             <Metric label="Total PnL" value={priceFromFp(latest.totalPnl).toFixed(2)} />
             <Metric label="Realized Spread" value={priceFromFp(latest.realizedSpread).toFixed(2)} />
-            <Metric label="Fill Rate" value={`${(latest.fillRate * 100).toFixed(1)}%`} />
+            <Metric label="Fill Rate" value={`${(ratioFromDecimal(latest.fillRate) * 100).toFixed(1)}%`} />
             <Metric
               label="Adverse Selection"
-              value={`${(latest.adverseSelectionRate * 100).toFixed(1)}%`}
+              value={`${(ratioFromDecimal(latest.adverseSelectionRate) * 100).toFixed(1)}%`}
             />
             <Metric label="Hedging Costs" value={priceFromFp(latest.hedgingCosts).toFixed(2)} />
           </div>

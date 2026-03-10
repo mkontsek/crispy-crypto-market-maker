@@ -3,18 +3,17 @@ use rust_decimal_macros::dec;
 use std::collections::HashMap;
 
 use crate::models::{ExchangeFeedPayload, ExchangeOrderRequest, MMConfig, PairConfig, PAIRS};
-use crate::utils::{from_price_fp, from_size_fp, to_price_fp, to_size_fp};
 
 mod payload;
 
 #[derive(Clone)]
 pub struct PairState {
-    pub mid: i64,
-    pub bid: i64,
-    pub ask: i64,
+    pub mid: Decimal,
+    pub bid: Decimal,
+    pub ask: Decimal,
     pub spread_bps: Decimal,
-    pub inventory: i64,
-    pub inventory_skew: i64,
+    pub inventory: Decimal,
+    pub inventory_skew: Decimal,
     pub quote_refresh_rate: Decimal,
     pub volatility: Decimal,
     pub paused: bool,
@@ -22,14 +21,13 @@ pub struct PairState {
 
 impl PairState {
     pub fn new(mid: Decimal) -> Self {
-        let mid_fp = to_price_fp(mid);
         Self {
-            mid: mid_fp,
-            bid: mid_fp,
-            ask: mid_fp,
+            mid,
+            bid: mid,
+            ask: mid,
             spread_bps: dec!(10),
-            inventory: 0,
-            inventory_skew: 0,
+            inventory: Decimal::ZERO,
+            inventory_skew: Decimal::ZERO,
             quote_refresh_rate: dec!(4),
             volatility: Decimal::ONE,
             paused: false,
@@ -42,8 +40,8 @@ pub struct EngineState {
     pub pairs: HashMap<String, PairState>,
     /// Whether the bot is currently connected to the exchange.
     pub exchange_connected: bool,
-    pub total_realized_spread: i64,
-    pub hedging_costs: i64,
+    pub total_realized_spread: Decimal,
+    pub hedging_costs: Decimal,
     pub total_quotes: u64,
     pub total_fills: u64,
     pub adverse_fills: u64,
@@ -79,8 +77,8 @@ impl EngineState {
             config,
             pairs,
             exchange_connected: false,
-            total_realized_spread: 0,
-            hedging_costs: 0,
+            total_realized_spread: Decimal::ZERO,
+            hedging_costs: Decimal::ZERO,
             total_quotes: 0,
             total_fills: 0,
             adverse_fills: 0,
@@ -120,19 +118,18 @@ impl EngineState {
 
             let spread_bps = cfg.base_spread_bps
                 * (Decimal::ONE + cfg.volatility_multiplier * pair.volatility / dec!(10));
-            let spread_abs = to_price_fp(from_price_fp(pair.mid) * spread_bps / dec!(10000));
+            let spread_abs = pair.mid * spread_bps / dec!(10_000);
 
-            pair.inventory_skew =
-                to_price_fp(-from_size_fp(pair.inventory) * cfg.inventory_skew_sensitivity);
-            pair.bid = pair.mid - spread_abs / 2 + pair.inventory_skew;
-            pair.ask = pair.mid + spread_abs / 2 + pair.inventory_skew;
+            pair.inventory_skew = -pair.inventory * cfg.inventory_skew_sensitivity;
+            pair.bid = pair.mid - spread_abs / dec!(2) + pair.inventory_skew;
+            pair.ask = pair.mid + spread_abs / dec!(2) + pair.inventory_skew;
             pair.spread_bps = spread_bps;
             pair.quote_refresh_rate =
                 Decimal::from(1_000_u64) / Decimal::from(cfg.quote_refresh_interval_ms);
             self.total_quotes = self.total_quotes.saturating_add(1);
 
             // Standard order size sent to exchange each tick.
-            let order_size = to_size_fp(dec!(0.5));
+            let order_size = dec!(0.5);
             orders.push(ExchangeOrderRequest {
                 pair: cfg.pair.clone(),
                 side: "buy".to_string(),

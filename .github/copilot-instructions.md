@@ -1,115 +1,158 @@
 # Development Guidelines for Copilot
 
-> **About this file (v1.0.0):** Lean version optimized for context efficiency. Core principles here; detailed patterns loaded on-demand via skills.
+> **About this file (v1.1.0):** Lean version optimized for context efficiency. Core principles here; detailed patterns loaded on-demand via skills (Next.js, Rust, testing).
 >
 > **Architecture:**
-> - `.github/copilot-instructions.md` (this file): Core philosophy + quick reference (~100 lines, always loaded)
-> - `.github/skills/`: Detailed patterns loaded on-demand (testing)
+> - `.github/copilot-instructions.md` (this file): Core philosophy + cross-cutting rules (~100 lines, always loaded).
+> - `.github/skills/`: Detailed, stack-specific patterns (Next.js, Rust, testing) loaded on demand.
 
 ## Interaction Style
 
-Before starting any planning, interview me to gain clarity. For instance, after learning acceptance criteria and business requirements from a ticket or planning prompt, if there's anything unclear or underspecified, ask focused questions that would help build a reasonable plan.
+Before planning, quickly interview me to clarify requirements, constraints, and acceptance criteria. Ask focused questions when something is underspecified and the decision has meaningful trade-offs.
 
-During execution, if you encounter ambiguity or a decision point with meaningful trade-offs, pause and ask rather than assuming. Say what the options are and what each trades off.
+During execution, if you hit ambiguity or a design choice that affects DX, performance, or safety, pause and propose 2–3 options with pros/cons, then ask which to take.
 
 ## Project Context & Identity
 
-- **Project**: A repo for custom React components for clients.
-- **Monorepo Tools**: Uses **pnpm** for package management. Always prefer `pnpm` over `npm` or `yarn`.
+- **Monorepo**: Turborepo with Next.js apps and Rust crates (workspaces).
+- **Primary product**: Custom React component libraries / client workspaces.
+- **Package management**: Use **pnpm** workspaces. Never use `npm` or `yarn`.
+
+## Stack Overview
+
+- **Frontend** (see `skills/nextjs-base.md`):
+    - React (function components only), TypeScript, Next.js.
+    - ShadCN UI, TanStack Query, Zustand (+ immer), React Hook Form v7, Zod.
+    - Prisma for persistence, `date-fns` for dates, `lodash` (per-method imports).
+
+- **Rust** (see `skills/rust-base.md`, `skills/rust-backend.md`, `skills/rust-cli.md`):
+    - Use **Rust 2024+** edition.
+    - Prefer **workspace layout** for multiple crates:
+        - Root `Cargo.toml` defines `[workspace]` and shared dev-dependencies.
+        - Place crates under `rust/crates/` or `crates/` (e.g., `crates/api`, `crates/core`, `crates/cli`). [web:3][web:11][web:12]
+    - For Web/Next integration, consider WASM crates when appropriate; keep them in dedicated crates (e.g., `crates/wasm-*`) and expose JS bindings via `wasm-bindgen`. [web:9]
 
 ## Infrastructure & Third-party Services
 
-- **Billing / Payments**: Use **Stripe** for all billing and payment integrations. Prefer Stripe Checkout for hosted flows and the Stripe SDK for client-side flows; keep sensitive logic on serverless functions or backend services.
-- **Deployment / Hosting**: Use **Vercel** for deployments and previews; prefer Vercel for its seamless Git integration and serverless functions. Keep builds fast and stateless; configure environment variables securely in the Vercel dashboard.
-- **Asset / Background Generation**: Use **Midjourney** for creative background generation. Store generated images in `public/assets/` (organized per module) and keep source prompts and generation metadata alongside feature docs, not in source control.
+- **Billing / Payments**: Stripe for all payments.
+    - Prefer Stripe Checkout for hosted flows.
+    - Client SDK only for non-sensitive logic; keep secrets in backend or serverless functions.
 
-## Core Tech Stack
+- **Deployment / Hosting**:
+    - Next.js apps on **Vercel** (stateless, fast builds, env via Vercel dashboard).
+    - Rust services:
+        - Either deployed as separate services (e.g., containerized) or behind serverless adapters.
+        - Ensure configuration via env vars; never commit secrets.
 
-(learn versions from `package.json`)
-- **Frontend**: React (Functional Components ONLY), TypeScript.
-- **UI/Design**:
-    - Use the **ShadCN** design system components.
-- **State & Data**:
-    - **TanStack Query** (`@tanstack/react-query`):
-        - **Fetch Pattern**: Use `refetch()` for retries after failure.
-        - **Refresh**: Use `queryClient.invalidateQueries()` to trigger a refetch for data known to have changed.
-        - **Staleness**: Use `staleTime: 0` to ensure a refetch happens on every component mount.
-    - **ORM**: Use **Prisma** for database access and schema migrations. Prefer the generated TypeScript client, keep your schema in `prisma/schema.prisma`, run migrations with `pnpm prisma migrate`, and store connection strings in environment variables (never commit secrets).
-    - **Mutations**: Use `useMutation` from `@tanstack/react-query`. ALWAYS provide user feedback (e.g., show a spinner) during pending states and ensure proper error handling.
-    - **Pagination**: Use `useInfiniteQuery` from `@tanstack/react-query` for paginated endpoints.
-    - **Forms**: Use **React Hook Form v7** with shared ShadCN wrappers (e.g., `FormTextField`, `FormSelectField`).
-    - **State**: Use **zustand** with the **immer** middleware.
-        - **Global/Shared**: Use a dedicated store module for feature-level state that needs to be shared or live outside React.
-        - **Local**: Use `useLocalSlice()` or a scoped zustand store for state confined to a component subtree.
-    - **Context**: Use React's built-in `createContext` / `useContext` to avoid singletons.
-        - **Patterns**: Create typed context wrappers with a custom hook (e.g., `useMyContext()`) that throws when used outside its provider. Use a single `MultiContextProvider` component to flatten provider trees.
-- **Utilities**:
-    - **Lodash**: Use standard `lodash` (import per-method, e.g., `import debounce from 'lodash/debounce'`).
-    - **Dates**: Use `date-fns` for all date operations.
+- **Assets / Backgrounds**:
+    - Use **Midjourney** for generative backgrounds.
+    - Store compiled assets under `public/assets/<feature>/`.
+    - Keep prompts/metadata in docs (e.g., `/docs/asset-guides.md`), not in source control.
 
-## Internal Coding Standards
+## Cross-cutting Coding Standards
 
 - **Naming Conventions**:
-    - **kebab-case**: Folders, packages, and `data-cy` attributes.
-    - **camelCase**: Hooks, function names, and variables.
-    - **PascalCase**: Components, TypeScript types, class names, and service files.
-    - **UPPER_CASE**: Constants.
-    - **Folders**: Use plural form for multiple similar items (e.g., `hooks/`, `helpers/`).
+    - **kebab-case**: folders, packages, `data-cy` attributes.
+    - **camelCase**: variables, functions, hooks.
+    - **PascalCase**: React components, TS types, classes, service files.
+    - **UPPER_CASE**: constants.
+    - **Folders**: plural for collections (e.g., `hooks/`, `helpers/`).
     - **Styles**: `PascalCase.module.scss`.
-- **Performance & Lazy Loading**:
-    - **Lazy load ONLY routers** at the top level of a feature package.
-    - **Directly import** everything else within a feature to avoid excessive small chunks.
-    - Avoid nested lazy loading.
-- **TypeScript**:
-    - **Prefer String Union Types** over `enum` for runtime compatibility (TS 5.8+).
-- **JSX/TSX**:
-    - Avoid multiline ternary operators; use `&&` for conditional rendering.
-    - Avoid inline styles.
-    - No `lodash.uniqueId()` for React keys; use resource IDs, or the `useId()` hook (as last resort).
+
 - **Imports**:
-    - Use relative imports within the same package.
-    - Use absolute aliases (e.g., `@business/feature-core`) for cross-package imports.
-    - NEVER import from `src` folders directly across packages.
-    - Prefer destructured (named) imports where possible — prefer named imports (e.g., `import { debounce } from 'lodash'`) and avoid importing entire modules or namespaces unless necessary. Keep default imports only for modules that export a single primary value.
+    - Within the same package/crate, prefer relative imports.
+    - Cross-package (TS): use path aliases (e.g., `@business/feature-core`), never deep import `src` of another package.
+    - Prefer named imports and tree-shakeable usage (avoid `import * as` unless needed).
+
 - **Security**:
-    - Sanitize URL parameters and user-provided fields using the `sanitize()` utility to prevent XSS.
+    - Sanitize URL params and user input via a `sanitize()` utility (TS) or dedicated validation layer (Rust) before use in HTML, SQL, or shell commands.
+    - Do not log secrets or full tokens.
+
 - **Assets**:
-    - Use `public/assets/` for FE assets (organized by type/module). `public/img/` is reserved for proxied/dynamic content.
-    - Prefer **SVG** for UI elements.
-- **Forms (Advanced)**:
-    - **Validations**: Use **Zod** with a **builder/factory pattern** for reusability.
-    - **Shape**: Keep form values **flat**; match UI structure rather than API DTOs. Use mappers for API conversion.
-    - **Errors**: Map backend violations to form fields using a violation matcher utility.
-    - **Cross-field logic**: Use `useWatch` from React Hook Form for side effects between fields.
+    - UI assets: `public/assets/<feature>/`.
+    - Proxied / dynamic content: `public/img/`.
+    - Prefer **SVG** for UI icons and simple illustrations.
 
-### Workflow & Commits
+- **Forms**:
+    - Use **Zod** schemas + React Hook Form.
+    - Keep form value shapes flat and UI-centric; map to/from API DTOs via mappers.
+    - Map backend validation errors to fields via a violation-mapper util.
+    - For cross-field logic, use `useWatch`.
 
-- **Git Commit Workflow**: follow [Git Commit Instructions](./git-commit-instructions.md).
-- **ESLint and Prettier**: Adhere to rules regarding rendering and formatting.
+## Rust-specific Standards (Monorepo)
+
+> Detailed patterns live in `skills/rust-base.md` etc.; here are the high-level rules.
+
+- **Workspace & Layout**:
+    - Prefer a **single top-level workspace** with Rust crates under `crates/` or `rust/crates/`:
+        - `crates/core` – domain logic, types, pure functions (no IO).
+        - `crates/api` – HTTP services, handlers, framework wiring.
+        - `crates/cli` – tools/maintenance CLIs.
+        - `crates/wasm-*` – WASM-compiled crates for FE integration. [web:3][web:11][web:12]
+    - Each crate under `src/`:
+        - Library crate: `src/lib.rs` exports a coherent API.
+        - Binary crate: `src/main.rs` is thin, delegates to lib crate.
+        - For multiple binaries: `src/bin/<name>.rs`. [web:5][web:14]
+
+- **Modules & Organization**:
+    - Prefer **flat modules with explicit `mod`/`pub use` in `lib.rs`** over nested `mod.rs` hierarchies for new code. [web:3][web:8][web:14]
+    - Group by domain/feature rather than technical layer:
+        - Example: `domain`, `application`, `infrastructure`, `config`, `telemetry`.
+    - Use feature flags for optional integrations, not separate crates, unless reuse or compilation time justifies it.
+
+- **Error Handling**:
+    - Use `Result<T, E>` with typed error enums per crate; avoid `Box<dyn Error>` at boundaries.
+    - Use `thiserror` for ergonomic error definitions in library crates.
+    - Map internal errors to transport-level errors (HTTP status, CLI exit codes) in boundary layers only.
+
+- **Testing**:
+    - Unit tests colocated in modules with `#[cfg(test)] mod tests;`.
+    - Integration tests under `tests/` with descriptive filenames.
+    - Prefer tests against public APIs, not private internals.
+    - Use workspaces to share test utilities via a `test-support` crate if needed. [web:11]
+
+- **Performance & Safety**:
+    - Prefer **safe Rust**; reach for `unsafe` only with a documented justification and invariants.
+    - Avoid premature micro-optimizations; profile first.
+    - Use `clippy` and `rustfmt` with workspace-level configs; keep builds warning-free.
+
+- **Interop with TS/Next**:
+    - For WASM:
+        - Keep the Rust API small and focused; expose simple types compatible with JS (strings, numbers, plain structs).
+        - Add a thin TS wrapper that hides WASM initialization details from React code. [web:9]
+
+## TypeScript / React Standards (recap)
+
+- **TS**:
+    - Prefer string union types over `enum` (better interop and tree-shaking).
+- **JSX/TSX**:
+    - Avoid multiline ternaries; use `&&` or extracted components.
+    - Avoid inline styles; use CSS modules/utility classes.
+    - Keys: use stable IDs; `useId()` only as last resort; never `lodash.uniqueId()`.
+
+- **State & Data**:
+    - TanStack Query for async data (`staleTime: 0`, `refetch` on failure, `invalidateQueries` on mutation).
+    - Zustand (+ immer) for global/shared app state with dedicated stores.
+    - React Context only for truly cross-cutting concerns; expose via typed hooks that throw when misused.
+
+## Workflow & Commits
+
+- **Git Branching**:
+    - Use `<type>/<ticket-number>` (e.g., `feat/XXX-1234`), where `type ∈ {refactor, feat, test, chore, fix}`.
+
+- **Commit Messages**:
+    - Format: `<type>: <ticket-number> <description>`.
+    - Follow Conventional Commits semantics.
+
+- **Pull Requests**:
+    - Rebase onto `main`; never merge `main` into feature branches.
+    - Merge via `merge please` comment.
+    - Target PR size ≈ 300 LOC; split larger work into multiple PRs.
 
 ## Living Documentation
 
-Skill files in `.github/skills/` grow organically from real development feedback. Start sparse. Let patterns emerge from actual work.
+Skill files in `.github/skills/` should emerge from real corrections and patterns.
 
-### Recognizing Patterns
-
-When the user gives feedback, first apply it to the immediate code. Then consider: is this a reusable pattern worth capturing?
-
-**Signals to capture it:**
-- Same correction appears twice in a session
-- User says "always", "never", "we prefer", "our convention is"
-- User references a style guide or team standard
-- User explicitly asks to remember it
-
-**Signals to skip:**
-- One-off or context-specific correction
-- Tentative language ("maybe", "let's try")
-- Business logic, not a coding pattern
-- User says "just this once"
-
-### Proposing Updates
-
-1. Ask: "This seems like a pattern. Should I update [skill-file.md]?"
-2. Show the proposed diff
-3. Wait for approval before applying
-4. Keep each update to one focused concept
+- When you see repeated feedback or explicit conventions, propose updating a specific skill file (show a small diff).
+- Keep each update focused on a single concern (e.g., “Rust error handling”, “Next.js data fetching”).
+- Wait for approval before assuming a new pattern is canonical.

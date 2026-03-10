@@ -39,8 +39,8 @@ export function LiveQuotesSection({
                 <td className="py-2">{priceFromFp(quote.bid).toFixed(2)}</td>
                 <td className="py-2">{priceFromFp(quote.ask).toFixed(2)}</td>
                 <td className="py-2">{priceFromFp(quote.mid).toFixed(2)}</td>
-                <td className="py-2">{quote.spreadBps.toFixed(2)}</td>
-                <td className="py-2">{quote.quoteRefreshRate.toFixed(2)}</td>
+                <td className="py-2">{priceFromFp(quote.spreadBps).toFixed(2)}</td>
+                <td className="py-2">{priceFromFp(quote.quoteRefreshRate).toFixed(2)}</td>
                 <td className="py-2">
                   <Badge tone={quote.paused ? 'warning' : 'success'}>
                     {quote.paused ? 'paused' : 'quoting'}
