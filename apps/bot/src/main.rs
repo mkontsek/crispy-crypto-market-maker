@@ -7,6 +7,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use rust_decimal_macros::dec;
 use tokio::{
     net::TcpListener,
     sync::{broadcast, RwLock},
@@ -160,7 +161,7 @@ async fn update_config(
         state
             .pairs
             .entry(cfg.pair.clone())
-            .or_insert_with(|| PairState::new(1_000.0));
+            .or_insert_with(|| PairState::new(dec!(1000)));
         if let Some(pair_state) = state.pairs.get_mut(&cfg.pair) {
             pair_state.paused = !cfg.enabled;
         }

@@ -1,8 +1,18 @@
 pub const PRICE_SCALE: i64 = 10_000;
 const RATE_DENOM_BPS: i64 = 10_000;
 
-pub fn to_price_fp(value: f64) -> i64 {
-    (value * PRICE_SCALE as f64).round() as i64
+use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
+
+pub fn to_price_fp(value: Decimal) -> i64 {
+    (value * Decimal::from(PRICE_SCALE))
+        .round()
+        .to_i64()
+        .expect("price conversion overflow")
+}
+
+pub fn from_price_fp(value: i64) -> Decimal {
+    Decimal::from(value) / Decimal::from(PRICE_SCALE)
 }
 
 pub fn apply_bps(value_fp: i64, bps_delta: i64) -> i64 {

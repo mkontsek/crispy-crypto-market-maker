@@ -5,8 +5,15 @@
   "packageManager": "pnpm@10.18.0",
   "scripts": {
     "dev": "turbo run dev --parallel",
+    "dev:exchange": "cd apps/exchange && cargo watch -x run",
+    "dev:bot": "cd apps/bot && cargo watch -x run",
+    "dev:web": "pnpm --filter @crispy/web dev",
+    "dev:all": "pnpm run dev:exchange & pnpm run dev:bot & pnpm run dev:web",
     "build": "turbo run build",
+    "build:exchange": "cd apps/exchange && cargo build --release",
+    "build:bot": "cd apps/bot && cargo build --release",
     "lint": "turbo run lint",
+    "lint:rust": "cd apps/exchange && cargo clippy -- -W clippy::pedantic && cd ../bot && cargo clippy -- -W clippy::pedantic",
     "typecheck": "turbo run typecheck",
     "check:lines": "./scripts/check-file-lines.sh"
   },

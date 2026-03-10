@@ -1,4 +1,6 @@
 use rand::{thread_rng, Rng};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use tracing::error;
 
 use crate::models::{
@@ -138,29 +140,29 @@ impl EngineState {
             // Simulate exchange connectivity metrics (bot's perspective of the exchange).
             for exchange in EXCHANGES {
                 let feed_staleness_ms = if self.exchange_connected {
-                    rng.gen_range(5.0..120.0)
+                    Decimal::from(rng.gen_range(50..1200)) / dec!(10)
                 } else {
-                    rng.gen_range(180.0..500.0)
+                    Decimal::from(rng.gen_range(1800..5000)) / dec!(10)
                 };
                 exchange_health.push(ExchangeHealth {
                     pair: cfg.pair.clone(),
                     exchange: exchange.to_string(),
-                    tick_latency_ms: rng.gen_range(4.0..26.0),
+                    tick_latency_ms: Decimal::from(rng.gen_range(40..260)) / dec!(10),
                     feed_staleness_ms,
-                    connected: feed_staleness_ms < 180.0,
+                    connected: feed_staleness_ms < dec!(180),
                 });
             }
         }
 
         let fill_rate = if self.total_quotes == 0 {
-            0.0
+            Decimal::ZERO
         } else {
-            self.total_fills as f64 / self.total_quotes as f64
+            Decimal::from(self.total_fills) / Decimal::from(self.total_quotes)
         };
         let adverse_selection_rate = if self.total_fills == 0 {
-            0.0
+            Decimal::ZERO
         } else {
-            self.adverse_fills as f64 / self.total_fills as f64
+            Decimal::from(self.adverse_fills) / Decimal::from(self.total_fills)
         };
 
         let pnl = PnLSnapshot {
