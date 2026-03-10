@@ -10,6 +10,15 @@ function tone(skew: number) {
   return 'bg-red-500';
 }
 
+function widthClass(skew: number) {
+  const absoluteSkew = Math.abs(skew);
+  if (absoluteSkew < 0.01) return 'w-0';
+  if (absoluteSkew < 0.25) return 'w-1/4';
+  if (absoluteSkew < 0.5) return 'w-1/2';
+  if (absoluteSkew < 0.75) return 'w-3/4';
+  return 'w-full';
+}
+
 export function InventoryMonitorSection({
   inventory,
   quotes,
@@ -34,7 +43,6 @@ export function InventoryMonitorSection({
         {inventory.map((item) => {
           const quote = quoteMap.get(item.pair);
           const normalizedSkew = ratioFromDecimal(item.normalizedSkew);
-          const width = Math.min(Math.abs(normalizedSkew) * 100, 100);
           const isBusy = pendingPair === item.pair;
 
           return (
@@ -47,8 +55,7 @@ export function InventoryMonitorSection({
               </div>
               <div className="h-2 rounded bg-slate-800">
                 <div
-                  className={`${tone(normalizedSkew)} h-2 rounded`}
-                  style={{ width: `${width}%` }}
+                  className={`${tone(normalizedSkew)} ${widthClass(normalizedSkew)} h-2 rounded`}
                 />
               </div>
               <div className="mt-3 flex gap-2">

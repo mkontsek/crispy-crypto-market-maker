@@ -99,7 +99,7 @@ impl EngineState {
     }
 
     /// Compute MM quotes and return the list of orders to place on the exchange.
-    /// Updates bid/ask/spread in PairState based on current exchange prices + MM config.
+    /// Updates bid/ask/spread in `PairState` based on current exchange prices + MM config.
     pub fn compute_orders(&mut self) -> Vec<ExchangeOrderRequest> {
         let mut orders = Vec::new();
 

@@ -105,8 +105,8 @@ pub struct Fill {
     pub price: Decimal,
     #[serde(with = "rust_decimal::serde::str")]
     pub size: Decimal,
-    #[serde(with = "rust_decimal::serde::str")]
-    pub mid_at_fill: Decimal,
+    #[serde(rename = "midAtFill", with = "rust_decimal::serde::str")]
+    pub mid: Decimal,
     #[serde(with = "rust_decimal::serde::str")]
     pub realized_spread: Decimal,
     pub adverse_selection: bool,
