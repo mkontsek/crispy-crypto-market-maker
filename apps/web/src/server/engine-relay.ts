@@ -1,5 +1,4 @@
 import {
-  BOT_IDS,
   engineStreamSchema,
   type BotId,
   type EngineStreamPayload,
@@ -12,7 +11,7 @@ import {
 } from '@crispy/shared';
 import WebSocket from 'ws';
 
-import { resolveBotTopology } from '@/server/runtime-topology';
+import { getRuntimeTopology, resolveBotTopology } from '@/server/runtime-topology';
 
 export type QuoteHistoryEntry = QuoteSnapshot & {
   status: 'filled' | 'expired';
@@ -67,17 +66,24 @@ function createRelay(): BotRelay {
   };
 }
 
-const relays: Record<BotId, BotRelay> = {
-  'bot-1': createRelay(),
-  'bot-2': createRelay(),
-};
+const relays = new Map<BotId, BotRelay>();
+
+function getRelay(botId: BotId): BotRelay {
+  const existing = relays.get(botId);
+  if (existing) {
+    return existing;
+  }
+  const relay = createRelay();
+  relays.set(botId, relay);
+  return relay;
+}
 
 function cap<T>(values: T[], size: number): T[] {
   return values.length > size ? values.slice(0, size) : values;
 }
 
 function ingestPayload(botId: BotId, payload: EngineStreamPayload) {
-  const relay = relays[botId];
+  const relay = getRelay(botId);
   relay.state.connected = true;
   relay.state.lastUpdated = payload.timestamp;
   relay.state.quotes = payload.quotes;
@@ -107,7 +113,7 @@ function ingestPayload(botId: BotId, payload: EngineStreamPayload) {
 }
 
 function scheduleReconnect(botId: BotId) {
-  const relay = relays[botId];
+  const relay = getRelay(botId);
   if (relay.reconnectTimer) {
     return;
   }
@@ -119,7 +125,7 @@ function scheduleReconnect(botId: BotId) {
 }
 
 function connect(botId: BotId) {
-  const relay = relays[botId];
+  const relay = getRelay(botId);
   if (!relay.wsUrl || relay.socket) {
     return;
   }
@@ -175,8 +181,32 @@ function connect(botId: BotId) {
   });
 }
 
+function stopRelay(relay: BotRelay) {
+  if (relay.reconnectTimer) {
+    clearTimeout(relay.reconnectTimer);
+    relay.reconnectTimer = null;
+  }
+
+  if (relay.socket) {
+    const socket = relay.socket;
+    relay.socket = null;
+    socket.close();
+  }
+}
+
+function pruneInactiveRelays() {
+  const activeBotIds = new Set(getRuntimeTopology().bots.map((bot) => bot.id));
+  for (const [botId, relay] of relays) {
+    if (activeBotIds.has(botId)) {
+      continue;
+    }
+    stopRelay(relay);
+    relays.delete(botId);
+  }
+}
+
 function syncBotRelay(botId: BotId) {
-  const relay = relays[botId];
+  const relay = getRelay(botId);
   const topology = resolveBotTopology(botId);
 
   if (!relay.started) {
@@ -192,18 +222,7 @@ function syncBotRelay(botId: BotId) {
 
   relay.wsUrl = topology.wsUrl;
   relay.state.connected = false;
-
-  if (relay.reconnectTimer) {
-    clearTimeout(relay.reconnectTimer);
-    relay.reconnectTimer = null;
-  }
-
-  if (relay.socket) {
-    const socket = relay.socket;
-    relay.socket = null;
-    socket.close();
-  }
-
+  stopRelay(relay);
   connect(botId);
 }
 
@@ -211,16 +230,19 @@ export function subscribeToEngineStream(
   botId: BotId,
   listener: (payload: EngineStreamPayload) => void
 ) {
+  pruneInactiveRelays();
   syncBotRelay(botId);
-  relays[botId].listeners.add(listener);
+  const relay = getRelay(botId);
+  relay.listeners.add(listener);
   return () => {
-    relays[botId].listeners.delete(listener);
+    relay.listeners.delete(listener);
   };
 }
 
 export function getRelaySnapshot(botId: BotId): RelayState {
+  pruneInactiveRelays();
   syncBotRelay(botId);
-  const state = relays[botId].state;
+  const state = getRelay(botId).state;
 
   return {
     connected: state.connected,
@@ -237,7 +259,8 @@ export function getRelaySnapshot(botId: BotId): RelayState {
 }
 
 export function ensureEngineRelaysRunning() {
-  for (const botId of BOT_IDS) {
-    syncBotRelay(botId);
+  pruneInactiveRelays();
+  for (const bot of getRuntimeTopology().bots) {
+    syncBotRelay(bot.id);
   }
 }

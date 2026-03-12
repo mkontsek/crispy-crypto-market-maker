@@ -1,16 +1,19 @@
 'use client';
 
-import type { RuntimeTopology } from '@crispy/shared';
+import { type RuntimeTopology, type TopologyBot } from '@crispy/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 
 import { BotDashboardPanel } from '@/components/dashboard/bot-dashboard-panel';
 import { TopologyConfigSection } from '@/components/dashboard/topology-config-section';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchJson } from '@/lib/fetch-json';
+import { cn } from '@/lib/utils';
 
 export function MarketMakerDashboard() {
   const queryClient = useQueryClient();
+  const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
 
   const topologyQuery = useQuery({
     queryKey: ['topology'],
@@ -40,6 +43,8 @@ export function MarketMakerDashboard() {
 
   const topology = topologyQuery.data ?? null;
   const bots = topology?.bots ?? [];
+  const activeBot = bots.find((bot) => bot.id === selectedBotId) ?? bots[0] ?? null;
+  const topologyKey = topology ? JSON.stringify(topology) : 'topology-loading';
 
   return (
     <main className="mx-auto max-w-7xl space-y-4 p-4">
@@ -59,6 +64,7 @@ export function MarketMakerDashboard() {
       </header>
 
       <TopologyConfigSection
+        key={topologyKey}
         topology={topology}
         saving={topologyMutation.isPending}
         onSubmit={(next) => topologyMutation.mutate(next)}
@@ -72,9 +78,58 @@ export function MarketMakerDashboard() {
         </Card>
       ) : null}
 
-      {bots.map((bot) => (
-        <BotDashboardPanel key={bot.id} bot={bot} />
-      ))}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bot Dashboards</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          {bots.map((bot) => (
+            <BotTabButton
+              key={bot.id}
+              bot={bot}
+              active={activeBot?.id === bot.id}
+              onClick={() => setSelectedBotId(bot.id)}
+            />
+          ))}
+        </CardContent>
+      </Card>
+
+      {activeBot ? (
+        <BotDashboardPanel key={activeBot.id} bot={activeBot} />
+      ) : (
+        <Card>
+          <CardContent className="py-4 text-sm text-slate-300">
+            No bots configured. Add at least one bot in Network Topology.
+          </CardContent>
+        </Card>
+      )}
     </main>
+  );
+}
+
+function BotTabButton({
+  bot,
+  active,
+  onClick,
+}: {
+  bot: TopologyBot;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'max-w-full rounded-md border px-3 py-2 text-left text-sm transition',
+        active
+          ? 'border-cyan-400 bg-cyan-950/40'
+          : 'border-slate-700 bg-slate-900 hover:bg-slate-800'
+      )}
+    >
+      <div className="font-medium">{bot.name}</div>
+      <div className="mt-1 text-xs text-slate-400">WS: {bot.wsUrl}</div>
+      <div className="text-xs text-slate-400">API: {bot.httpUrl}</div>
+    </button>
   );
 }

@@ -1,6 +1,6 @@
 export const PAIRS = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'] as const;
 export const EXCHANGES = ['Binance', 'Bybit', 'OKX'] as const;
-export const BOT_IDS = ['bot-1', 'bot-2'] as const;
+export const DEFAULT_BOT_ID = 'bot-1';
 export const PRICE_SCALE = 10_000;
 export const SIZE_SCALE = 1_000_000;
 

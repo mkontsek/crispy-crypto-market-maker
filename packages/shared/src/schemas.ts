@@ -1,20 +1,44 @@
 import { z } from 'zod';
 
-import { BOT_IDS, EXCHANGES, PAIRS } from './constants';
+import { EXCHANGES, PAIRS } from './constants';
 
 export const pairSchema = z.enum(PAIRS);
 export const exchangeSchema = z.enum(EXCHANGES);
-export const botIdSchema = z.enum(BOT_IDS);
 export const sideSchema = z.enum(['buy', 'sell']);
 export const endpointUrlSchema = z.url();
+export const botIdSchema = z
+  .string()
+  .trim()
+  .regex(/^bot-[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Expected bot id like "bot-1"');
+
+function isLocalHostname(hostname: string) {
+  const normalized = hostname.toLowerCase();
+  return (
+    normalized === 'localhost' ||
+    normalized === '127.0.0.1' ||
+    normalized === '::1' ||
+    normalized.endsWith('.localhost')
+  );
+}
+
+function requiresSecureProtocol(value: string) {
+  return !isLocalHostname(new URL(value).hostname);
+}
+
 export const wsEndpointUrlSchema = endpointUrlSchema.refine((value) => {
   const protocol = new URL(value).protocol;
+  if (requiresSecureProtocol(value)) {
+    return protocol === 'wss:';
+  }
   return protocol === 'ws:' || protocol === 'wss:';
-}, 'Expected ws:// or wss:// URL');
+}, 'Expected wss:// URL (ws:// allowed for localhost)');
 export const httpEndpointUrlSchema = endpointUrlSchema.refine((value) => {
   const protocol = new URL(value).protocol;
+  if (requiresSecureProtocol(value)) {
+    return protocol === 'https:';
+  }
   return protocol === 'http:' || protocol === 'https:';
-}, 'Expected http:// or https:// URL');
+}, 'Expected https:// URL (http:// allowed for localhost)');
 export const decimalStringSchema = z
   .string()
   .regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/, 'Expected decimal string')
@@ -127,12 +151,12 @@ export const runtimeTopologySchema = z
   .object({
     exchangeWsUrl: wsEndpointUrlSchema,
     exchangeHttpUrl: httpEndpointUrlSchema,
-    bots: z.array(topologyBotSchema).length(BOT_IDS.length),
+    bots: z.array(topologyBotSchema).min(1),
   })
   .refine(
     (value) => {
       const ids = new Set(value.bots.map((bot) => bot.id));
-      return ids.size === BOT_IDS.length;
+      return ids.size === value.bots.length;
     },
     {
       message: 'Expected unique bot IDs',

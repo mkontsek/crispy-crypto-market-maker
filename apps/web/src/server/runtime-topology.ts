@@ -1,5 +1,5 @@
 import {
-  BOT_IDS,
+  DEFAULT_BOT_ID,
   DEFAULT_ENGINE_HTTP_URL,
   DEFAULT_ENGINE_WS_URL,
   DEFAULT_EXCHANGE_HTTP_URL,
@@ -11,16 +11,13 @@ import {
   type TopologyBot,
 } from '@crispy/shared';
 
-const FALLBACK_BOT_2_WS_URL = 'ws://127.0.0.1:9080/stream';
-const FALLBACK_BOT_2_HTTP_URL = 'http://127.0.0.1:9081';
-
-const BOT_LABELS: Record<BotId, string> = {
-  'bot-1': 'Bot 1',
-  'bot-2': 'Bot 2',
-};
-
 function canonicalUrl(url: string) {
   return new URL(url).toString();
+}
+
+function botNameFromId(botId: string) {
+  const suffix = botId.replace(/^bot-/, '').replace(/-/g, ' ').trim();
+  return suffix.length > 0 ? `Bot ${suffix}` : 'Bot';
 }
 
 function buildInitialTopology(): RuntimeTopology {
@@ -33,8 +30,8 @@ function buildInitialTopology(): RuntimeTopology {
     ),
     bots: [
       {
-        id: 'bot-1',
-        name: BOT_LABELS['bot-1'],
+        id: DEFAULT_BOT_ID,
+        name: process.env.BOT_1_NAME?.trim() || botNameFromId(DEFAULT_BOT_ID),
         wsUrl: canonicalUrl(
           process.env.BOT_1_WS_URL ??
             process.env.ENGINE_WS_URL ??
@@ -46,26 +43,11 @@ function buildInitialTopology(): RuntimeTopology {
             DEFAULT_ENGINE_HTTP_URL
         ),
       },
-      {
-        id: 'bot-2',
-        name: BOT_LABELS['bot-2'],
-        wsUrl: canonicalUrl(process.env.BOT_2_WS_URL ?? FALLBACK_BOT_2_WS_URL),
-        httpUrl: canonicalUrl(
-          process.env.BOT_2_HTTP_URL ?? FALLBACK_BOT_2_HTTP_URL
-        ),
-      },
     ],
   });
 }
 
 let topologyState: RuntimeTopology = buildInitialTopology();
-
-function orderedBots(bots: TopologyBot[]) {
-  const byId = new Map<BotId, TopologyBot>(bots.map((bot) => [bot.id, bot]));
-  return BOT_IDS.map((id) => byId.get(id)).filter(
-    (bot): bot is TopologyBot => Boolean(bot)
-  );
-}
 
 function cloneTopology(topology: RuntimeTopology): RuntimeTopology {
   return {
@@ -100,7 +82,7 @@ export function updateRuntimeTopology(next: RuntimeTopology): RuntimeTopology {
     exchangeHttpUrl: canonicalUrl(next.exchangeHttpUrl),
     bots: next.bots.map((bot) => ({
       id: bot.id,
-      name: bot.name.trim() || BOT_LABELS[bot.id],
+      name: bot.name.trim() || botNameFromId(bot.id),
       wsUrl: canonicalUrl(bot.wsUrl),
       httpUrl: canonicalUrl(bot.httpUrl),
     })),
@@ -109,7 +91,7 @@ export function updateRuntimeTopology(next: RuntimeTopology): RuntimeTopology {
   topologyState = {
     exchangeWsUrl: validated.exchangeWsUrl,
     exchangeHttpUrl: validated.exchangeHttpUrl,
-    bots: orderedBots(validated.bots),
+    bots: validated.bots.map((bot) => ({ ...bot })),
   };
 
   return getRuntimeTopology();
