@@ -1,8 +1,13 @@
-import type { QuoteHistoryEntry } from '@/stores/engine-store';
+import type { QuoteSnapshot } from '@crispy/shared';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { priceFromFp } from '@/lib/fixed-point';
+
+export type QuoteHistoryEntry = QuoteSnapshot & {
+  status: 'filled' | 'expired';
+  timestamp: string;
+};
 
 export function QuoteHistorySection({ entries }: { entries: QuoteHistoryEntry[] }) {
   return (

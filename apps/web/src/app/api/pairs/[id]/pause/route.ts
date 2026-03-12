@@ -1,6 +1,7 @@
 import { pairSchema, pausePairRequestSchema } from '@crispy/shared';
 import { NextResponse } from 'next/server';
 
+import { parseBotIdFromRequest } from '@/server/bot-target';
 import { forwardEnginePost } from '@/server/engine-http';
 import { sanitize } from '@/lib/sanitize';
 
@@ -10,6 +11,11 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const target = parseBotIdFromRequest(request);
+  if ('error' in target) {
+    return target.error;
+  }
+
   const { id } = await params;
   const parsedPair = pairSchema.safeParse(sanitize(id));
   if (!parsedPair.success) {
@@ -36,6 +42,7 @@ export async function POST(
 
   try {
     const response = await forwardEnginePost(
+      target.botId,
       `/pairs/${encodeURIComponent(parsedPair.data)}/pause`,
       parsed.data
     );

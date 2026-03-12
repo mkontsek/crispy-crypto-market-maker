@@ -1,6 +1,7 @@
 import {
-  DEFAULT_ENGINE_WS_URL,
+  BOT_IDS,
   engineStreamSchema,
+  type BotId,
   type EngineStreamPayload,
   type ExchangeHealth,
   type Fill,
@@ -10,6 +11,8 @@ import {
   type QuoteSnapshot,
 } from '@crispy/shared';
 import WebSocket from 'ws';
+
+import { resolveBotTopology } from '@/server/runtime-topology';
 
 export type QuoteHistoryEntry = QuoteSnapshot & {
   status: 'filled' | 'expired';
@@ -29,43 +32,65 @@ type RelayState = {
   config: MMConfig | null;
 };
 
-const relayState: RelayState = {
-  connected: false,
-  lastUpdated: null,
-  quotes: [],
-  fills: [],
-  inventory: [],
-  inventoryHistory: {},
-  pnlHistory: [],
-  exchangeHealth: [],
-  quoteHistory: [],
-  config: null,
+type BotRelay = {
+  state: RelayState;
+  listeners: Set<(payload: EngineStreamPayload) => void>;
+  socket: WebSocket | null;
+  reconnectTimer: NodeJS.Timeout | null;
+  started: boolean;
+  wsUrl: string | null;
 };
 
-const listeners = new Set<(payload: EngineStreamPayload) => void>();
-let socket: WebSocket | null = null;
-let reconnectTimer: NodeJS.Timeout | null = null;
-let started = false;
-const engineWsUrl = process.env.ENGINE_WS_URL ?? DEFAULT_ENGINE_WS_URL;
+function createRelayState(): RelayState {
+  return {
+    connected: false,
+    lastUpdated: null,
+    quotes: [],
+    fills: [],
+    inventory: [],
+    inventoryHistory: {},
+    pnlHistory: [],
+    exchangeHealth: [],
+    quoteHistory: [],
+    config: null,
+  };
+}
+
+function createRelay(): BotRelay {
+  return {
+    state: createRelayState(),
+    listeners: new Set<(payload: EngineStreamPayload) => void>(),
+    socket: null,
+    reconnectTimer: null,
+    started: false,
+    wsUrl: null,
+  };
+}
+
+const relays: Record<BotId, BotRelay> = {
+  'bot-1': createRelay(),
+  'bot-2': createRelay(),
+};
 
 function cap<T>(values: T[], size: number): T[] {
   return values.length > size ? values.slice(0, size) : values;
 }
 
-function ingestPayload(payload: EngineStreamPayload) {
-  relayState.connected = true;
-  relayState.lastUpdated = payload.timestamp;
-  relayState.quotes = payload.quotes;
-  relayState.inventory = payload.inventory;
-  relayState.exchangeHealth = payload.exchangeHealth;
-  relayState.config = payload.config;
+function ingestPayload(botId: BotId, payload: EngineStreamPayload) {
+  const relay = relays[botId];
+  relay.state.connected = true;
+  relay.state.lastUpdated = payload.timestamp;
+  relay.state.quotes = payload.quotes;
+  relay.state.inventory = payload.inventory;
+  relay.state.exchangeHealth = payload.exchangeHealth;
+  relay.state.config = payload.config;
 
-  relayState.fills = cap([...payload.fills, ...relayState.fills], 500);
-  relayState.pnlHistory = cap([payload.pnl, ...relayState.pnlHistory], 500);
+  relay.state.fills = cap([...payload.fills, ...relay.state.fills], 500);
+  relay.state.pnlHistory = cap([payload.pnl, ...relay.state.pnlHistory], 500);
 
   for (const snapshot of payload.inventory) {
-    const history = relayState.inventoryHistory[snapshot.pair] ?? [];
-    relayState.inventoryHistory[snapshot.pair] = cap([snapshot, ...history], 500);
+    const history = relay.state.inventoryHistory[snapshot.pair] ?? [];
+    relay.state.inventoryHistory[snapshot.pair] = cap([snapshot, ...history], 500);
   }
 
   const filledPairs = new Set(payload.fills.map((fill) => fill.pair));
@@ -74,93 +99,145 @@ function ingestPayload(payload: EngineStreamPayload) {
     status: filledPairs.has(quote.pair) ? 'filled' : 'expired',
     timestamp: payload.timestamp,
   }));
-  relayState.quoteHistory = cap([...quoteEvents, ...relayState.quoteHistory], 1_000);
+  relay.state.quoteHistory = cap([...quoteEvents, ...relay.state.quoteHistory], 1_000);
 
-  for (const listener of listeners) {
+  for (const listener of relay.listeners) {
     listener(payload);
   }
 }
 
-function scheduleReconnect() {
-  if (reconnectTimer) {
+function scheduleReconnect(botId: BotId) {
+  const relay = relays[botId];
+  if (relay.reconnectTimer) {
     return;
   }
 
-  reconnectTimer = setTimeout(() => {
-    reconnectTimer = null;
-    connect();
+  relay.reconnectTimer = setTimeout(() => {
+    relay.reconnectTimer = null;
+    connect(botId);
   }, 1_000);
 }
 
-function connect() {
-  socket = new WebSocket(engineWsUrl);
+function connect(botId: BotId) {
+  const relay = relays[botId];
+  if (!relay.wsUrl || relay.socket) {
+    return;
+  }
 
-  socket.on('open', () => {
-    relayState.connected = true;
+  const ws = new WebSocket(relay.wsUrl);
+  relay.socket = ws;
+
+  ws.on('open', () => {
+    if (relay.socket !== ws) {
+      return;
+    }
+    relay.state.connected = true;
   });
 
-  socket.on('message', (data) => {
+  ws.on('message', (data) => {
     const raw = data.toString();
     let json: unknown;
     try {
       json = JSON.parse(raw);
     } catch (error) {
-      console.error('engine relay received invalid json', error);
+      console.error(`engine relay (${botId}) received invalid json`, error);
       return;
     }
 
     const parsed = engineStreamSchema.safeParse(json);
     if (!parsed.success) {
-      console.error('engine relay payload failed schema validation', parsed.error.flatten());
+      console.error(
+        `engine relay (${botId}) payload failed schema validation`,
+        parsed.error.flatten()
+      );
       return;
     }
 
-    ingestPayload(parsed.data);
+    ingestPayload(botId, parsed.data);
   });
 
-  socket.on('close', () => {
-    relayState.connected = false;
-    scheduleReconnect();
+  ws.on('close', () => {
+    if (relay.socket !== ws) {
+      return;
+    }
+    relay.socket = null;
+    relay.state.connected = false;
+    scheduleReconnect(botId);
   });
 
-  socket.on('error', (error) => {
-    console.error('engine relay websocket error', error);
-    relayState.connected = false;
-    socket?.close();
+  ws.on('error', (error) => {
+    if (relay.socket !== ws) {
+      return;
+    }
+    console.error(`engine relay (${botId}) websocket error`, error);
+    relay.state.connected = false;
+    ws.close();
   });
 }
 
-export function ensureEngineRelayRunning() {
-  if (started) {
+function syncBotRelay(botId: BotId) {
+  const relay = relays[botId];
+  const topology = resolveBotTopology(botId);
+
+  if (!relay.started) {
+    relay.started = true;
+    relay.wsUrl = topology.wsUrl;
+    connect(botId);
     return;
   }
 
-  started = true;
-  connect();
+  if (relay.wsUrl === topology.wsUrl) {
+    return;
+  }
+
+  relay.wsUrl = topology.wsUrl;
+  relay.state.connected = false;
+
+  if (relay.reconnectTimer) {
+    clearTimeout(relay.reconnectTimer);
+    relay.reconnectTimer = null;
+  }
+
+  if (relay.socket) {
+    const socket = relay.socket;
+    relay.socket = null;
+    socket.close();
+  }
+
+  connect(botId);
 }
 
 export function subscribeToEngineStream(
+  botId: BotId,
   listener: (payload: EngineStreamPayload) => void
 ) {
-  ensureEngineRelayRunning();
-  listeners.add(listener);
+  syncBotRelay(botId);
+  relays[botId].listeners.add(listener);
   return () => {
-    listeners.delete(listener);
+    relays[botId].listeners.delete(listener);
   };
 }
 
-export function getRelaySnapshot(): RelayState {
-  ensureEngineRelayRunning();
+export function getRelaySnapshot(botId: BotId): RelayState {
+  syncBotRelay(botId);
+  const state = relays[botId].state;
+
   return {
-    connected: relayState.connected,
-    lastUpdated: relayState.lastUpdated,
-    quotes: [...relayState.quotes],
-    fills: [...relayState.fills],
-    inventory: [...relayState.inventory],
-    inventoryHistory: { ...relayState.inventoryHistory },
-    pnlHistory: [...relayState.pnlHistory],
-    exchangeHealth: [...relayState.exchangeHealth],
-    quoteHistory: [...relayState.quoteHistory],
-    config: relayState.config,
+    connected: state.connected,
+    lastUpdated: state.lastUpdated,
+    quotes: [...state.quotes],
+    fills: [...state.fills],
+    inventory: [...state.inventory],
+    inventoryHistory: { ...state.inventoryHistory },
+    pnlHistory: [...state.pnlHistory],
+    exchangeHealth: [...state.exchangeHealth],
+    quoteHistory: [...state.quoteHistory],
+    config: state.config,
   };
+}
+
+export function ensureEngineRelaysRunning() {
+  for (const botId of BOT_IDS) {
+    syncBotRelay(botId);
+  }
 }

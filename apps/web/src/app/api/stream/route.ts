@@ -1,10 +1,16 @@
 import { getRelaySnapshot, subscribeToEngineStream } from '@/server/engine-relay';
+import { parseBotIdFromRequest } from '@/server/bot-target';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 export async function GET(request: Request) {
+  const target = parseBotIdFromRequest(request);
+  if ('error' in target) {
+    return target.error;
+  }
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -13,9 +19,10 @@ export async function GET(request: Request) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(value)}\n\n`));
       };
 
-      const snapshot = getRelaySnapshot();
+      const snapshot = getRelaySnapshot(target.botId);
       if (snapshot.lastUpdated) {
         send({
+          botId: target.botId,
           timestamp: snapshot.lastUpdated,
           quotes: snapshot.quotes,
           fills: [],
@@ -26,8 +33,8 @@ export async function GET(request: Request) {
         });
       }
 
-      const unsubscribe = subscribeToEngineStream((payload) => {
-        send(payload);
+      const unsubscribe = subscribeToEngineStream(target.botId, (payload) => {
+        send({ botId: target.botId, ...payload });
       });
 
       const heartbeat = setInterval(() => {
