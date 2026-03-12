@@ -1,7 +1,7 @@
 'use client';
 
 import { EXCHANGES, type MMConfig } from '@crispy/shared';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +15,31 @@ export function ConfigPanelSection({
   saving: boolean;
   onSubmit: (next: MMConfig) => void;
 }) {
-  const [draft, setDraft] = useState<MMConfig | null>(config);
+  const [pairOverrides, setPairOverrides] = useState<
+    Record<string, Partial<MMConfig['pairs'][number]>>
+  >({});
 
-  useEffect(() => {
-    setDraft(config);
-  }, [config]);
+  const draft = config
+    ? {
+        pairs: config.pairs.map((pairConfig) => ({
+          ...pairConfig,
+          ...(pairOverrides[pairConfig.pair] ?? {}),
+        })),
+      }
+    : null;
+
+  const updatePair = (
+    pair: string,
+    updates: Partial<MMConfig['pairs'][number]>
+  ) => {
+    setPairOverrides((current) => ({
+      ...current,
+      [pair]: {
+        ...(current[pair] ?? {}),
+        ...updates,
+      },
+    }));
+  };
 
   if (!draft) {
     return (
@@ -48,35 +68,25 @@ export function ConfigPanelSection({
               <DecimalField
                 label="Base spread bps"
                 value={pairConfig.baseSpreadBps}
-                onChange={(value) =>
-                  patchPair(draft, setDraft, pairConfig.pair, {
-                    baseSpreadBps: value,
-                  })
-                }
+                onChange={(value) => updatePair(pairConfig.pair, { baseSpreadBps: value })}
               />
               <DecimalField
                 label="Vol multiplier"
                 value={pairConfig.volatilityMultiplier}
                 onChange={(value) =>
-                  patchPair(draft, setDraft, pairConfig.pair, {
-                    volatilityMultiplier: value,
-                  })
+                  updatePair(pairConfig.pair, { volatilityMultiplier: value })
                 }
               />
               <DecimalField
                 label="Max inventory"
                 value={pairConfig.maxInventory}
-                onChange={(value) =>
-                  patchPair(draft, setDraft, pairConfig.pair, {
-                    maxInventory: value,
-                  })
-                }
+                onChange={(value) => updatePair(pairConfig.pair, { maxInventory: value })}
               />
               <DecimalField
                 label="Skew sensitivity"
                 value={pairConfig.inventorySkewSensitivity}
                 onChange={(value) =>
-                  patchPair(draft, setDraft, pairConfig.pair, {
+                  updatePair(pairConfig.pair, {
                     inventorySkewSensitivity: value,
                   })
                 }
@@ -85,7 +95,7 @@ export function ConfigPanelSection({
                 label="Refresh (ms)"
                 value={pairConfig.quoteRefreshIntervalMs}
                 onChange={(value) =>
-                  patchPair(draft, setDraft, pairConfig.pair, {
+                  updatePair(pairConfig.pair, {
                     quoteRefreshIntervalMs: Math.max(Math.floor(value), 50),
                   })
                 }
@@ -93,18 +103,14 @@ export function ConfigPanelSection({
               <DecimalField
                 label="Hedge threshold"
                 value={pairConfig.hedgeThreshold}
-                onChange={(value) =>
-                  patchPair(draft, setDraft, pairConfig.pair, {
-                    hedgeThreshold: value,
-                  })
-                }
+                onChange={(value) => updatePair(pairConfig.pair, { hedgeThreshold: value })}
               />
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={pairConfig.enabled}
                   onChange={(event) =>
-                    patchPair(draft, setDraft, pairConfig.pair, {
+                    updatePair(pairConfig.pair, {
                       enabled: event.target.checked,
                     })
                   }
@@ -116,7 +122,7 @@ export function ConfigPanelSection({
                   type="checkbox"
                   checked={pairConfig.hedgingEnabled}
                   onChange={(event) =>
-                    patchPair(draft, setDraft, pairConfig.pair, {
+                    updatePair(pairConfig.pair, {
                       hedgingEnabled: event.target.checked,
                     })
                   }
@@ -130,9 +136,7 @@ export function ConfigPanelSection({
                   value={pairConfig.hedgeExchange}
                   onChange={(event) => {
                     const selected = event.target.value as (typeof EXCHANGES)[number];
-                    patchPair(draft, setDraft, pairConfig.pair, {
-                      hedgeExchange: selected,
-                    });
+                    updatePair(pairConfig.pair, { hedgeExchange: selected });
                   }}
                 >
                   {EXCHANGES.map((exchange) => (
@@ -193,22 +197,4 @@ function DecimalField({
       />
     </label>
   );
-}
-
-function patchPair(
-  draft: MMConfig,
-  setDraft: (next: MMConfig) => void,
-  pair: string,
-  updates: Partial<MMConfig['pairs'][number]>
-) {
-  setDraft({
-    pairs: draft.pairs.map((item) =>
-      item.pair === pair
-        ? {
-            ...item,
-            ...updates,
-          }
-        : item
-    ),
-  });
 }
