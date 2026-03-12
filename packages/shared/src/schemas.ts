@@ -1,10 +1,20 @@
 import { z } from 'zod';
 
-import { EXCHANGES, PAIRS } from './constants';
+import { BOT_IDS, EXCHANGES, PAIRS } from './constants';
 
 export const pairSchema = z.enum(PAIRS);
 export const exchangeSchema = z.enum(EXCHANGES);
+export const botIdSchema = z.enum(BOT_IDS);
 export const sideSchema = z.enum(['buy', 'sell']);
+export const endpointUrlSchema = z.url();
+export const wsEndpointUrlSchema = endpointUrlSchema.refine((value) => {
+  const protocol = new URL(value).protocol;
+  return protocol === 'ws:' || protocol === 'wss:';
+}, 'Expected ws:// or wss:// URL');
+export const httpEndpointUrlSchema = endpointUrlSchema.refine((value) => {
+  const protocol = new URL(value).protocol;
+  return protocol === 'http:' || protocol === 'https:';
+}, 'Expected http:// or https:// URL');
 export const decimalStringSchema = z
   .string()
   .regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/, 'Expected decimal string')
@@ -104,4 +114,33 @@ export const pausePairRequestSchema = z.object({
 export const hedgeRequestSchema = z.object({
   pair: pairSchema,
   targetExchange: exchangeSchema.optional(),
+});
+
+export const topologyBotSchema = z.object({
+  id: botIdSchema,
+  name: z.string().min(1),
+  wsUrl: wsEndpointUrlSchema,
+  httpUrl: httpEndpointUrlSchema,
+});
+
+export const runtimeTopologySchema = z
+  .object({
+    exchangeWsUrl: wsEndpointUrlSchema,
+    exchangeHttpUrl: httpEndpointUrlSchema,
+    bots: z.array(topologyBotSchema).length(BOT_IDS.length),
+  })
+  .refine(
+    (value) => {
+      const ids = new Set(value.bots.map((bot) => bot.id));
+      return ids.size === BOT_IDS.length;
+    },
+    {
+      message: 'Expected unique bot IDs',
+      path: ['bots'],
+    }
+  );
+
+export const exchangeTopologySchema = z.object({
+  exchangeWsUrl: wsEndpointUrlSchema,
+  exchangeHttpUrl: httpEndpointUrlSchema,
 });

@@ -1,144 +1,45 @@
 'use client';
 
-import type {
-  ExchangeHealth,
-  Fill,
-  InventorySnapshot,
-  MMConfig,
-  PnLSnapshot,
-  QuoteSnapshot,
-} from '@crispy/shared';
+import type { RuntimeTopology } from '@crispy/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { ConfigPanelSection } from '@/components/dashboard/config-panel-section';
-import { ExchangeHealthSection } from '@/components/dashboard/exchange-health-section';
-import { InventoryMonitorSection } from '@/components/dashboard/inventory-monitor-section';
-import { LiveQuotesSection } from '@/components/dashboard/live-quotes-section';
-import { PnlPerformanceSection } from '@/components/dashboard/pnl-performance-section';
-import { QuoteHistorySection } from '@/components/dashboard/quote-history-section';
+import { BotDashboardPanel } from '@/components/dashboard/bot-dashboard-panel';
+import { TopologyConfigSection } from '@/components/dashboard/topology-config-section';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { fetchJson } from '@/lib/fetch-json';
-import { useEngineStream } from '@/hooks/use-engine-stream';
-import { useEngineStore } from '@/stores/engine-store';
-
-type QuotesResponse = {
-  connected: boolean;
-  updatedAt: string | null;
-  quotes: QuoteSnapshot[];
-  quoteHistory: ReturnType<typeof useEngineStore.getState>['quoteHistory'];
-  exchangeHealth: ExchangeHealth[];
-  config: MMConfig | null;
-};
-
-type FillsResponse = {
-  items: Fill[];
-};
-
-type PnlResponse = {
-  items: PnLSnapshot[];
-};
-
-type InventoryResponse = {
-  current: InventorySnapshot[];
-};
 
 export function MarketMakerDashboard() {
-  useEngineStream();
-
   const queryClient = useQueryClient();
-  const streamPayload = useEngineStore((state) => state.lastPayload);
-  const streamConnected = useEngineStore((state) => state.connected);
-  const liveQuoteHistory = useEngineStore((state) => state.quoteHistory);
 
-  const quotesQuery = useQuery({
-    queryKey: ['quotes'],
-    queryFn: () => fetchJson<QuotesResponse>('/api/quotes'),
-  });
-  const fillsQuery = useQuery({
-    queryKey: ['fills'],
-    queryFn: () => fetchJson<FillsResponse>('/api/fills?page=1&pageSize=100'),
-  });
-  const pnlQuery = useQuery({
-    queryKey: ['pnl'],
-    queryFn: () => fetchJson<PnlResponse>('/api/pnl'),
-  });
-  const inventoryQuery = useQuery({
-    queryKey: ['inventory'],
-    queryFn: () => fetchJson<InventoryResponse>('/api/inventory'),
+  const topologyQuery = useQuery({
+    queryKey: ['topology'],
+    queryFn: () => fetchJson<RuntimeTopology>('/api/topology'),
   });
 
-  const configMutation = useMutation({
-    mutationFn: async (payload: MMConfig) => {
-      const response = await fetch('/api/config', {
+  const topologyMutation = useMutation({
+    mutationFn: async (payload: RuntimeTopology) => {
+      const response = await fetch('/api/topology', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       if (!response.ok) {
-        throw new Error('failed to update engine config');
+        throw new Error('failed to update topology');
       }
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['topology'] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-    },
-  });
-
-  const pairActionMutation = useMutation({
-    mutationFn: async ({
-      pair,
-      action,
-      paused,
-    }: {
-      pair: string;
-      action: 'pause' | 'hedge';
-      paused?: boolean;
-    }) => {
-      if (action === 'pause') {
-        const response = await fetch(`/api/pairs/${encodeURIComponent(pair)}/pause`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paused }),
-        });
-        if (!response.ok) {
-          throw new Error('failed to update pair pause status');
-        }
-        return response.json();
-      }
-
-      const response = await fetch('/api/hedge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pair }),
-      });
-      if (!response.ok) {
-        throw new Error('failed to hedge pair');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['fills'] });
       queryClient.invalidateQueries({ queryKey: ['pnl'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
     },
   });
 
-  const quotes = streamPayload?.quotes ?? quotesQuery.data?.quotes ?? [];
-  const fills = dedupeFills([
-    ...(streamPayload?.fills ?? []),
-    ...(fillsQuery.data?.items ?? []),
-  ]);
-  const pnl = dedupePnl([
-    ...(streamPayload?.pnl ? [streamPayload.pnl] : []),
-    ...(pnlQuery.data?.items ?? []),
-  ]);
-  const inventory = streamPayload?.inventory ?? inventoryQuery.data?.current ?? [];
-  const health = streamPayload?.exchangeHealth ?? quotesQuery.data?.exchangeHealth ?? [];
-  const config = streamPayload?.config ?? quotesQuery.data?.config ?? null;
-  const connected = streamConnected || quotesQuery.data?.connected || false;
-  const pendingPair = pairActionMutation.variables?.pair ?? null;
-  const quoteHistoryEntries =
-    liveQuoteHistory.length > 0 ? liveQuoteHistory : (quotesQuery.data?.quoteHistory ?? []);
+  const topology = topologyQuery.data ?? null;
+  const bots = topology?.bots ?? [];
 
   return (
     <main className="mx-auto max-w-7xl space-y-4 p-4">
@@ -146,66 +47,34 @@ export function MarketMakerDashboard() {
         <div>
           <h1 className="text-xl font-semibold">Crispy Crypto Market Maker</h1>
           <p className="text-sm text-slate-400">
-            Market maker bot connected to a simulated exchange — real-time metrics via Next.js BFF + SSE.
+            Multi-bot market maker control plane with runtime topology routing.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge tone={connected ? 'success' : 'danger'}>
-            {connected ? 'bot live' : 'bot offline'}
-          </Badge>
-          {configMutation.isPending || pairActionMutation.isPending ? (
-            <Badge tone="warning">Applying changes...</Badge>
+          <Badge tone="default">{bots.length} bots configured</Badge>
+          {topologyMutation.isPending ? (
+            <Badge tone="warning">Applying topology...</Badge>
           ) : null}
         </div>
       </header>
 
-      <LiveQuotesSection quotes={quotes} connected={connected} />
+      <TopologyConfigSection
+        topology={topology}
+        saving={topologyMutation.isPending}
+        onSubmit={(next) => topologyMutation.mutate(next)}
+      />
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <InventoryMonitorSection
-          inventory={inventory}
-          quotes={quotes}
-          pendingPair={pendingPair}
-          onTogglePause={(pair, paused) =>
-            pairActionMutation.mutate({ pair, action: 'pause', paused })
-          }
-          onManualHedge={(pair) => pairActionMutation.mutate({ pair, action: 'hedge' })}
-        />
-        <PnlPerformanceSection pnl={pnl} fills={fills} />
-      </div>
+      {topologyQuery.isError ? (
+        <Card>
+          <CardContent className="py-4 text-sm text-red-300">
+            Failed to load topology from `/api/topology`.
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <QuoteHistorySection entries={quoteHistoryEntries} />
-        <ConfigPanelSection
-          config={config}
-          saving={configMutation.isPending}
-          onSubmit={(next) => configMutation.mutate(next)}
-        />
-      </div>
-
-      <ExchangeHealthSection health={health} />
+      {bots.map((bot) => (
+        <BotDashboardPanel key={bot.id} bot={bot} />
+      ))}
     </main>
   );
-}
-
-function dedupeFills(fills: Fill[]) {
-  const seen = new Set<string>();
-  const output: Fill[] = [];
-  for (const fill of fills) {
-    if (seen.has(fill.id)) continue;
-    seen.add(fill.id);
-    output.push(fill);
-  }
-  return output.slice(0, 300);
-}
-
-function dedupePnl(pnl: PnLSnapshot[]) {
-  const seen = new Set<string>();
-  const output: PnLSnapshot[] = [];
-  for (const row of pnl) {
-    if (seen.has(row.timestamp)) continue;
-    seen.add(row.timestamp);
-    output.push(row);
-  }
-  return output.slice(0, 300);
 }

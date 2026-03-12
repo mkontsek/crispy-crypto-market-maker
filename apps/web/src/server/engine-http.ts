@@ -1,9 +1,22 @@
-import { DEFAULT_ENGINE_HTTP_URL } from '@crispy/shared';
+import type { BotId } from '@crispy/shared';
 
-const engineHttpUrl = process.env.ENGINE_HTTP_URL ?? DEFAULT_ENGINE_HTTP_URL;
+import { resolveBotTopology } from '@/server/runtime-topology';
 
-export async function forwardEnginePost(path: string, payload: unknown) {
-  const response = await fetch(`${engineHttpUrl}${path}`, {
+function joinUrl(baseUrl: string, path: string) {
+  const normalizedBase = baseUrl.endsWith('/')
+    ? baseUrl.slice(0, -1)
+    : baseUrl;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${normalizedBase}${normalizedPath}`;
+}
+
+export async function forwardEnginePost(
+  botId: BotId,
+  path: string,
+  payload: unknown
+) {
+  const bot = resolveBotTopology(botId);
+  const response = await fetch(joinUrl(bot.httpUrl, path), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

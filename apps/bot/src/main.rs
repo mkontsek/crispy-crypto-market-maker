@@ -8,11 +8,12 @@ use axum::{
     Json, Router,
 };
 use rust_decimal_macros::dec;
+use serde::Deserialize;
 use tokio::{
     net::TcpListener,
     sync::{broadcast, RwLock},
 };
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 mod exchange;
 mod models;
@@ -27,6 +28,13 @@ use utils::{apply_ratio, quote_notional_rate};
 const DEFAULT_EXCHANGE_WS_URL: &str = "ws://127.0.0.1:8082/feed";
 const DEFAULT_EXCHANGE_API_URL: &str = "http://127.0.0.1:8083";
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExchangeTopologyResponse {
+    exchange_ws_url: String,
+    exchange_http_url: String,
+}
+
 #[derive(Clone)]
 struct AppState {
     state: Arc<RwLock<EngineState>>,
@@ -38,10 +46,9 @@ struct AppState {
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let exchange_ws_url =
-        std::env::var("EXCHANGE_WS_URL").unwrap_or_else(|_| DEFAULT_EXCHANGE_WS_URL.to_string());
-    let exchange_api_url =
-        std::env::var("EXCHANGE_API_URL").unwrap_or_else(|_| DEFAULT_EXCHANGE_API_URL.to_string());
+    let (exchange_ws_url, exchange_api_url) = resolve_exchange_endpoints().await;
+    info!("exchange ws url: {exchange_ws_url}");
+    info!("exchange api url: {exchange_api_url}");
 
     let (stream_tx, _) = broadcast::channel(128);
     let app_state = AppState {
@@ -121,6 +128,62 @@ async fn main() {
             }
         }
     }
+}
+
+fn exchange_topology_endpoint(raw: &str) -> String {
+    let trimmed = raw.trim().trim_end_matches('/');
+    if trimmed.ends_with("/api/topology/exchange") {
+        trimmed.to_string()
+    } else {
+        format!("{trimmed}/api/topology/exchange")
+    }
+}
+
+async fn resolve_exchange_endpoints() -> (String, String) {
+    let exchange_ws_url = std::env::var("EXCHANGE_WS_URL")
+        .ok()
+        .filter(|value| !value.trim().is_empty());
+    let exchange_api_url = std::env::var("EXCHANGE_API_URL")
+        .ok()
+        .filter(|value| !value.trim().is_empty());
+
+    if let (Some(ws_url), Some(api_url)) = (&exchange_ws_url, &exchange_api_url) {
+        return (ws_url.clone(), api_url.clone());
+    }
+
+    if let Some(topology_base_url) = std::env::var("WEB_TOPOLOGY_URL")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+    {
+        let topology_endpoint = exchange_topology_endpoint(&topology_base_url);
+        match reqwest::get(&topology_endpoint).await {
+            Ok(response) => match response.error_for_status() {
+                Ok(ok_response) => match ok_response.json::<ExchangeTopologyResponse>().await {
+                    Ok(topology) => {
+                        let resolved_ws = exchange_ws_url
+                            .unwrap_or_else(|| topology.exchange_ws_url.trim().to_string());
+                        let resolved_api = exchange_api_url
+                            .unwrap_or_else(|| topology.exchange_http_url.trim().to_string());
+                        return (resolved_ws, resolved_api);
+                    }
+                    Err(err) => {
+                        warn!("failed to parse topology exchange response: {err}");
+                    }
+                },
+                Err(err) => {
+                    warn!("topology exchange endpoint returned non-success status: {err}");
+                }
+            },
+            Err(err) => {
+                warn!("failed to fetch topology exchange endpoint: {err}");
+            }
+        }
+    }
+
+    (
+        exchange_ws_url.unwrap_or_else(|| DEFAULT_EXCHANGE_WS_URL.to_string()),
+        exchange_api_url.unwrap_or_else(|| DEFAULT_EXCHANGE_API_URL.to_string()),
+    )
 }
 
 async fn ws_stream_handler(
