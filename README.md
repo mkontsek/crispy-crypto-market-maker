@@ -5,11 +5,8 @@ Crispy is a monorepo demo of a market-making platform with two Rust services and
 ## Architecture
 
 ```
-Web/Dashboard  ──────────►  Bot 1 (market maker)  ──────────►  Exchange
-(Next.js BFF)               ws://8080   http://8081           ws://8082  http://8083
-       │
-       └───────────────►  Bot 2 (market maker)
-                          ws://9080   http://9081
+Web/Dashboard  ──────────►  Bot 1..N (market maker)  ──────────►  Exchange
+(Next.js BFF)               wss://...  https://...               wss://...  https://...
 ```
 
 - **Exchange** (`apps/exchange`): Simulates a crypto exchange with fake data generation.
@@ -17,8 +14,8 @@ Web/Dashboard  ──────────►  Bot 1 (market maker)  ──�
 - **Bot** (`apps/bot`): Market maker bot that connects to the exchange, calculates quotes,
   places orders, tracks inventory, PnL and hedging. Exposes a WebSocket stream and HTTP
   command API consumed by the web frontend.
-- **Web** (`apps/web`): Next.js 16 BFF + UI. Maintains runtime topology (2 bots + exchange),
-  relays both bot streams, and provides URL configuration from the dashboard.
+- **Web** (`apps/web`): Next.js 16 BFF + UI. Maintains runtime topology (initially 1 bot + exchange),
+  supports adding more bots at runtime, relays bot streams, and provides URL configuration from the dashboard.
 
 ## Monorepo layout
 
@@ -56,14 +53,14 @@ Web/Dashboard  ──────────►  Bot 1 (market maker)  ──�
 
 ## Web API routes
 
-- `GET /api/quotes?botId=bot-1|bot-2`
-- `GET /api/fills?botId=bot-1|bot-2`
-- `GET /api/pnl?botId=bot-1|bot-2`
-- `GET /api/inventory?botId=bot-1|bot-2`
-- `POST /api/config?botId=bot-1|bot-2`
-- `POST /api/pairs/:id/pause?botId=bot-1|bot-2`
-- `POST /api/hedge?botId=bot-1|bot-2`
-- `GET /api/stream?botId=bot-1|bot-2` (SSE fan-out from selected bot stream)
+- `GET /api/quotes?botId=<bot-id>`
+- `GET /api/fills?botId=<bot-id>`
+- `GET /api/pnl?botId=<bot-id>`
+- `GET /api/inventory?botId=<bot-id>`
+- `POST /api/config?botId=<bot-id>`
+- `POST /api/pairs/:id/pause?botId=<bot-id>`
+- `POST /api/hedge?botId=<bot-id>`
+- `GET /api/stream?botId=<bot-id>` (SSE fan-out from selected bot stream)
 - `GET /api/topology` / `POST /api/topology` (runtime bot + exchange URLs)
 - `GET /api/topology/exchange` (exchange URLs for bot bootstrap)
 
@@ -154,8 +151,7 @@ pnpm check:lines    # Enforce 300-line file limit
 - Create a Vercel project with **Root Directory** set to `apps/web`.
 - Vercel will automatically detect `pnpm` from the `pnpm-lock.yaml` file.
 - Add environment variables:
-  - `BOT_1_HTTP_URL`, `BOT_1_WS_URL` (bot-1 endpoints)
-  - `BOT_2_HTTP_URL`, `BOT_2_WS_URL` (bot-2 endpoints)
+  - `BOT_1_HTTP_URL`, `BOT_1_WS_URL` (initial bot endpoints)
   - `EXCHANGE_HTTP_URL`, `EXCHANGE_WS_URL` (exchange endpoints)
   - `ENGINE_HTTP_URL`, `ENGINE_WS_URL` remain supported as bot-1 aliases
   - `DATABASE_URL` (Postgres connection string)

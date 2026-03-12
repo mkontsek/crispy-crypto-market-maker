@@ -152,7 +152,7 @@ export function BotDashboardPanel({ bot }: { bot: TopologyBot }) {
         <div>
           <h2 className="text-lg font-semibold">{bot.name}</h2>
           <p className="text-xs text-slate-400">
-            WS: {bot.wsUrl} | HTTP: {bot.httpUrl}
+            WS: {bot.wsUrl} | API: {bot.httpUrl}
           </p>
         </div>
         <Badge tone={connected ? 'success' : 'danger'}>
