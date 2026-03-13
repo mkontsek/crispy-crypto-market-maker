@@ -208,10 +208,11 @@ For production, a managed Postgres service is recommended. For containerized/sel
 
 ```bash
 docker build -t crispy-postgres ./infra/postgres
-docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=change-me crispy-postgres
+# POSTGRES_PASSWORD must be supplied at runtime — never hard-code it
+docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=YOUR_STRONG_PASSWORD crispy-postgres
 ```
 
-Use the resulting connection string as `DATABASE_URL`.
+Set `DATABASE_URL` to the resulting connection string (e.g. `postgresql://crispy:YOUR_STRONG_PASSWORD@localhost:5432/crispy`).
 
 ### Production topology
 
