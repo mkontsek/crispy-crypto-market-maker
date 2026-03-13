@@ -30,10 +30,28 @@ export function MarketMakerDashboard() {
       if (!response.ok) {
         throw new Error('failed to update topology');
       }
-      return response.json();
+      return (await response.json()) as RuntimeTopology;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['topology'] });
+    onSuccess: (updatedTopology) => {
+      const previousTopology = queryClient.getQueryData<RuntimeTopology>([
+        'topology',
+      ]);
+
+      queryClient.setQueryData(['topology'], updatedTopology);
+
+      if (
+        previousTopology &&
+        updatedTopology.bots.length > previousTopology.bots.length
+      ) {
+        setSelectedBotId(updatedTopology.bots[updatedTopology.bots.length - 1]?.id ?? null);
+      } else {
+        setSelectedBotId((current) =>
+          current && updatedTopology.bots.some((bot) => bot.id === current)
+            ? current
+            : (updatedTopology.bots[0]?.id ?? null)
+        );
+      }
+
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['fills'] });
       queryClient.invalidateQueries({ queryKey: ['pnl'] });

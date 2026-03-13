@@ -113,14 +113,12 @@ export function TopologyConfigSection({
   };
 
   const addBot = () => {
-    setDraft((current) =>
-      current
-        ? {
-            ...current,
-            bots: [...current.bots, buildNewBot(current.bots)],
-          }
-        : current
-    );
+    const nextDraft: RuntimeTopology = {
+      ...draft,
+      bots: [...draft.bots, buildNewBot(draft.bots)],
+    };
+    setDraft(nextDraft);
+    onSubmit(nextDraft);
   };
 
   return (
@@ -135,9 +133,6 @@ export function TopologyConfigSection({
             }}
           >
             Reset
-          </Button>
-          <Button variant="outline" onClick={addBot}>
-            Add Bot
           </Button>
           <Button disabled={saving} onClick={() => onSubmit(draft)}>
             {saving ? 'Saving...' : 'Save Topology'}
@@ -204,6 +199,15 @@ export function TopologyConfigSection({
               </div>
             </div>
           ))}
+        </div>
+
+        <div>
+          <Button variant="outline" disabled={saving} onClick={addBot}>
+            <span aria-hidden className="mr-1 text-base leading-none">
+              +
+            </span>
+            Add Bot
+          </Button>
         </div>
       </CardContent>
     </Card>
