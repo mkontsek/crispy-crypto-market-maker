@@ -147,3 +147,158 @@ impl EngineState {
         orders
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{ExchangeFeedPayload, ExchangePairData};
+    use rust_decimal_macros::dec;
+
+    #[test]
+    fn pair_state_new_sets_initial_mid() {
+        let state = PairState::new(dec!(100));
+        assert_eq!(state.mid, dec!(100));
+        assert_eq!(state.bid, dec!(100));
+        assert_eq!(state.ask, dec!(100));
+        assert!(!state.paused);
+        assert_eq!(state.inventory, Decimal::ZERO);
+    }
+
+    #[test]
+    fn engine_state_new_has_three_pairs() {
+        let state = EngineState::new();
+        assert_eq!(state.pairs.len(), 3);
+        assert!(state.pairs.contains_key("BTC/USDT"));
+        assert!(state.pairs.contains_key("ETH/USDT"));
+        assert!(state.pairs.contains_key("SOL/USDT"));
+        assert!(!state.exchange_connected);
+        assert_eq!(state.total_fills, 0);
+        assert_eq!(state.total_quotes, 0);
+    }
+
+    #[test]
+    fn update_from_exchange_marks_connected_and_updates_mid() {
+        let mut state = EngineState::new();
+        assert!(!state.exchange_connected);
+
+        state.update_from_exchange(ExchangeFeedPayload {
+            pairs: vec![ExchangePairData {
+                pair: "BTC/USDT".to_string(),
+                mid: dec!(65000),
+                volatility: dec!(1.5),
+            }],
+        });
+
+        assert!(state.exchange_connected);
+        assert_eq!(state.pairs["BTC/USDT"].mid, dec!(65000));
+        assert_eq!(state.pairs["BTC/USDT"].volatility, dec!(1.5));
+    }
+
+    #[test]
+    fn update_from_exchange_ignores_unknown_pair() {
+        let mut state = EngineState::new();
+        state.update_from_exchange(ExchangeFeedPayload {
+            pairs: vec![ExchangePairData {
+                pair: "UNKNOWN/USDT".to_string(),
+                mid: dec!(999),
+                volatility: dec!(1),
+            }],
+        });
+        // Unknown pair should not be inserted
+        assert!(!state.pairs.contains_key("UNKNOWN/USDT"));
+    }
+
+    #[test]
+    fn compute_orders_returns_buy_and_sell_per_enabled_pair() {
+        let mut state = EngineState::new();
+        state.update_from_exchange(ExchangeFeedPayload {
+            pairs: vec![
+                ExchangePairData {
+                    pair: "BTC/USDT".to_string(),
+                    mid: dec!(62000),
+                    volatility: dec!(1),
+                },
+                ExchangePairData {
+                    pair: "ETH/USDT".to_string(),
+                    mid: dec!(3450),
+                    volatility: dec!(1),
+                },
+                ExchangePairData {
+                    pair: "SOL/USDT".to_string(),
+                    mid: dec!(140),
+                    volatility: dec!(1),
+                },
+            ],
+        });
+
+        let orders = state.compute_orders();
+        // 3 pairs × 2 sides = 6 orders
+        assert_eq!(orders.len(), 6);
+
+        let btc_orders: Vec<_> = orders.iter().filter(|o| o.pair == "BTC/USDT").collect();
+        assert_eq!(btc_orders.len(), 2);
+        assert!(btc_orders.iter().any(|o| o.side == "buy"));
+        assert!(btc_orders.iter().any(|o| o.side == "sell"));
+    }
+
+    #[test]
+    fn compute_orders_bid_is_below_ask() {
+        let mut state = EngineState::new();
+        state.update_from_exchange(ExchangeFeedPayload {
+            pairs: vec![ExchangePairData {
+                pair: "BTC/USDT".to_string(),
+                mid: dec!(62000),
+                volatility: dec!(1),
+            }],
+        });
+
+        let orders = state.compute_orders();
+        let buy = orders
+            .iter()
+            .find(|o| o.pair == "BTC/USDT" && o.side == "buy")
+            .expect("no buy order for BTC/USDT");
+        let sell = orders
+            .iter()
+            .find(|o| o.pair == "BTC/USDT" && o.side == "sell")
+            .expect("no sell order for BTC/USDT");
+
+        assert!(buy.price < sell.price, "bid must be below ask");
+    }
+
+    #[test]
+    fn compute_orders_skips_disabled_pair() {
+        let mut state = EngineState::new();
+        // Disable ETH/USDT
+        for cfg in &mut state.config.pairs {
+            if cfg.pair == "ETH/USDT" {
+                cfg.enabled = false;
+            }
+        }
+        state.update_from_exchange(ExchangeFeedPayload {
+            pairs: vec![
+                ExchangePairData {
+                    pair: "BTC/USDT".to_string(),
+                    mid: dec!(62000),
+                    volatility: dec!(1),
+                },
+                ExchangePairData {
+                    pair: "ETH/USDT".to_string(),
+                    mid: dec!(3450),
+                    volatility: dec!(1),
+                },
+                ExchangePairData {
+                    pair: "SOL/USDT".to_string(),
+                    mid: dec!(140),
+                    volatility: dec!(1),
+                },
+            ],
+        });
+
+        let orders = state.compute_orders();
+        // Disabled pair produces no orders
+        assert!(
+            orders.iter().all(|o| o.pair != "ETH/USDT"),
+            "disabled pair should produce no orders"
+        );
+    }
+}
