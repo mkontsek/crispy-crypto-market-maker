@@ -6,7 +6,7 @@ use axum::{
     Router,
 };
 
-use crate::AppState;
+use crate::state::AppState;
 
 pub fn build_ws_app(app_state: AppState) -> Router {
     Router::new()

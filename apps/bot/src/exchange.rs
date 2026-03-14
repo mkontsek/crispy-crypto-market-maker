@@ -8,7 +8,7 @@ use tracing::{error, info, warn};
 use crate::models::{ExchangeFeedPayload, ExchangeOrderRequest, ExchangeOrderResponse};
 use crate::state::EngineState;
 
-/// Connects to the exchange WebSocket feed and keeps the bot state updated with
+/// Connects to the exchange WebSocket feed and keeps the bot state_engine updated with
 /// the latest market prices. Reconnects automatically on disconnect.
 pub async fn exchange_ws_loop(exchange_ws_url: String, bot_state: Arc<RwLock<EngineState>>) {
     loop {

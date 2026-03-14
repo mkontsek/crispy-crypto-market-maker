@@ -7,10 +7,17 @@ use axum::{
 use rust_decimal_macros::dec;
 
 use crate::{
-    models::{HedgeRequest, MMConfig, PauseRequest},
-    state::PairState,
-    utils::{apply_ratio, quote_notional_rate},
-    AppState,
+    models::{
+        HedgeRequest,
+        MMConfig,
+        PauseRequest
+    },
+    state::{AppState, PairState},
+    utils::{
+        apply_ratio,
+        quote_notional_rate
+    },
+    router::api_health::health,
 };
 
 pub fn build_api_app(app_state: AppState) -> Router {
@@ -85,17 +92,6 @@ async fn manual_hedge(
     Json(serde_json::json!({ "error": "unknown pair" }))
 }
 
-async fn health(State(app_state): State<AppState>) -> Json<serde_json::Value> {
-    let state = app_state.state.read().await;
-    Json(serde_json::json!({
-        "status": "ok",
-        "exchangeConnected": state.exchange_connected,
-        "trackedPairs": state.pairs.len(),
-        "fills": state.total_fills,
-        "quotes": state.total_quotes,
-    }))
-}
-
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
@@ -108,7 +104,7 @@ mod tests {
         time::{sleep, Duration},
     };
 
-    use crate::{state::EngineState, AppState};
+    use crate::{state::{EngineState, AppState, PairState}};
 
     use super::build_api_app;
 
@@ -190,7 +186,7 @@ mod tests {
         let pair_state = state
             .pairs
             .get("TESTPAIR")
-            .expect("config update should create TESTPAIR state");
+            .expect("config update should create TESTPAIR state_engine");
         assert!(pair_state.paused);
         assert_eq!(state.config.pairs.len(), 1);
 
@@ -205,7 +201,7 @@ mod tests {
             let mut state = app_state.state.write().await;
             state
                 .pairs
-                .insert("TESTPAIR".to_string(), crate::state::PairState::new(dec!(1000)));
+                .insert("TESTPAIR".to_string(), PairState::new(dec!(1000)));
             if let Some(pair) = state.pairs.get_mut("BTC/USDT") {
                 pair.inventory = dec!(8);
             }
@@ -248,12 +244,12 @@ mod tests {
         let test_pair = state
             .pairs
             .get("TESTPAIR")
-            .expect("TESTPAIR should exist in state");
+            .expect("TESTPAIR should exist in state_engine");
         assert!(test_pair.paused);
         let btc_pair = state
             .pairs
             .get("BTC/USDT")
-            .expect("BTC/USDT should exist in state");
+            .expect("BTC/USDT should exist in state_engine");
         assert_eq!(btc_pair.inventory, dec!(2));
 
         server.abort();

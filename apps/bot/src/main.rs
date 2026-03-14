@@ -1,5 +1,4 @@
 use std::sync::Arc;
-
 use tokio::{
     net::TcpListener,
     sync::{broadcast, RwLock},
@@ -9,24 +8,16 @@ use tracing::{error, info};
 mod exchange;
 mod init;
 mod models;
-mod router_api;
-mod router_ws;
+mod router;
 mod state;
 mod utils;
 
-use exchange::exchange_ws_loop;
 use init::resolve_exchange_endpoints;
-use router_api::build_api_app;
-use router_ws::build_ws_app;
-use state::EngineState;
+use exchange::exchange_ws_loop;
+use router::{build_api_app, build_ws_app};
+use state::{AppState, EngineState};
 use utils::spawn_bot_tick_loop;
 
-#[derive(Clone)]
-struct AppState {
-    state: Arc<RwLock<EngineState>>,
-    stream_tx: broadcast::Sender<String>,
-    exchange_api_url: String,
-}
 
 #[tokio::main]
 async fn main() {
@@ -45,7 +36,7 @@ async fn main() {
     };
 
     // Exchange WebSocket listener: subscribes to the exchange feed and updates
-    // mid prices / volatility in bot state whenever new market data arrives.
+    // mid prices / volatility in bot state_engine whenever new market data arrives.
     let exchange_bot_state = app_state.state.clone();
     tokio::spawn(async move {
         exchange_ws_loop(exchange_ws_url, exchange_bot_state).await;

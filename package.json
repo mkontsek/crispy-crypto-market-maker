@@ -10,12 +10,22 @@
     "dev:web": "pnpm --filter @crispy/web dev",
     "dev:all": "pnpm run dev:exchange & pnpm run dev:bot & pnpm run dev:web",
     "build": "turbo run build",
+    "build:all": "pnpm run build:exchange && pnpm run build:bot && pnpm --filter @crispy/web build",
     "build:exchange": "cd apps/exchange && cargo build --release",
     "build:bot": "cd apps/bot && cargo build --release",
     "lint": "turbo run lint",
     "lint:rust": "cd apps/exchange && cargo clippy -- -W clippy::pedantic && cd ../bot && cargo clippy -- -W clippy::pedantic",
+    "lint:all": "pnpm run lint && pnpm run lint:rust && pnpm run check:lines",
     "typecheck": "turbo run typecheck",
-    "check:lines": "./scripts/check-file-lines.sh"
+    "check:lines": "./scripts/check-file-lines.sh",
+    "test:web": "turbo run test",
+    "test:exchange": "cd apps/exchange && cargo test",
+    "test:bot": "cd apps/bot && cargo test",
+    "test:rust": "pnpm run test:exchange && pnpm run test:bot",
+    "test": "pnpm run test:web && pnpm run test:rust",
+    "check:precommit": "pnpm lint:all && pnpm test && pnpm build:all",
+    "hooks:install": "node ./scripts/install-git-hooks.js",
+    "prepare": "node ./scripts/install-git-hooks.js"
   },
   "devDependencies": {
     "turbo": "2.8.15"
