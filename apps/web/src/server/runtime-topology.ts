@@ -53,6 +53,7 @@ function cloneTopology(topology: RuntimeTopology): RuntimeTopology {
   return {
     exchangeWsUrl: topology.exchangeWsUrl,
     exchangeHttpUrl: topology.exchangeHttpUrl,
+    exchangeLocation: topology.exchangeLocation,
     bots: topology.bots.map((bot) => ({ ...bot })),
   };
 }
@@ -80,17 +81,20 @@ export function updateRuntimeTopology(next: RuntimeTopology): RuntimeTopology {
   const validated = runtimeTopologySchema.parse({
     exchangeWsUrl: canonicalUrl(next.exchangeWsUrl),
     exchangeHttpUrl: canonicalUrl(next.exchangeHttpUrl),
+    exchangeLocation: next.exchangeLocation,
     bots: next.bots.map((bot) => ({
       id: bot.id,
       name: bot.name.trim() || botNameFromId(bot.id),
       wsUrl: canonicalUrl(bot.wsUrl),
       httpUrl: canonicalUrl(bot.httpUrl),
+      location: bot.location,
     })),
   });
 
   topologyState = {
     exchangeWsUrl: validated.exchangeWsUrl,
     exchangeHttpUrl: validated.exchangeHttpUrl,
+    exchangeLocation: validated.exchangeLocation,
     bots: validated.bots.map((bot) => ({ ...bot })),
   };
 
