@@ -6,6 +6,7 @@ import {
   exchangeTopologySchema,
   exchangeHealthSchema,
   fillSchema,
+  geoLocationSchema,
   hedgeRequestSchema,
   inventorySnapshotSchema,
   mmConfigSchema,
@@ -28,6 +29,7 @@ export type MMConfig = z.infer<typeof mmConfigSchema>;
 export type EngineStreamPayload = z.infer<typeof engineStreamSchema>;
 export type PausePairRequest = z.infer<typeof pausePairRequestSchema>;
 export type HedgeRequest = z.infer<typeof hedgeRequestSchema>;
+export type GeoLocation = z.infer<typeof geoLocationSchema>;
 export type TopologyBot = z.infer<typeof topologyBotSchema>;
 export type RuntimeTopology = z.infer<typeof runtimeTopologySchema>;
 export type ExchangeTopology = z.infer<typeof exchangeTopologySchema>;

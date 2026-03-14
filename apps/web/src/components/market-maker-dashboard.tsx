@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { BotDashboardPanel } from '@/components/dashboard/bot-dashboard-panel';
+import { GeoMapSection } from '@/components/dashboard/geo-map-section';
 import { TopologyConfigSection } from '@/components/dashboard/topology-config-section';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -87,6 +88,8 @@ export function MarketMakerDashboard() {
         saving={topologyMutation.isPending}
         onSubmit={(next) => topologyMutation.mutate(next)}
       />
+
+      {topology ? <GeoMapSection topology={topology} /> : null}
 
       {topologyQuery.isError ? (
         <Card>
