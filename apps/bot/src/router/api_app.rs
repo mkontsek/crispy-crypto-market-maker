@@ -1,23 +1,16 @@
 use axum::{
-    extract::{Path, State},
-    response::IntoResponse,
     routing::{get, post},
-    Json, Router,
+    Router,
 };
-use rust_decimal_macros::dec;
 
 use crate::{
-    models::{
-        HedgeRequest,
-        MMConfig,
-        PauseRequest
+    router::{
+        api_health::health,
+        api_manual_hedge::manual_hedge,
+        api_pause_pair::pause_pair,
+        api_update_config::update_config,
     },
-    state::{AppState, PairState},
-    utils::{
-        apply_ratio,
-        quote_notional_rate
-    },
-    router::api_health::health,
+    state::AppState,
 };
 
 pub fn build_api_app(app_state: AppState) -> Router {
@@ -27,69 +20,6 @@ pub fn build_api_app(app_state: AppState) -> Router {
         .route("/hedge", post(manual_hedge))
         .route("/health", get(health))
         .with_state(app_state)
-}
-
-async fn update_config(
-    State(app_state): State<AppState>,
-    Json(payload): Json<MMConfig>,
-) -> Json<MMConfig> {
-    let mut state = app_state.state.write().await;
-    let pairs = payload.pairs.clone();
-    state.config = payload.clone();
-    for cfg in pairs {
-        state
-            .pairs
-            .entry(cfg.pair.clone())
-            .or_insert_with(|| PairState::new(dec!(1000)));
-        if let Some(pair_state) = state.pairs.get_mut(&cfg.pair) {
-            pair_state.paused = !cfg.enabled;
-        }
-    }
-    Json(payload)
-}
-
-async fn pause_pair(
-    Path(pair): Path<String>,
-    State(app_state): State<AppState>,
-    Json(payload): Json<PauseRequest>,
-) -> impl IntoResponse {
-    let mut state = app_state.state.write().await;
-    if let Some(pair_state) = state.pairs.get_mut(&pair) {
-        pair_state.paused = payload.paused;
-        return Json(serde_json::json!({
-            "pair": pair,
-            "paused": pair_state.paused,
-        }));
-    }
-
-    Json(serde_json::json!({
-        "error": format!("unknown pair: {pair}"),
-    }))
-}
-
-async fn manual_hedge(
-    State(app_state): State<AppState>,
-    Json(payload): Json<HedgeRequest>,
-) -> impl IntoResponse {
-    let mut state = app_state.state.write().await;
-    if let Some(pair_state) = state.pairs.get_mut(&payload.pair) {
-        let pre = pair_state.inventory;
-        let mid = pair_state.mid;
-        pair_state.inventory = apply_ratio(pair_state.inventory, 25, 100);
-        let inventory_after = pair_state.inventory;
-        let hedge_cost = quote_notional_rate(mid, pre.abs(), 8, 100_000);
-        state.hedging_costs += hedge_cost;
-
-        return Json(serde_json::json!({
-            "pair": payload.pair,
-            "targetExchange": payload.target_exchange,
-            "inventoryBefore": pre,
-            "inventoryAfter": inventory_after,
-            "hedgingCost": hedge_cost,
-        }));
-    }
-
-    Json(serde_json::json!({ "error": "unknown pair" }))
 }
 
 #[cfg(test)]
