@@ -9,7 +9,7 @@ import {
 } from '@crispy/shared';
 
 describe('runtime-topology', () => {
-  // Reset the module between tests so the singleton state is re-initialised.
+  // Reset the module between tests so the singleton state_engine is re-initialised.
   beforeEach(() => {
     vi.resetModules();
   });
@@ -26,10 +26,10 @@ describe('runtime-topology', () => {
     expect(topology.bots[0]?.id).toBe(DEFAULT_BOT_ID);
   });
 
-  it('getRuntimeTopology returns a clone (mutations do not affect state)', async () => {
+  it('getRuntimeTopology returns a clone (mutations do not affect state_engine)', async () => {
     const { getRuntimeTopology } = await import('../runtime-topology');
     const t1 = getRuntimeTopology();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     t1.bots[0]!.name = 'mutated';
 
     const t2 = getRuntimeTopology();

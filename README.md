@@ -78,6 +78,13 @@ Install dependencies:
 pnpm install
 ```
 
+Git pre-commit hooks are installed automatically during `pnpm install`. If needed, you can
+reinstall them manually:
+
+```bash
+pnpm hooks:install
+```
+
 Install `cargo-watch` for auto-reloading Rust services during development:
 
 ```bash
@@ -145,7 +152,12 @@ pnpm build:bot      # Bot release build
 pnpm lint           # Turbo lint for web packages
 pnpm lint:rust      # Clippy for Rust services
 pnpm typecheck      # TypeScript type checking
+pnpm test           # Full test suite (web + Rust services)
+pnpm test:web       # Web tests (Vitest via Turbo)
+pnpm test:rust      # Rust tests (exchange + bot)
 pnpm check:lines    # Enforce 300-line file limit
+pnpm check:precommit # Full pre-commit checks (lint + test + build all)
+pnpm hooks:install   # Configure Git hooks to use .githooks/
 ```
 
 ## Deploying (recommended)

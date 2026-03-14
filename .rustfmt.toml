@@ -1,6 +1,6 @@
 # Rustfmt configuration for crispy-crypto-market-maker
 # Only stable options (compatible with stable Rust toolchain)
-edition = "2021"
+edition = "2024"
 max_width = 100
 hard_tabs = false
 tab_spaces = 4
