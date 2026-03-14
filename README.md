@@ -37,12 +37,16 @@ Web/Dashboard  ──────────►  Bot 1..N (market maker)  ─�
 
 ## Exchange interfaces
 
+Default local-development addresses (override with `EXCHANGE_WS_URL` / `EXCHANGE_HTTP_URL`):
+
 - WebSocket feed: `ws://127.0.0.1:8082/feed`
 - HTTP order API: `http://127.0.0.1:8083`
   - `POST /orders` — place an order; returns fill result (fake mode: probability-based fill)
   - `GET /health`
 
 ## Bot interfaces
+
+Default local-development addresses (override with `BOT_1_WS_URL` / `BOT_1_HTTP_URL`):
 
 - WebSocket stream: `ws://127.0.0.1:8080/stream`
 - HTTP command API: `http://127.0.0.1:8081`
@@ -189,6 +193,11 @@ docker run --rm \
   crispy-bot
 ```
 
+> **Note:** `http://` is safe here because `exchange` and `crispy-bot` communicate over a
+> private Docker bridge network. Only the ports published via `-p` are accessible externally,
+> and in a real production setup those would sit behind a TLS-terminating reverse proxy (see
+> [Production topology](#production-topology) below).
+
 Or let the bot fetch exchange URLs from web topology:
 
 ```bash
@@ -221,3 +230,19 @@ Best results come from:
 - **Managed Postgres** for persistence
 
 Then set Vercel env vars to the bot and database endpoints.
+
+### HTTP vs HTTPS
+
+The bot and exchange services are **plain HTTP servers**. They do not manage TLS certificates
+themselves. TLS termination is handled at the infrastructure layer:
+
+- **Local development**: `http://` and `ws://` are fine — all traffic stays on `127.0.0.1`.
+- **Deployed (remote)**: put the Rust services behind a **TLS-terminating reverse proxy or
+  cloud load balancer** (e.g. Fly.io's built-in proxy, nginx, AWS ALB). The proxy accepts
+  public `https://` / `wss://` connections and forwards plain HTTP to the containers over the
+  private network.
+
+The web app enforces this rule via the URL validation schema
+(`packages/shared/src/schemas.ts`): any bot or exchange URL that is not `localhost` /
+`127.0.0.1` / `::1` **must** use `https://` or `wss://` — the runtime topology API will
+reject `http://` for remote hosts.
