@@ -1,8 +1,9 @@
 # Crispy Crypto Market Maker
 
-## Repository Snapshot (2026-02)
+## Repository Snapshot (2026-03)
 Monorepo demo of a crypto market-making platform with:
-- a Rust engine (`apps/engine`) for market simulation + command handling
+- a Rust exchange simulator (`apps/exchange`) for market data + order execution
+- a Rust market-maker bot (`apps/bot`) that connects to the exchange, exposes a stream and command API
 - a Next.js 16 web app (`apps/web`) that acts as both dashboard UI and BFF
 - shared TypeScript schemas/types (`packages/shared`)
 - Prisma schema/client package for Postgres (`packages/db`)
@@ -11,7 +12,8 @@ Monorepo demo of a crypto market-making platform with:
 ## Workspace Layout
 ```
 apps/
-  engine/   # Rust (Axum + Tokio): WS stream + HTTP command API
+  exchange/ # Rust (Axum + Tokio): WS market feed + HTTP order API
+  bot/      # Rust (Axum + Tokio): market-maker bot — WS stream + HTTP command API
   web/      # Next.js App Router dashboard and API relay
 packages/
   shared/   # Shared constants, Zod schemas, TS types
@@ -22,42 +24,58 @@ infra/
 ```
 
 ## Runtime Architecture
-1.  engine listens on:
+1. Exchange (`apps/exchange`) listens on (local dev defaults):
+   - `ws://127.0.0.1:8082/feed`
+   - `http://127.0.0.1:8083` (`/orders`, `/health`)
+2. Bot (`apps/bot`) listens on (local dev defaults):
    - `ws://127.0.0.1:8080/stream`
    - `http://127.0.0.1:8081` (`/config`, `/pairs/:id/pause`, `/hedge`, `/health`)
-2. Web server relay (`apps/web/src/server/engine-relay.ts`) keeps a WS client to the engine, validates payloads via Zod, and stores in-memory snapshots/history.
-3. Web API routes expose dashboard data:
-   - `GET /api/quotes`
-   - `GET /api/fills`
-   - `GET /api/pnl`
-   - `GET /api/inventory`
-   - `POST /api/config`
-   - `POST /api/pairs/:id/pause`
-   - `POST /api/hedge`
-   - `GET /api/stream` (SSE fan-out from relay)
+3. Web BFF proxies bot streams and relays commands; maintains runtime topology (bots + exchange URLs).
 4. Client (`MarketMakerDashboard`) consumes `/api/stream` via `EventSource`, and uses TanStack Query + Zustand for state/UI updates.
 
+## HTTP vs HTTPS
+The Rust services (`apps/bot`, `apps/exchange`) are **plain HTTP servers**; they do not
+terminate TLS themselves. TLS is handled at the infrastructure layer:
+
+- **Local development**: `http://` and `ws://` are used — all traffic stays on `127.0.0.1`.
+- **Deployed (remote)**: services sit behind a TLS-terminating reverse proxy or cloud load
+  balancer (Fly.io, nginx, AWS ALB, …). The proxy exposes `https://` / `wss://` to clients
+  and forwards plain HTTP internally.
+
+The web app enforces this via `packages/shared/src/schemas.ts`: any non-localhost URL
+**must** use `https://` or `wss://`. `http://` is only accepted for `localhost`, `127.0.0.1`,
+or `::1`.
+
 ## Key Stack (Current)
-- Next.js 16.1.x + React 19 + TypeScript 5.9
+- Next.js 16 + React 19 + TypeScript 5.9
 - TanStack Query 5
 - Zustand + immer
 - Zod shared schemas
-- Rust Axum/Tokio engine
-- Prisma 6 + PostgreSQL schema package
+- Rust Axum/Tokio (exchange + bot)
+- Prisma 7 + PostgreSQL schema package
 - pnpm + Turbo monorepo
 
 ## Environment Variables
 Web app (`apps/web/.env.example`):
-- `ENGINE_HTTP_URL` (default local: `http://127.0.0.1:8081`)
-- `ENGINE_WS_URL` (default local: `ws://127.0.0.1:8080/stream`)
+- `BOT_1_HTTP_URL` / `ENGINE_HTTP_URL` (default local: `http://127.0.0.1:8081`)
+- `BOT_1_WS_URL` / `ENGINE_WS_URL` (default local: `ws://127.0.0.1:8080/stream`)
+- `EXCHANGE_HTTP_URL` (default local: `http://127.0.0.1:8083`)
+- `EXCHANGE_WS_URL` (default local: `ws://127.0.0.1:8082/feed`)
 - `DATABASE_URL` (Postgres connection string for Prisma workflows)
+
+Bot (`apps/bot`):
+- `EXCHANGE_WS_URL`, `EXCHANGE_API_URL` — direct exchange endpoints
+- `WEB_TOPOLOGY_URL` — fetch exchange endpoints from web topology API (alternative to above)
 
 ## Local Development
 ```bash
 pnpm install
-cd apps/engine && cargo run
-pnpm --filter @crispy/web dev
+cd apps/exchange && cargo run   # terminal 1
+cd apps/bot && cargo run        # terminal 2
+pnpm --filter @crispy/web dev   # terminal 3
 ```
+Or use `pnpm run dev:all` to start all three in the background.
+
 Root checks:
 ```bash
 pnpm lint
@@ -67,11 +85,12 @@ pnpm typecheck
 
 ## Deployment Notes
 - Web deploy target is Vercel with root directory `apps/web`.
-- `apps/web/next.config.ts` sets `outputFileTracingRoot` for monorepo/Vercel tracing.
-- `apps/web/src/app/api/stream/route.ts` sets `maxDuration = 300` for long-lived SSE requests.
-- Rust engine container: `apps/engine/Dockerfile` (exposes `8080`, `8081`).
+- Rust services: build with `pnpm build:exchange` / `pnpm build:bot`; run via Docker.
+  Dockerfiles at `apps/exchange/Dockerfile` (ports 8082, 8083) and `apps/bot/Dockerfile` (ports 8080, 8081).
 - PostgreSQL container: `infra/postgres/Dockerfile`.
-- Recommended topology: Vercel (web) + container platform (engine) + managed Postgres.
+- Recommended topology: Vercel (web) + container platform (exchange + bot) + managed Postgres.
+- In production the container platform provides HTTPS/WSS termination; bots and exchange
+  only need to accept plain HTTP internally.
 
 ## Important Conventions for Edits
 - Use `pnpm` (not npm/yarn) and workspace filters when needed.
