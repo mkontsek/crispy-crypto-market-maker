@@ -107,3 +107,71 @@ impl ExchangeState {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::OrderRequest;
+    use rust_decimal_macros::dec;
+
+    #[test]
+    fn pair_market_new_has_bid_below_mid_and_ask_above() {
+        let market = PairMarket::new(dec!(1000));
+        assert_eq!(market.mid, dec!(1000));
+        assert!(market.bid < market.mid, "bid should be below mid");
+        assert!(market.ask > market.mid, "ask should be above mid");
+    }
+
+    #[test]
+    fn exchange_state_new_has_three_pairs_and_fake_flag() {
+        let state = ExchangeState::new();
+        assert_eq!(state.pairs.len(), 3);
+        assert!(state.pairs.contains_key("BTC/USDT"));
+        assert!(state.pairs.contains_key("ETH/USDT"));
+        assert!(state.pairs.contains_key("SOL/USDT"));
+        assert!(state.fake, "exchange should be in fake mode by default");
+    }
+
+    #[test]
+    fn place_order_echoes_pair_side_price_and_size() {
+        let state = ExchangeState::new();
+        let req = OrderRequest {
+            pair: "BTC/USDT".to_string(),
+            side: "buy".to_string(),
+            price: dec!(62000),
+            size: dec!(0.5),
+        };
+        let resp = state.place_order(&req);
+        assert_eq!(resp.pair, "BTC/USDT");
+        assert_eq!(resp.side, "buy");
+        assert_eq!(resp.fill_price, dec!(62000));
+        assert_eq!(resp.fill_size, dec!(0.5));
+    }
+
+    #[test]
+    fn place_order_adverse_selection_only_when_filled() {
+        let state = ExchangeState::new();
+        let req = OrderRequest {
+            pair: "BTC/USDT".to_string(),
+            side: "sell".to_string(),
+            price: dec!(62100),
+            size: dec!(1),
+        };
+        // Run multiple times to cover random paths; the invariant must always hold.
+        for _ in 0..200 {
+            let resp = state.place_order(&req);
+            if resp.adverse_selection {
+                assert!(resp.filled, "adverse_selection implies the order was filled");
+            }
+        }
+    }
+
+    #[test]
+    fn tick_returns_payload_with_all_pairs() {
+        let mut state = ExchangeState::new();
+        let payload = state.tick();
+        assert_eq!(payload.pairs.len(), 3);
+        assert!(payload.fake);
+        assert!(!payload.timestamp.is_empty());
+    }
+}
