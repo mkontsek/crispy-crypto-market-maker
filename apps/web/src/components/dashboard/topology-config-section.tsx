@@ -6,11 +6,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-import {
-  LocationFields,
-  TextField,
-  UrlField,
-} from './topology-config-fields';
+import { LocationFields } from './location-fields';
+import { TextField } from './text-field';
+import { UrlField } from './url-field';
 
 function cloneTopology(topology: RuntimeTopology): RuntimeTopology {
   return {
