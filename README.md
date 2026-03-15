@@ -29,8 +29,9 @@ Web/Dashboard  ──────────►  Bot 1..N (market maker)  ─�
 │   ├── config    # shared lint/ts config artifacts
 │   ├── db        # Prisma schema + Prisma client export
 │   └── shared    # shared TS types + Zod schemas/constants
-├── infra
-│   └── postgres  # PostgreSQL container image
+├── scripts
+│   ├── setup-ubuntu.sh   # Ubuntu server provisioning script (bot / exchange)
+│   └── run-services.sh   # Local background-process launcher
 ├── turbo.json
 └── pnpm-workspace.yaml
 ```
@@ -179,66 +180,97 @@ vercel
 
 **Note**: The `vercel.json` in `apps/web` configures pnpm as the package manager and sets the correct build command for the monorepo.
 
-### 2) Exchange as a container
+### 2) Exchange on an Ubuntu server
 
-Build and run:
+`scripts/setup-ubuntu.sh` builds the exchange from source, installs it as a
+systemd service, and writes a `/etc/crispy/crispy-exchange.env` config file.
 
 ```bash
-docker build -t crispy-exchange ./apps/exchange
-docker run --rm -p 8082:8082 -p 8083:8083 crispy-exchange
+git clone https://github.com/mkontsek/crispy-crypto-market-maker.git
+cd crispy-crypto-market-maker
+sudo ./scripts/setup-ubuntu.sh --service exchange
 ```
 
-`apps/exchange/Dockerfile` exposes:
+The service starts automatically and restarts on failure. Ports exposed:
 - `8082` WebSocket feed (`/feed`)
 - `8083` HTTP API (`/orders`, `/health`)
 
-### 3) Bot as a container
-
-Build and run (point it at the exchange):
+Manage the service with standard systemd commands:
 
 ```bash
-docker build -t crispy-bot ./apps/bot
-docker run --rm \
-  -e EXCHANGE_WS_URL=ws://exchange:8082/feed \
-  -e EXCHANGE_API_URL=http://exchange:8083 \
-  -p 8080:8080 -p 8081:8081 \
-  crispy-bot
+sudo systemctl status  crispy-exchange
+sudo systemctl restart crispy-exchange
+journalctl -fu         crispy-exchange
 ```
 
-> **Note:** `http://` is safe here because `exchange` and `crispy-bot` communicate over a
-> private Docker bridge network. Only the ports published via `-p` are accessible externally,
-> and in a real production setup those would sit behind a TLS-terminating reverse proxy (see
-> [Production topology](#production-topology) below).
+### 3) Bot on an Ubuntu server
 
-Or let the bot fetch exchange URLs from web topology:
+Point the bot at your exchange (by explicit URL or via the web topology API):
 
 ```bash
-docker run --rm \
-  -e WEB_TOPOLOGY_URL=https://web.your-domain.com \
-  -p 8080:8080 -p 8081:8081 \
-  crispy-bot
+# Option A — explicit exchange URLs
+# (use wss:// / https:// when the exchange is behind a TLS-terminating proxy)
+sudo ./scripts/setup-ubuntu.sh \
+  --service bot \
+  --exchange-ws-url  ws://exchange.your-server.com/feed \
+  --exchange-api-url http://exchange.your-server.com
+
+# Option B — discover exchange URLs from the web topology API
+sudo ./scripts/setup-ubuntu.sh \
+  --service bot \
+  --web-topology-url https://web.your-domain.com
 ```
 
-`apps/bot/Dockerfile` exposes:
+> **Note:** The Rust services are plain HTTP servers. Use `ws://` / `http://` on
+> private/internal networks and `wss://` / `https://` for any publicly reachable
+> endpoint (place the service behind a TLS-terminating reverse proxy such as
+> nginx or Caddy — see [HTTP vs HTTPS](#http-vs-https) below).
+
+The service is installed under systemd and the config lives in
+`/etc/crispy/crispy-bot.env`. Edit it to change endpoints, then restart:
+
+```bash
+sudo systemctl restart crispy-bot
+journalctl -fu         crispy-bot
+```
+
+Ports exposed:
 - `8080` WebSocket stream (`/stream`)
 - `8081` HTTP API (`/config`, `/pairs/:id/pause`, `/hedge`, `/health`)
 
-### 4) PostgreSQL as a container (or managed DB)
+To add a second bot instance on the same machine, re-run the script with
+`--user crispy2` (or any unique service user). The script will create the user,
+install a separate binary, and register an independent systemd unit.
 
-For production, a managed Postgres service is recommended. For containerized/self-hosted usage:
+#### Uninstalling a service
 
 ```bash
-docker build -t crispy-postgres ./infra/postgres
-docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=change-me crispy-postgres
+sudo ./scripts/setup-ubuntu.sh --service <bot|exchange> --uninstall
 ```
 
-Use the resulting connection string as `DATABASE_URL`.
+### 4) PostgreSQL (managed DB recommended)
+
+For production, a managed Postgres service (e.g. Supabase, Neon, RDS) is
+recommended. For a quick self-hosted setup on Ubuntu, install the official
+PostgreSQL package:
+
+```bash
+sudo apt-get install -y postgresql
+sudo -u postgres psql -c "CREATE USER crispy WITH PASSWORD 'change-me';"
+sudo -u postgres psql -c "CREATE DATABASE crispy OWNER crispy;"
+```
+
+Use the resulting connection string as `DATABASE_URL`:
+
+```
+postgresql://crispy:change-me@localhost:5432/crispy
+```
 
 ### Production topology
 
 Best results come from:
 - **Vercel** for `apps/web`
-- **Container platform** (Fly.io/Render/ECS/Kubernetes) for `apps/exchange` and `apps/bot`
+- **Ubuntu VMs or bare-metal** for `apps/exchange` and `apps/bot` (provisioned with `setup-ubuntu.sh`)
 - **Managed Postgres** for persistence
 
 Then set Vercel env vars to the bot and database endpoints.
