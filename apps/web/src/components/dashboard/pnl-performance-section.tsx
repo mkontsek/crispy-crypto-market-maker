@@ -3,6 +3,7 @@ import type { Fill, PnLSnapshot } from '@crispy/shared';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { priceFromFp, ratioFromDecimal, sizeFromFp } from '@/lib/fixed-point';
+import { nanosToTime } from '@/lib/timestamp';
 
 export function PnlPerformanceSection({
   pnl,
@@ -12,6 +13,8 @@ export function PnlPerformanceSection({
   fills: Fill[];
 }) {
   const latest = pnl[0];
+  const totalFills = fills.length;
+  const adverseFills = fills.filter((f) => f.adverseSelection).length;
 
   return (
     <Card>
@@ -32,14 +35,24 @@ export function PnlPerformanceSection({
           </div>
         ) : null}
 
+        <div className="grid grid-cols-3 gap-3 text-sm">
+          <Metric label="Total Fills" value={String(totalFills)} />
+          <Metric label="Adverse Fills" value={String(adverseFills)} />
+          <Metric
+            label="Clean Fills"
+            value={String(totalFills - adverseFills)}
+          />
+        </div>
+
         <div>
           <div className="mb-2 text-xs uppercase tracking-wide text-slate-400">Latest fills</div>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {fills.slice(0, 10).map((fill) => (
               <div
                 key={fill.id}
-                className="flex items-center justify-between rounded border border-slate-800 px-3 py-2 text-sm"
+                className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded border border-slate-800 px-3 py-2 text-sm"
               >
+                <span className="font-mono text-xs text-slate-400">{nanosToTime(fill.timestamp)}</span>
                 <span>
                   {fill.pair} {fill.side.toUpperCase()} @ {priceFromFp(fill.price).toFixed(2)} ({sizeFromFp(fill.size).toFixed(3)})
                 </span>
