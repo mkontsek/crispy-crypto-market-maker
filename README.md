@@ -40,8 +40,8 @@ Web/Dashboard  ──────────►  Bot 1..N (market maker)  ─�
 
 Default local-development addresses (override with `EXCHANGE_WS_URL` / `EXCHANGE_HTTP_URL`):
 
-- WebSocket feed: `ws://127.0.0.1:8082/feed`
-- HTTP order API: `http://127.0.0.1:8083`
+- WebSocket feed: `ws://127.0.0.1:3111/feed`
+- HTTP order API: `http://127.0.0.1:3111`
   - `POST /orders` — place an order; returns fill result (fake mode: probability-based fill)
   - `GET /health`
 
@@ -49,8 +49,8 @@ Default local-development addresses (override with `EXCHANGE_WS_URL` / `EXCHANGE
 
 Default local-development addresses (override with `BOT_1_WS_URL` / `BOT_1_HTTP_URL`):
 
-- WebSocket stream: `ws://127.0.0.1:8080/stream`
-- HTTP command API: `http://127.0.0.1:8081`
+- WebSocket stream: `ws://127.0.0.1:3110/stream`
+- HTTP command API: `http://127.0.0.1:3110`
   - `POST /config`
   - `POST /pairs/:id/pause`
   - `POST /hedge`
@@ -192,8 +192,8 @@ sudo ./scripts/setup-ubuntu.sh --service exchange
 ```
 
 The service starts automatically and restarts on failure. Ports exposed:
-- `8082` WebSocket feed (`/feed`)
-- `8083` HTTP API (`/orders`, `/health`)
+- `3111` WebSocket feed (`/feed`)
+- `3111` HTTP API (`/orders`, `/health`)
 
 Manage the service with standard systemd commands:
 
@@ -235,8 +235,8 @@ journalctl -fu         crispy-bot
 ```
 
 Ports exposed:
-- `8080` WebSocket stream (`/stream`)
-- `8081` HTTP API (`/config`, `/pairs/:id/pause`, `/hedge`, `/health`)
+- `3110` WebSocket stream (`/stream`)
+- `3110` HTTP API (`/config`, `/pairs/:id/pause`, `/hedge`, `/health`)
 
 To add a second bot instance on the same machine, re-run the script with
 `--user crispy2` (or any unique service user). The script will create the user,

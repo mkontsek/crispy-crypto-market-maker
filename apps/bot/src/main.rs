@@ -49,29 +49,16 @@ async fn main() {
         app_state.exchange_api_url.clone(),
     );
 
-    let ws_app = build_ws_app(app_state.clone());
-    let api_app = build_api_app(app_state.clone());
+    let app = build_ws_app(app_state.clone()).merge(build_api_app(app_state));
 
-    let ws_listener = TcpListener::bind("0.0.0.0:8080")
+    let listener = TcpListener::bind("0.0.0.0:3110")
         .await
-        .expect("bind ws listener");
-    let api_listener = TcpListener::bind("0.0.0.0:8081")
-        .await
-        .expect("bind api listener");
+        .expect("bind bot listener");
 
-    info!("bot stream listening on ws://0.0.0.0:8080/stream");
-    info!("bot api listening on http://0.0.0.0:8081");
+    info!("bot stream listening on ws://0.0.0.0:3110/stream");
+    info!("bot api listening on http://0.0.0.0:3110");
 
-    tokio::select! {
-        result = axum::serve(ws_listener, ws_app) => {
-            if let Err(err) = result {
-                error!("ws server error: {err}");
-            }
-        }
-        result = axum::serve(api_listener, api_app) => {
-            if let Err(err) = result {
-                error!("api server error: {err}");
-            }
-        }
+    if let Err(err) = axum::serve(listener, app).await {
+        error!("bot server error: {err}");
     }
 }

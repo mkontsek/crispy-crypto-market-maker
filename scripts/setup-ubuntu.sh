@@ -23,8 +23,8 @@
 # Example — install bot pointing at the exchange:
 #   sudo ./scripts/setup-ubuntu.sh \
 #     --service bot \
-#     --exchange-ws-url ws://exchange.internal:8082/feed \
-#     --exchange-api-url http://exchange.internal:8083
+#     --exchange-ws-url ws://exchange.internal:3111/feed \
+#     --exchange-api-url http://exchange.internal:3111
 set -euo pipefail
 
 # ── defaults ────────────────────────────────────────────────────────────────
@@ -175,9 +175,9 @@ info "Wrote ${ENV_FILE}"
 section "Writing systemd unit: ${UNIT_FILE}"
 
 if [[ "$SERVICE" == "bot" ]]; then
-  PORTS_DOC="# WS stream: ws://<server-ip-or-domain>:8080/stream  |  HTTP API: http://<server-ip-or-domain>:8081"
+  PORTS_DOC="# WS stream: ws://<server-ip-or-domain>:3110/stream  |  HTTP API: http://<server-ip-or-domain>:3110"
 else
-  PORTS_DOC="# WS feed:   ws://<server-ip-or-domain>:8082/feed    |  HTTP API: http://<server-ip-or-domain>:8083"
+  PORTS_DOC="# WS feed:   ws://<server-ip-or-domain>:3111/feed    |  HTTP API: http://<server-ip-or-domain>:3111"
 fi
 
 cat > "$UNIT_FILE" <<EOF

@@ -237,7 +237,7 @@ mod tests {
 
     #[tokio::test]
     async fn manual_hedge_returns_error_for_unknown_pair() {
-        let app_state = test_app_state("http://127.0.0.1:8083".to_string());
+        let app_state = test_app_state("http://127.0.0.1:3111".to_string());
 
         let axum::Json(payload) = manual_hedge(
             axum::extract::State(app_state),
