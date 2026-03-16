@@ -64,7 +64,7 @@ mod tests {
         AppState {
             state: Arc::new(RwLock::new(EngineState::new())),
             stream_tx,
-            exchange_api_url: "http://127.0.0.1:8083".to_string(),
+            exchange_api_url: "http://127.0.0.1:3111".to_string(),
         }
     }
 

@@ -51,36 +51,21 @@ async fn main() {
         }
     });
 
-    let ws_app = Router::new()
+    let app = Router::new()
         .route("/feed", get(ws_feed_handler))
-        .with_state(app_state.clone());
-
-    let api_app = Router::new()
         .route("/orders", post(place_order))
         .route("/health", get(health))
         .with_state(app_state.clone());
 
-    let ws_listener = TcpListener::bind("0.0.0.0:8082")
+    let listener = TcpListener::bind("0.0.0.0:3111")
         .await
-        .expect("bind ws listener");
-    let api_listener = TcpListener::bind("0.0.0.0:8083")
-        .await
-        .expect("bind api listener");
+        .expect("bind exchange listener");
 
-    info!("exchange feed listening on ws://0.0.0.0:8082/feed");
-    info!("exchange api listening on http://0.0.0.0:8083");
+    info!("exchange feed listening on ws://0.0.0.0:3111/feed");
+    info!("exchange api listening on http://0.0.0.0:3111");
 
-    tokio::select! {
-        result = axum::serve(ws_listener, ws_app) => {
-            if let Err(err) = result {
-                error!("ws server error: {err}");
-            }
-        }
-        result = axum::serve(api_listener, api_app) => {
-            if let Err(err) = result {
-                error!("api server error: {err}");
-            }
-        }
+    if let Err(err) = axum::serve(listener, app).await {
+        error!("exchange server error: {err}");
     }
 }
 

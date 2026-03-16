@@ -161,7 +161,10 @@ mod tests {
         for _ in 0..200 {
             let resp = state.place_order(&req);
             if resp.adverse_selection {
-                assert!(resp.filled, "adverse_selection implies the order was filled");
+                assert!(
+                    resp.filled,
+                    "adverse_selection implies the order was filled"
+                );
             }
         }
     }

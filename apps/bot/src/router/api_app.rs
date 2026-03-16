@@ -104,7 +104,7 @@ mod tests {
 
     #[tokio::test]
     async fn health_endpoint_returns_ok_payload() {
-        let app_state = test_app_state("http://127.0.0.1:8083".to_string());
+        let app_state = test_app_state("http://127.0.0.1:3111".to_string());
         let (base_url, server) = spawn_api_server(app_state).await;
 
         let response = reqwest::get(format!("{base_url}/health"))
@@ -122,7 +122,7 @@ mod tests {
 
     #[tokio::test]
     async fn config_endpoint_updates_state_and_returns_payload() {
-        let app_state = test_app_state("http://127.0.0.1:8083".to_string());
+        let app_state = test_app_state("http://127.0.0.1:3111".to_string());
         let (base_url, server) = spawn_api_server(app_state.clone()).await;
         let client = reqwest::Client::new();
 

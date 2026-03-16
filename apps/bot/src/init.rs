@@ -1,8 +1,8 @@
 use serde::Deserialize;
 use tracing::warn;
 
-const DEFAULT_EXCHANGE_WS_URL: &str = "ws://127.0.0.1:8082/feed";
-const DEFAULT_EXCHANGE_API_URL: &str = "http://127.0.0.1:8083";
+const DEFAULT_EXCHANGE_WS_URL: &str = "ws://127.0.0.1:3111/feed";
+const DEFAULT_EXCHANGE_API_URL: &str = "http://127.0.0.1:3111";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -204,7 +204,7 @@ mod tests {
 
         let (ws_url, api_url) = resolve_exchange_endpoints().await;
 
-        assert_eq!(ws_url, "ws://127.0.0.1:8082/feed");
-        assert_eq!(api_url, "http://127.0.0.1:8083");
+        assert_eq!(ws_url, "ws://127.0.0.1:3111/feed");
+        assert_eq!(api_url, "http://127.0.0.1:3111");
     }
 }
