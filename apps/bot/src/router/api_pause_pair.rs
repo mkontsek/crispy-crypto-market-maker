@@ -3,10 +3,7 @@ use axum::{
     Json,
 };
 
-use crate::{
-    models::PauseRequest,
-    state::AppState,
-};
+use crate::{models::PauseRequest, state::AppState};
 
 pub async fn pause_pair(
     Path(pair): Path<String>,

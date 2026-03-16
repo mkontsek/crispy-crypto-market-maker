@@ -5,9 +5,7 @@ use axum::{
 
 use crate::{
     router::{
-        api_health::health,
-        api_manual_hedge::manual_hedge,
-        api_pause_pair::pause_pair,
+        api_health::health, api_manual_hedge::manual_hedge, api_pause_pair::pause_pair,
         api_update_config::update_config,
     },
     state::AppState,
@@ -26,6 +24,10 @@ pub fn build_api_app(app_state: AppState) -> Router {
 mod tests {
     use std::sync::Arc;
 
+    use axum::{
+        extract::State as AxumState, routing::post as axum_post, Json as AxumJson,
+        Router as AxumRouter,
+    };
     use rust_decimal_macros::dec;
     use tokio::{
         net::TcpListener,
@@ -34,16 +36,19 @@ mod tests {
         time::{sleep, Duration},
     };
 
-    use crate::{state::{EngineState, AppState, PairState}};
+    use crate::{
+        models::{ExchangeOrderRequest, ExchangeOrderResponse},
+        state::{AppState, EngineState, PairState},
+    };
 
     use super::build_api_app;
 
-    fn test_app_state() -> AppState {
+    fn test_app_state(exchange_api_url: String) -> AppState {
         let (stream_tx, _) = broadcast::channel(8);
         AppState {
             state: Arc::new(RwLock::new(EngineState::new())),
             stream_tx,
-            exchange_api_url: "http://127.0.0.1:8083".to_string(),
+            exchange_api_url,
         }
     }
 
@@ -51,8 +56,43 @@ mod tests {
         let listener = TcpListener::bind("127.0.0.1:0")
             .await
             .expect("bind api test listener");
-        let address = listener.local_addr().expect("read api test listener address");
+        let address = listener
+            .local_addr()
+            .expect("read api test listener address");
         let app = build_api_app(app_state);
+        let server = tokio::spawn(async move {
+            let _ = axum::serve(listener, app).await;
+        });
+
+        sleep(Duration::from_millis(20)).await;
+
+        (format!("http://{address}"), server)
+    }
+
+    async fn mock_place_order(
+        AxumState(filled): AxumState<bool>,
+        AxumJson(payload): AxumJson<ExchangeOrderRequest>,
+    ) -> AxumJson<ExchangeOrderResponse> {
+        AxumJson(ExchangeOrderResponse {
+            pair: payload.pair,
+            side: payload.side,
+            filled,
+            fill_price: payload.price,
+            fill_size: payload.size,
+            adverse_selection: false,
+        })
+    }
+
+    async fn spawn_mock_exchange_api(filled: bool) -> (String, JoinHandle<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind mock exchange listener");
+        let address = listener
+            .local_addr()
+            .expect("read mock exchange listener address");
+        let app = AxumRouter::new()
+            .route("/orders", axum_post(mock_place_order))
+            .with_state(filled);
         let server = tokio::spawn(async move {
             let _ = axum::serve(listener, app).await;
         });
@@ -64,7 +104,7 @@ mod tests {
 
     #[tokio::test]
     async fn health_endpoint_returns_ok_payload() {
-        let app_state = test_app_state();
+        let app_state = test_app_state("http://127.0.0.1:8083".to_string());
         let (base_url, server) = spawn_api_server(app_state).await;
 
         let response = reqwest::get(format!("{base_url}/health"))
@@ -82,7 +122,7 @@ mod tests {
 
     #[tokio::test]
     async fn config_endpoint_updates_state_and_returns_payload() {
-        let app_state = test_app_state();
+        let app_state = test_app_state("http://127.0.0.1:8083".to_string());
         let (base_url, server) = spawn_api_server(app_state.clone()).await;
         let client = reqwest::Client::new();
 
@@ -126,7 +166,8 @@ mod tests {
 
     #[tokio::test]
     async fn pause_and_hedge_endpoints_update_existing_pair_state() {
-        let app_state = test_app_state();
+        let (exchange_api_url, exchange_server) = spawn_mock_exchange_api(true).await;
+        let app_state = test_app_state(exchange_api_url);
         {
             let mut state = app_state.state.write().await;
             state
@@ -169,6 +210,7 @@ mod tests {
             .await
             .expect("parse hedge response payload");
         assert_eq!(hedge_payload["pair"].as_str(), Some("BTC/USDT"));
+        assert_eq!(hedge_payload["hedgeOrder"]["filled"].as_bool(), Some(true));
 
         let state = app_state.state.read().await;
         let test_pair = state
@@ -184,5 +226,7 @@ mod tests {
 
         server.abort();
         let _ = server.await;
+        exchange_server.abort();
+        let _ = exchange_server.await;
     }
 }
