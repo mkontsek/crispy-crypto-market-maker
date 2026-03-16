@@ -36,7 +36,7 @@ pub fn chrono_string() -> String {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
-        .as_millis();
+        .as_nanos();
     now.to_string()
 }
 
