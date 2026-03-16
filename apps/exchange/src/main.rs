@@ -3,10 +3,12 @@ use std::{sync::Arc, time::Duration};
 use axum::{
     extract::ws::{Message, WebSocket},
     extract::{State, WebSocketUpgrade},
+    http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
+use serde::Deserialize;
 use tokio::{
     net::TcpListener,
     sync::{broadcast, RwLock},
@@ -55,6 +57,7 @@ async fn main() {
         .route("/feed", get(ws_feed_handler))
         .route("/orders", post(place_order))
         .route("/health", get(health))
+        .route("/geo", get(geo))
         .with_state(app_state.clone());
 
     let listener = TcpListener::bind("0.0.0.0:3111")
@@ -112,4 +115,51 @@ async fn health(State(app_state): State<AppState>) -> Json<serde_json::Value> {
         "fake": state.fake,
         "trackedPairs": state.pairs.len(),
     }))
+}
+
+const GEO_API_URL: &str = "https://ipapi.co/json/";
+
+#[derive(Deserialize)]
+struct IpGeoResponse {
+    latitude: f64,
+    longitude: f64,
+    city: Option<String>,
+    country_name: Option<String>,
+}
+
+async fn geo() -> (StatusCode, Json<serde_json::Value>) {
+    match reqwest::get(GEO_API_URL).await {
+        Ok(resp) => match resp.json::<IpGeoResponse>().await {
+            Ok(data) => {
+                let label = match (data.city, data.country_name) {
+                    (Some(city), Some(country)) => format!("{city}, {country}"),
+                    (Some(city), None) => city,
+                    (None, Some(country)) => country,
+                    (None, None) => "Unknown".to_string(),
+                };
+                (
+                    StatusCode::OK,
+                    Json(serde_json::json!({
+                        "lat": data.latitude,
+                        "lng": data.longitude,
+                        "label": label,
+                    })),
+                )
+            }
+            Err(err) => {
+                tracing::warn!("failed to parse geo response: {err}");
+                (
+                    StatusCode::BAD_GATEWAY,
+                    Json(serde_json::json!({ "error": "failed to parse geo response" })),
+                )
+            }
+        },
+        Err(err) => {
+            tracing::warn!("geo lookup failed: {err}");
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({ "error": "geo lookup unavailable" })),
+            )
+        }
+    }
 }

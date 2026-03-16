@@ -1,4 +1,5 @@
 mod api_app;
+mod api_geo;
 mod api_health;
 mod api_manual_hedge;
 mod api_pause_pair;
