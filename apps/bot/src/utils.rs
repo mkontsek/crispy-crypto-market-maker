@@ -4,11 +4,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use tokio::sync::{broadcast, RwLock};
 
-use crate::{
-    exchange::place_exchange_orders,
-    models::ExchangeOrderResponse,
-    state::EngineState,
-};
+use crate::{exchange::place_exchange_orders, models::ExchangeOrderResponse, state::EngineState};
 
 pub fn apply_ratio(value: Decimal, numerator: i64, denominator: i64) -> Decimal {
     value * Decimal::from(numerator) / Decimal::from(denominator)
@@ -168,7 +164,9 @@ mod tests {
         let parsed: serde_json::Value =
             serde_json::from_str(&message).expect("payload should be valid json");
 
-        let quotes = parsed["quotes"].as_array().expect("quotes should be an array");
+        let quotes = parsed["quotes"]
+            .as_array()
+            .expect("quotes should be an array");
         assert_eq!(quotes.len(), 3);
     }
 }

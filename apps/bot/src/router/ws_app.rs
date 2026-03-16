@@ -82,7 +82,11 @@ mod tests {
 
         sleep(Duration::from_millis(20)).await;
 
-        (format!("http://{address}"), format!("ws://{address}/stream"), server)
+        (
+            format!("http://{address}"),
+            format!("ws://{address}/stream"),
+            server,
+        )
     }
 
     #[tokio::test]

@@ -3,24 +3,14 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use tracing::error;
 
+use super::EngineState;
 use crate::models::{
-    EngineStreamPayload,
-    ExchangeHealth,
-    ExchangeOrderResponse,
-    Fill,
-    InventorySnapshot,
-    PnLSnapshot,
-    QuoteSnapshot,
-    EXCHANGES,
+    EngineStreamPayload, ExchangeHealth, ExchangeOrderResponse, Fill, InventorySnapshot,
+    PnLSnapshot, QuoteSnapshot, EXCHANGES,
 };
 use crate::utils::{
-    apply_ratio,
-    chrono_string,
-    normalize_inventory,
-    quote_notional,
-    quote_notional_rate,
+    apply_ratio, chrono_string, normalize_inventory, quote_notional, quote_notional_rate,
 };
-use super::EngineState;
 
 impl EngineState {
     /// Process fill responses from the exchange and build the stream payload.

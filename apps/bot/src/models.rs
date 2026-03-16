@@ -23,7 +23,7 @@ pub struct ExchangeFeedPayload {
 }
 
 /// Request sent to exchange to place an order.
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExchangeOrderRequest {
     pub pair: String,
@@ -35,7 +35,7 @@ pub struct ExchangeOrderRequest {
 }
 
 /// Response from exchange after placing an order.
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExchangeOrderResponse {
     pub pair: String,

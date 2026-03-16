@@ -1,6 +1,6 @@
+use crate::state::AppState;
 use axum::extract::State;
 use axum::Json;
-use crate::state::AppState;
 
 pub async fn health(State(app_state): State<AppState>) -> Json<serde_json::Value> {
     let state = app_state.state.read().await;
@@ -54,9 +54,10 @@ mod tests {
             state.total_fills = 7;
             state.total_quotes = 19;
             state.pairs.clear();
-            state
-                .pairs
-                .insert("TEST/USDT".to_string(), PairState::new(rust_decimal_macros::dec!(100)));
+            state.pairs.insert(
+                "TEST/USDT".to_string(),
+                PairState::new(rust_decimal_macros::dec!(100)),
+            );
         }
 
         let axum::Json(payload) = health(axum::extract::State(app_state)).await;

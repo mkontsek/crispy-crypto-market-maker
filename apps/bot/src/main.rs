@@ -12,12 +12,11 @@ mod router;
 mod state;
 mod utils;
 
-use init::resolve_exchange_endpoints;
 use exchange::exchange_ws_loop;
+use init::resolve_exchange_endpoints;
 use router::{build_api_app, build_ws_app};
 use state::{AppState, EngineState};
 use utils::spawn_bot_tick_loop;
-
 
 #[tokio::main]
 async fn main() {
