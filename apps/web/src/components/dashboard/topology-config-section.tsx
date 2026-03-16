@@ -180,6 +180,7 @@ export function TopologyConfigSection({
           </div>
           <LocationFields
             location={draft.exchangeLocation}
+            httpUrl={draft.exchangeHttpUrl}
             onChangeField={setExchangeLocation}
           />
         </div>
@@ -221,6 +222,7 @@ export function TopologyConfigSection({
               </div>
               <LocationFields
                 location={bot.location}
+                httpUrl={bot.httpUrl}
                 onChangeField={(field, value) => setBotLocation(bot.id, field, value)}
               />
             </div>

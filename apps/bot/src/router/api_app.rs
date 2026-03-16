@@ -5,8 +5,8 @@ use axum::{
 
 use crate::{
     router::{
-        api_health::health, api_manual_hedge::manual_hedge, api_pause_pair::pause_pair,
-        api_update_config::update_config,
+        api_geo::geo, api_health::health, api_manual_hedge::manual_hedge,
+        api_pause_pair::pause_pair, api_update_config::update_config,
     },
     state::AppState,
 };
@@ -17,6 +17,7 @@ pub fn build_api_app(app_state: AppState) -> Router {
         .route("/pairs/{id}/pause", post(pause_pair))
         .route("/hedge", post(manual_hedge))
         .route("/health", get(health))
+        .route("/geo", get(geo))
         .with_state(app_state)
 }
 
