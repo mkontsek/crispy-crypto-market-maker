@@ -24,7 +24,7 @@
     "test:rust": "pnpm run test:exchange && pnpm run test:bot",
     "test": "pnpm run test:web && pnpm run test:rust",
     "check:precommit": "pnpm lint:all && pnpm test && pnpm build:all",
-    "db:up": "docker compose up -d postgres && DATABASE_URL=\"postgresql://postgres:postgres@localhost:${POSTGRES_HOST_PORT:-55432}/postgres\" pnpm --filter @crispy/db prisma:push",
+    "db:up": "docker compose up -d --wait postgres && DATABASE_URL=\"postgresql://postgres:postgres@localhost:${POSTGRES_HOST_PORT:-55432}/postgres\" pnpm --filter @crispy/db prisma:push",
     "hooks:install": "node ./scripts/install-git-hooks.js",
     "prepare": "node ./scripts/install-git-hooks.js"
   },

@@ -103,19 +103,15 @@ cp apps/web/.env.example apps/web/.env.local
 
 ### Database (PostgreSQL)
 
-A `docker-compose.yml` is provided for spinning up a local Postgres instance:
+A `docker-compose.yml` is provided for spinning up a local Postgres instance and pushing Prisma schema:
 
 ```bash
-docker compose up -d postgres
+pnpm run db:up
 ```
 
 This starts Postgres on host port `55432` (mapped to container `5432`) with the default credentials
 (`postgres`/`postgres`/`postgres`) that match the fallback `DATABASE_URL` in
-`packages/db`. Push the Prisma schema to the database before first run:
-
-```bash
-pnpm --filter @crispy/db prisma:push
-```
+`packages/db`.
 
 If `55432` is busy on your machine, set `POSTGRES_HOST_PORT` when starting the DB:
 
