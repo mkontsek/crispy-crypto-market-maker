@@ -6,6 +6,7 @@ import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 
 import type { GeoMapMarker } from './geo-map-section';
 import { LegendItem } from './legend-item';
+import { buildMarkerPixelOffsets } from './marker-overlap';
 import { markerIcon } from './marker-icon';
 import { BoundsController } from './use-bounds-controller';
 
@@ -16,6 +17,7 @@ export default function GeoMapLeaflet({
 }) {
   const defaultCenter: [number, number] = [20, 10];
   const defaultZoom = 2;
+  const markerOffsets = buildMarkerPixelOffsets(markers);
 
   return (
     <div className="space-y-3">
@@ -29,11 +31,11 @@ export default function GeoMapLeaflet({
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         />
-        {markers.map((marker) => (
+        {markers.map((marker, index) => (
           <Marker
-            key={`${marker.kind}-${marker.label}-${marker.lat}-${marker.lng}`}
+            key={`${marker.kind}-${marker.label}-${marker.lat}-${marker.lng}-${index}`}
             position={[marker.lat, marker.lng]}
-            icon={markerIcon(marker)}
+            icon={markerIcon(marker, markerOffsets[index])}
             zIndexOffset={marker.kind === 'bot' || marker.kind === 'dashboard' ? 1000 : 0}
           >
             <Popup>{marker.label}</Popup>

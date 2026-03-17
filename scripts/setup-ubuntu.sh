@@ -8,7 +8,6 @@
 #   --service <bot|exchange>        Which service to install (required)
 #   --exchange-ws-url <url>         (bot only) Exchange WebSocket feed URL
 #   --exchange-api-url <url>        (bot only) Exchange HTTP API URL
-#   --web-topology-url <url>        (bot only) Web topology URL (alternative to explicit URLs)
 #   --user <name>                   OS user to run the service (default: crispy)
 #   --install-dir <path>            Where to install the binary (default: /usr/local/bin)
 #   --repo-dir <path>               Path to the cloned repository (default: current directory)
@@ -31,7 +30,6 @@ set -euo pipefail
 SERVICE=""
 EXCHANGE_WS_URL=""
 EXCHANGE_API_URL=""
-WEB_TOPOLOGY_URL=""
 RUN_USER="crispy"
 INSTALL_DIR="/usr/local/bin"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -51,7 +49,6 @@ while [[ $# -gt 0 ]]; do
     --service)           SERVICE="$2";            shift 2 ;;
     --exchange-ws-url)   EXCHANGE_WS_URL="$2";    shift 2 ;;
     --exchange-api-url)  EXCHANGE_API_URL="$2";   shift 2 ;;
-    --web-topology-url)  WEB_TOPOLOGY_URL="$2";   shift 2 ;;
     --user)              RUN_USER="$2";            shift 2 ;;
     --install-dir)       INSTALL_DIR="$2";         shift 2 ;;
     --repo-dir)          REPO_DIR="$2";            shift 2 ;;
@@ -151,14 +148,10 @@ if [[ "$SERVICE" == "bot" ]]; then
 # crispy-bot environment configuration
 # Edit this file, then run: systemctl restart ${SERVICE_NAME}
 
-# Exchange endpoints — set explicitly OR provide WEB_TOPOLOGY_URL so the bot
-# can fetch them automatically from the web topology API.
+# Exchange endpoints (optional).
+# Leave empty to let the bot use its built-in local defaults.
 EXCHANGE_WS_URL=${EXCHANGE_WS_URL}
 EXCHANGE_API_URL=${EXCHANGE_API_URL}
-
-# Optional: let the bot discover exchange endpoints via the web topology API.
-# Takes effect only when EXCHANGE_WS_URL / EXCHANGE_API_URL are not both set.
-WEB_TOPOLOGY_URL=${WEB_TOPOLOGY_URL}
 EOF
 else
   cat > "$ENV_FILE" <<EOF
