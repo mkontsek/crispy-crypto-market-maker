@@ -89,8 +89,6 @@ export function MarketMakerDashboard() {
         onSubmit={(next) => topologyMutation.mutate(next)}
       />
 
-      {topology ? <GeoMapSection topology={topology} /> : null}
-
       {topologyQuery.isError ? (
         <Card>
           <CardContent className="py-4 text-sm text-red-300">
@@ -124,6 +122,8 @@ export function MarketMakerDashboard() {
           </CardContent>
         </Card>
       )}
+
+      {topology ? <GeoMapSection topology={topology} /> : null}
     </main>
   );
 }
