@@ -88,7 +88,7 @@ export function PnlCurveSection({ pnl }: { pnl: PnLSnapshot[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Intraday P&amp;L Curve</CardTitle>
+        <CardTitle>Intraday P&L Curve</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <PnlChart values={values} />

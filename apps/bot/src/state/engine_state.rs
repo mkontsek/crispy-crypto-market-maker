@@ -278,4 +278,20 @@ mod tests {
             "disabled pair should produce no orders"
         );
     }
+
+    #[test]
+    fn compute_orders_returns_empty_when_kill_switch_engaged() {
+        let mut state = EngineState::new();
+        state.kill_switch_engaged = true;
+        state.update_from_exchange(ExchangeFeedPayload {
+            pairs: vec![ExchangePairData {
+                pair: "BTC/USDT".to_string(),
+                mid: dec!(62000),
+                volatility: dec!(1),
+            }],
+        });
+
+        let orders = state.compute_orders();
+        assert!(orders.is_empty(), "kill switch engaged should produce no orders");
+    }
 }
