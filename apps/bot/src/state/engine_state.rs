@@ -16,6 +16,8 @@ pub struct EngineState {
     pub total_fills: u64,
     pub adverse_fills: u64,
     pub fill_seq: u64,
+    /// When true, no orders are placed and all pairs are kept paused.
+    pub kill_switch_engaged: bool,
 }
 
 impl EngineState {
@@ -53,6 +55,7 @@ impl EngineState {
             total_fills: 0,
             adverse_fills: 0,
             fill_seq: 0,
+            kill_switch_engaged: false,
         }
     }
 
@@ -71,6 +74,10 @@ impl EngineState {
     /// Compute MM quotes and return the list of orders to place on the exchange.
     /// Updates bid/ask/spread in `PairState` based on current exchange prices + MM config.
     pub fn compute_orders(&mut self) -> Vec<ExchangeOrderRequest> {
+        if self.kill_switch_engaged {
+            return Vec::new();
+        }
+
         let mut orders = Vec::new();
 
         for cfg in self.config.pairs.clone() {

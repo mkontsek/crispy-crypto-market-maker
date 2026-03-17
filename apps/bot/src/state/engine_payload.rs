@@ -177,6 +177,7 @@ impl EngineState {
             pnl,
             exchange_health,
             config: self.config.clone(),
+            kill_switch_engaged: self.kill_switch_engaged,
         }
     }
 }

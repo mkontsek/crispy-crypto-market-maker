@@ -12,10 +12,16 @@ import type {
 } from '@crispy/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { AlertPanelSection } from '@/components/dashboard/alert-panel-section';
 import { ConfigPanelSection } from '@/components/dashboard/config-panel-section';
+import { EventLogSection } from '@/components/dashboard/event-log-section';
 import { ExchangeHealthSection } from '@/components/dashboard/exchange-health-section';
+import { ExposureSection } from '@/components/dashboard/exposure-section';
+import { FillMetricsSection } from '@/components/dashboard/fill-metrics-section';
 import { InventoryMonitorSection } from '@/components/dashboard/inventory-monitor-section';
+import { KillSwitchSection } from '@/components/dashboard/kill-switch-section';
 import { LiveQuotesSection } from '@/components/dashboard/live-quotes-section';
+import { PnlCurveSection } from '@/components/dashboard/pnl-curve-section';
 import {
   QuoteHistorySection,
   type QuoteHistoryEntry,
@@ -33,6 +39,7 @@ type QuotesResponse = {
   quoteHistory: QuoteHistoryEntry[];
   exchangeHealth: ExchangeHealth[];
   config: MMConfig | null;
+  killSwitchEngaged: boolean;
 };
 
 type FillsResponse = {
@@ -83,14 +90,10 @@ export function BotDashboardPanel({ bot }: { bot: TopologyBot }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) {
-        throw new Error('failed to update engine config');
-      }
+      if (!response.ok) throw new Error('failed to update engine config');
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quotes', bot.id] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes', bot.id] }),
   });
 
   const pairActionMutation = useMutation({
@@ -106,26 +109,17 @@ export function BotDashboardPanel({ bot }: { bot: TopologyBot }) {
       if (action === 'pause') {
         const response = await fetch(
           `/api/pairs/${encodeURIComponent(pair)}/pause?botId=${botQuery}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paused }),
-          }
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paused }) }
         );
-        if (!response.ok) {
-          throw new Error('failed to update pair pause status');
-        }
+        if (!response.ok) throw new Error('failed to update pair pause status');
         return response.json();
       }
-
       const response = await fetch(`/api/hedge?botId=${botQuery}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pair }),
       });
-      if (!response.ok) {
-        throw new Error('failed to hedge pair');
-      }
+      if (!response.ok) throw new Error('failed to hedge pair');
       return response.json();
     },
     onSuccess: () => {
@@ -136,6 +130,19 @@ export function BotDashboardPanel({ bot }: { bot: TopologyBot }) {
     },
   });
 
+  const killSwitchMutation = useMutation({
+    mutationFn: async (engaged: boolean) => {
+      const response = await fetch(`/api/kill-switch?botId=${botQuery}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ engaged }),
+      });
+      if (!response.ok) throw new Error('failed to toggle kill switch');
+      return response.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes', bot.id] }),
+  });
+
   const quotes = quotesQuery.data?.quotes ?? [];
   const fills = dedupeFills(fillsQuery.data?.items ?? []);
   const pnl = dedupePnl(pnlQuery.data?.items ?? []);
@@ -143,8 +150,10 @@ export function BotDashboardPanel({ bot }: { bot: TopologyBot }) {
   const health = quotesQuery.data?.exchangeHealth ?? [];
   const config = quotesQuery.data?.config ?? null;
   const connected = quotesQuery.data?.connected ?? false;
+  const killSwitchEngaged = quotesQuery.data?.killSwitchEngaged ?? false;
   const pendingPair = pairActionMutation.variables?.pair ?? null;
   const quoteHistoryEntries = quotesQuery.data?.quoteHistory ?? [];
+  const latestPnl = pnl[0] ?? null;
 
   return (
     <section className="space-y-4 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
@@ -159,6 +168,21 @@ export function BotDashboardPanel({ bot }: { bot: TopologyBot }) {
           {connected ? 'connected' : 'disconnected'}
         </Badge>
       </header>
+
+      <KillSwitchSection
+        engaged={killSwitchEngaged}
+        pending={killSwitchMutation.isPending}
+        onToggle={(engaged) => killSwitchMutation.mutate(engaged)}
+      />
+
+      <AlertPanelSection
+        health={health}
+        inventory={inventory}
+        config={config}
+        pnl={latestPnl}
+        killSwitchEngaged={killSwitchEngaged}
+        quotes={quotes}
+      />
 
       <LiveQuotesSection quotes={quotes} connected={connected} />
 
@@ -175,6 +199,13 @@ export function BotDashboardPanel({ bot }: { bot: TopologyBot }) {
         <PnlPerformanceSection pnl={pnl} fills={fills} />
       </div>
 
+      <ExposureSection inventory={inventory} quotes={quotes} config={config} />
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <FillMetricsSection fills={fills} quoteHistory={quoteHistoryEntries} />
+        <PnlCurveSection pnl={pnl} />
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-2">
         <QuoteHistorySection entries={quoteHistoryEntries} />
         <ConfigPanelSection
@@ -185,6 +216,12 @@ export function BotDashboardPanel({ bot }: { bot: TopologyBot }) {
       </div>
 
       <ExchangeHealthSection health={health} />
+
+      <EventLogSection
+        connected={connected}
+        quotes={quotes}
+        killSwitchEngaged={killSwitchEngaged}
+      />
 
       {quotesQuery.isError ? (
         <Card>
@@ -218,3 +255,4 @@ function dedupePnl(pnl: PnLSnapshot[]) {
   }
   return output.slice(0, 300);
 }
+

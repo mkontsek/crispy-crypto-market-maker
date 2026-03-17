@@ -162,6 +162,7 @@ pub struct EngineStreamPayload {
     pub pnl: PnLSnapshot,
     pub exchange_health: Vec<ExchangeHealth>,
     pub config: MMConfig,
+    pub kill_switch_engaged: bool,
 }
 
 #[derive(Clone, Deserialize)]
@@ -174,4 +175,10 @@ pub struct PauseRequest {
 pub struct HedgeRequest {
     pub pair: String,
     pub target_exchange: Option<String>,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KillSwitchRequest {
+    pub engaged: bool,
 }
