@@ -12,8 +12,12 @@ export function persistPayload(botId: BotId, payload: EngineStreamPayload): void
     tasks.push(writeFills(botId, payload));
   }
 
-  Promise.all(tasks).catch((err) => {
-    console.error(`[db-writer] ${botId} persist error`, err);
+  Promise.allSettled(tasks).then((results) => {
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        console.error(`[db-writer] ${botId} persist error`, result.reason);
+      }
+    }
   });
 }
 

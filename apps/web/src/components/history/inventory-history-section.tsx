@@ -29,8 +29,8 @@ function skewWidth(skew: number) {
 
 export function InventoryHistorySection({ rows }: { rows: DbInventory[] }) {
   const byPair = rows.reduce<Record<string, DbInventory[]>>((acc, row) => {
-    if (!acc[row.pair]) acc[row.pair] = [];
-    acc[row.pair]!.push(row);
+    acc[row.pair] = acc[row.pair] ?? [];
+    acc[row.pair].push(row);
     return acc;
   }, {});
 
@@ -46,8 +46,9 @@ export function InventoryHistorySection({ rows }: { rows: DbInventory[] }) {
           <p className="text-sm text-slate-400">No inventory snapshots stored yet.</p>
         ) : (
           pairs.map((pair) => {
-            const latest = byPair[pair]![0]!;
-            const history = byPair[pair]!;
+            const history = byPair[pair] ?? [];
+            const latest = history[0];
+            if (!latest) return null;
             return (
               <div key={pair} className="rounded border border-slate-800 p-3">
                 <div className="mb-2 flex items-center justify-between text-sm">
