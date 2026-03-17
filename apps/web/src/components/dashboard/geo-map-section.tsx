@@ -15,6 +15,13 @@ export interface GeoMapMarker {
 
 type DetectedGeo = { lat: number; lng: number; label?: string };
 
+// Hardcoded headquarters coordinates for the real hedging exchanges.
+const EXCHANGE_LOCATIONS: Record<string, { lat: number; lng: number }> = {
+  Binance: { lat: 1.3521, lng: 103.8198 },  // Singapore
+  Bybit: { lat: 25.2048, lng: 55.2708 },    // Dubai
+  OKX: { lat: 22.3193, lng: 114.1694 },     // Hong Kong
+};
+
 async function fetchGeoForUrl(httpUrl: string): Promise<DetectedGeo | null> {
   try {
     const resp = await fetch(`/api/geo?url=${encodeURIComponent(httpUrl)}`);
@@ -72,6 +79,16 @@ function buildMarkers(
       lat: exchangeLocation.lat,
       lng: exchangeLocation.lng,
       label: exchangeLocation.label ?? 'Exchange',
+      kind: 'exchange',
+    });
+  }
+
+  // Real hedging exchange markers — always shown at hardcoded coords
+  for (const [name, coords] of Object.entries(EXCHANGE_LOCATIONS)) {
+    markers.push({
+      lat: coords.lat,
+      lng: coords.lng,
+      label: name,
       kind: 'exchange',
     });
   }

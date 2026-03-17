@@ -44,7 +44,7 @@ export default function GeoMapLeaflet({
       <div className="flex flex-wrap gap-4 text-xs text-slate-400">
         <LegendItem color="#22c55e" label="Dashboard" />
         <LegendItem color="#06b6d4" label="Bot" />
-        <LegendItem color="#f97316" label="Simulated exchange" />
+        <LegendItem color="#f97316" label="Exchange" />
       </div>
     </div>
   );
