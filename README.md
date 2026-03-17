@@ -119,7 +119,7 @@ pnpm --filter @crispy/db prisma:push
 
 The web BFF automatically persists every engine stream event (fills, quotes,
 inventory, PnL) to Postgres as soon as the bot connects. Historical data can be
-browsed at [http://localhost:3000/history](http://localhost:3000/history).
+browsed at [http://localhost:3008/history](http://localhost:3008/history).
 
 ### Development (watch mode)
 

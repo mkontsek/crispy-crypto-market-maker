@@ -4,8 +4,10 @@ use rust_decimal::Decimal;
 use crate::{
     models::{ExchangeOrderRequest, ExchangeOrderResponse, HedgeRequest},
     state::AppState,
-    utils::{apply_ratio, quote_notional_rate},
+    utils::apply_ratio,
 };
+
+use super::update_pair_after_hedge;
 
 pub async fn manual_hedge(
     State(app_state): State<AppState>,
@@ -37,6 +39,8 @@ pub async fn manual_hedge(
     } else {
         "buy"
     };
+
+    // naive hedge size calculation - we should consider exchange-specific lot sizes and minimum order sizes
     let hedge_order = ExchangeOrderRequest {
         pair: payload.pair.clone(),
         side: hedge_side.to_string(),
@@ -77,27 +81,15 @@ pub async fn manual_hedge(
 
     let (inventory_after, hedge_cost) = {
         let mut state = app_state.state.write().await;
+
         let (inventory_after, hedge_cost) =
-            if let Some(pair_state) = state.pairs.get_mut(&payload.pair) {
-                let mut hedge_cost = Decimal::ZERO;
-                if order_response.filled {
-                    if order_response.side == "sell" {
-                        pair_state.inventory -= order_response.fill_size;
-                    } else {
-                        pair_state.inventory += order_response.fill_size;
-                    }
-                    hedge_cost = quote_notional_rate(
-                        order_response.fill_price,
-                        order_response.fill_size,
-                        8,
-                        100_000,
-                    );
-                }
-                (pair_state.inventory, hedge_cost)
-            } else {
-                return Json(serde_json::json!({ "error": "unknown pair" }));
+            match update_pair_after_hedge(&mut state, &payload.pair, &order_response) {
+                Ok(values) => values,
+                Err(response) => return response,
             };
+
         state.hedging_costs += hedge_cost;
+
         (inventory_after, hedge_cost)
     };
 
