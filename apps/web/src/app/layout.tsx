@@ -5,7 +5,7 @@ import { Providers } from './providers';
 
 const metadataBase = process.env.NEXT_PUBLIC_APP_URL
   ? new URL(process.env.NEXT_PUBLIC_APP_URL)
-  : new URL('http://localhost:3000');
+  : new URL('http://localhost:3008');
 
 export const metadata: Metadata = {
   metadataBase,

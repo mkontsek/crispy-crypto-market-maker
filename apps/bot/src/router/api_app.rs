@@ -5,8 +5,11 @@ use axum::{
 
 use crate::{
     router::{
-        api_geo::geo, api_health::health, api_manual_hedge::manual_hedge,
-        api_pause_pair::pause_pair, api_update_config::update_config,
+        api_geo::geo,
+        api_health::health,
+        api_manual_hedge::manual_hedge,
+        api_pause_pair::pause_pair,
+        api_update_config::update_config,
     },
     state::AppState,
 };
