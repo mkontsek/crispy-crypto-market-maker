@@ -20,6 +20,7 @@ function makeIcon(color: string) {
 
 const BOT_ICON = makeIcon('#06b6d4'); // cyan-500
 const EXCHANGE_ICON = makeIcon('#f97316'); // orange-500
+const SIMULATED_EXCHANGE_ICON = makeIcon('#a855f7'); // purple-500
 const DASHBOARD_ICON = makeIcon('#22c55e'); // green-500
 
 export function markerIcon(marker: GeoMapMarker) {
@@ -28,6 +29,8 @@ export function markerIcon(marker: GeoMapMarker) {
       return BOT_ICON;
     case 'exchange':
       return EXCHANGE_ICON;
+    case 'simulated-exchange':
+      return SIMULATED_EXCHANGE_ICON;
     case 'dashboard':
       return DASHBOARD_ICON;
   }
