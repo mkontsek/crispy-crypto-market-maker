@@ -1,12 +1,11 @@
 'use client';
 
-import type { GeoLocation, RuntimeTopology, TopologyBot } from '@crispy/shared';
+import type { RuntimeTopology, TopologyBot } from '@crispy/shared';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-import { LocationFields } from './location-fields';
 import { TextField } from './text-field';
 import { UrlField } from './url-field';
 
@@ -14,7 +13,6 @@ function cloneTopology(topology: RuntimeTopology): RuntimeTopology {
   return {
     exchangeWsUrl: topology.exchangeWsUrl,
     exchangeHttpUrl: topology.exchangeHttpUrl,
-    exchangeLocation: topology.exchangeLocation,
     bots: topology.bots.map((bot) => ({ ...bot })),
   };
 }
@@ -41,17 +39,6 @@ function buildNewBot(existingBots: TopologyBot[]): TopologyBot {
     wsUrl: `wss://${botId}.example.com/stream`,
     httpUrl: `https://${botId}.example.com`,
   };
-}
-
-function applyLocationField(
-  prev: GeoLocation | undefined,
-  field: keyof GeoLocation,
-  value: string
-): GeoLocation {
-  const base = prev ?? { lat: 0, lng: 0 };
-  if (field === 'label') return { ...base, label: value || undefined };
-  const parsed = parseFloat(value);
-  return { ...base, [field]: Number.isFinite(parsed) ? parsed : (base[field] as number) };
 }
 
 export function TopologyConfigSection({
@@ -85,16 +72,6 @@ export function TopologyConfigSection({
     setDraft((current) => (current ? { ...current, [key]: value } : current));
   };
 
-  const setExchangeLocation = (field: keyof GeoLocation, value: string) => {
-    setDraft((current) => {
-      if (!current) return current;
-      return {
-        ...current,
-        exchangeLocation: applyLocationField(current.exchangeLocation, field, value),
-      };
-    });
-  };
-
   const setBotField = (botId: string, key: keyof TopologyBot, value: string) => {
     setDraft((current) =>
       current
@@ -106,20 +83,6 @@ export function TopologyConfigSection({
           }
         : current
     );
-  };
-
-  const setBotLocation = (botId: string, field: keyof GeoLocation, value: string) => {
-    setDraft((current) => {
-      if (!current) return current;
-      return {
-        ...current,
-        bots: current.bots.map((bot) =>
-          bot.id !== botId
-            ? bot
-            : { ...bot, location: applyLocationField(bot.location, field, value) }
-        ),
-      };
-    });
   };
 
   const removeBot = (botId: string) => {
@@ -178,10 +141,6 @@ export function TopologyConfigSection({
               onChange={(value) => setExchangeField('exchangeHttpUrl', value)}
             />
           </div>
-          <LocationFields
-            location={draft.exchangeLocation}
-            onChangeField={setExchangeLocation}
-          />
         </div>
 
         <div className="space-y-3">
@@ -219,10 +178,6 @@ export function TopologyConfigSection({
                   onChange={(value) => setBotField(bot.id, 'httpUrl', value)}
                 />
               </div>
-              <LocationFields
-                location={bot.location}
-                onChangeField={(field, value) => setBotLocation(bot.id, field, value)}
-              />
             </div>
           ))}
         </div>

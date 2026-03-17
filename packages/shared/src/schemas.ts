@@ -151,14 +151,12 @@ export const topologyBotSchema = z.object({
   name: z.string().min(1),
   wsUrl: wsEndpointUrlSchema,
   httpUrl: httpEndpointUrlSchema,
-  location: geoLocationSchema.optional(),
 });
 
 export const runtimeTopologySchema = z
   .object({
     exchangeWsUrl: wsEndpointUrlSchema,
     exchangeHttpUrl: httpEndpointUrlSchema,
-    exchangeLocation: geoLocationSchema.optional(),
     bots: z.array(topologyBotSchema).min(1),
   })
   .refine(
@@ -175,5 +173,4 @@ export const runtimeTopologySchema = z
 export const exchangeTopologySchema = z.object({
   exchangeWsUrl: wsEndpointUrlSchema,
   exchangeHttpUrl: httpEndpointUrlSchema,
-  exchangeLocation: geoLocationSchema.optional(),
 });
