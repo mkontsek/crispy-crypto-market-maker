@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@crispy/db": "workspace:*",
     "@crispy/shared": "workspace:*",
     "@tanstack/react-query": "5.90.21",
     "class-variance-authority": "0.7.1",

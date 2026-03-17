@@ -12,23 +12,26 @@ enum Side {
 }
 
 model Fill {
-  id             String               @id @default(cuid())
-  pair           String
-  side           Side
-  price          Float
-  size           Float
-  midAtFill      Float
-  realizedSpread Float
-  adverseSelection Boolean            @default(false)
-  createdAt      DateTime             @default(now())
+  id               String   @id @default(cuid())
+  botId            String?
+  pair             String
+  side             Side
+  price            Float
+  size             Float
+  midAtFill        Float
+  realizedSpread   Float
+  adverseSelection Boolean  @default(false)
+  createdAt        DateTime @default(now())
 
   adverseSelectionLog AdverseSelectionLog?
 
   @@index([pair, createdAt])
+  @@index([botId, createdAt])
 }
 
 model Quote {
   id               String   @id @default(cuid())
+  botId            String?
   pair             String
   bid              Float
   ask              Float
@@ -40,20 +43,24 @@ model Quote {
   createdAt        DateTime @default(now())
 
   @@index([pair, createdAt])
+  @@index([botId, createdAt])
 }
 
 model Inventory {
   id             String   @id @default(cuid())
+  botId          String?
   pair           String
   inventory      Float
   normalizedSkew Float
   createdAt      DateTime @default(now())
 
   @@index([pair, createdAt])
+  @@index([botId, createdAt])
 }
 
 model PnLSnapshot {
   id                   String   @id @default(cuid())
+  botId                String?
   totalPnl             Float
   realizedSpread       Float
   hedgingCosts         Float
@@ -62,6 +69,7 @@ model PnLSnapshot {
   createdAt            DateTime @default(now())
 
   @@index([createdAt])
+  @@index([botId, createdAt])
 }
 
 model MMConfig {
