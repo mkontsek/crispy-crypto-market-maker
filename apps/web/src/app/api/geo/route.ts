@@ -44,8 +44,9 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const serviceUrl = searchParams.get('url');
 
+  // When called without a URL, return the dashboard server's own location.
   if (!serviceUrl) {
-    return NextResponse.json({ error: 'missing url param' }, { status: 400 });
+    return geoFromIpapi();
   }
 
   let parsed: URL;
