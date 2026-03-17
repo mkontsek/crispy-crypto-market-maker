@@ -11,11 +11,11 @@ export type QuoteHistoryEntry = QuoteSnapshot & {
 
 export function QuoteHistorySection({ entries }: { entries: QuoteHistoryEntry[] }) {
   return (
-    <Card>
+    <Card className="flex h-full flex-col">
       <CardHeader>
         <CardTitle>Quote History</CardTitle>
       </CardHeader>
-      <CardContent className="max-h-[360px] overflow-y-auto">
+      <CardContent className="flex-1 overflow-y-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-slate-400">
             <tr>
