@@ -34,6 +34,7 @@ export default function GeoMapLeaflet({
             key={`${marker.kind}-${marker.label}-${marker.lat}-${marker.lng}`}
             position={[marker.lat, marker.lng]}
             icon={markerIcon(marker)}
+            zIndexOffset={marker.kind === 'bot' || marker.kind === 'dashboard' ? 1000 : 0}
           >
             <Popup>{marker.label}</Popup>
           </Marker>
