@@ -68,6 +68,9 @@ Default local-development addresses (override with `BOT_1_WS_URL` / `BOT_1_HTTP_
 - `GET /api/stream?botId=<bot-id>` (SSE fan-out from selected bot stream)
 - `GET /api/topology` / `POST /api/topology` (runtime bot + exchange URLs)
 - `GET /api/topology/exchange` (exchange URLs for bot bootstrap)
+- `GET /api/history/fills?pair=<pair>&botId=<id>&page=<n>&pageSize=<n>` (DB-backed fill history)
+- `GET /api/history/pnl?botId=<id>&limit=<n>` (DB-backed PnL snapshot history)
+- `GET /api/history/inventory?pair=<pair>&botId=<id>&limit=<n>` (DB-backed inventory history)
 
 ## Getting started
 
@@ -97,6 +100,26 @@ Copy web env template for local development:
 ```bash
 cp apps/web/.env.example apps/web/.env.local
 ```
+
+### Database (PostgreSQL)
+
+A `docker-compose.yml` is provided for spinning up a local Postgres instance:
+
+```bash
+docker compose up -d postgres
+```
+
+This starts Postgres on port `5432` with the default credentials
+(`postgres`/`postgres`/`postgres`) that match the fallback `DATABASE_URL` in
+`apps/web/.env.example`. Push the Prisma schema to the database before first run:
+
+```bash
+pnpm --filter @crispy/db prisma:push
+```
+
+The web BFF automatically persists every engine stream event (fills, quotes,
+inventory, PnL) to Postgres as soon as the bot connects. Historical data can be
+browsed at [http://localhost:3000/history](http://localhost:3000/history).
 
 ### Development (watch mode)
 

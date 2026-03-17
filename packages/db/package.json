@@ -9,10 +9,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "build": "echo 'db package ready'",
+    "build": "prisma generate",
     "lint": "echo 'db lint skipped'",
     "typecheck": "pnpm run prisma:generate && tsc --noEmit -p tsconfig.json",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:migrate": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.4.2",
