@@ -14,6 +14,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@crispy/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@crispy/shared':
         specifier: workspace:*
         version: link:../../packages/shared

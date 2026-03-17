@@ -11,6 +11,7 @@ import {
 } from '@crispy/shared';
 import WebSocket from 'ws';
 
+import { persistPayload } from '@/server/db-writer';
 import { getRuntimeTopology, resolveBotTopology } from '@/server/runtime-topology';
 
 export type QuoteHistoryEntry = QuoteSnapshot & {
@@ -110,6 +111,8 @@ function ingestPayload(botId: BotId, payload: EngineStreamPayload) {
   for (const listener of relay.listeners) {
     listener(payload);
   }
+
+  persistPayload(botId, payload);
 }
 
 function scheduleReconnect(botId: BotId) {

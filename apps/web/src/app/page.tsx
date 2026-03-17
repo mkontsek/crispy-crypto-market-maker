@@ -29,6 +29,12 @@ export default function HomePage() {
         >
           View dashboard
         </Link>
+        <Link
+          href="/history"
+          className="inline-flex h-10 items-center justify-center rounded-md border border-slate-700 bg-slate-900 px-4 text-sm font-medium text-slate-100 transition hover:bg-slate-800"
+        >
+          Historical data
+        </Link>
       </section>
     </main>
   );
