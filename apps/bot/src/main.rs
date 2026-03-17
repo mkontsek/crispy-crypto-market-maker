@@ -23,7 +23,7 @@ async fn main() {
     tracing_subscriber::fmt::init();
 
     // Init urls
-    let (exchange_ws_url, exchange_api_url) = resolve_exchange_endpoints().await;
+    let (exchange_ws_url, exchange_api_url) = resolve_exchange_endpoints();
     info!("exchange ws url: {exchange_ws_url}");
     info!("exchange api url: {exchange_api_url}");
 

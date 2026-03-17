@@ -109,12 +109,18 @@ A `docker-compose.yml` is provided for spinning up a local Postgres instance:
 docker compose up -d postgres
 ```
 
-This starts Postgres on port `5432` with the default credentials
+This starts Postgres on host port `55432` (mapped to container `5432`) with the default credentials
 (`postgres`/`postgres`/`postgres`) that match the fallback `DATABASE_URL` in
-`apps/web/.env.example`. Push the Prisma schema to the database before first run:
+`packages/db`. Push the Prisma schema to the database before first run:
 
 ```bash
 pnpm --filter @crispy/db prisma:push
+```
+
+If `55432` is busy on your machine, set `POSTGRES_HOST_PORT` when starting the DB:
+
+```bash
+POSTGRES_HOST_PORT=55440 pnpm run db:up
 ```
 
 The web BFF automatically persists every engine stream event (fills, quotes,
@@ -228,21 +234,19 @@ journalctl -fu         crispy-exchange
 
 ### 3) Bot on an Ubuntu server
 
-Point the bot at your exchange (by explicit URL or via the web topology API):
+Point the bot at your exchange with explicit URLs:
 
 ```bash
-# Option A — explicit exchange URLs
 # (use wss:// / https:// when the exchange is behind a TLS-terminating proxy)
 sudo ./scripts/setup-ubuntu.sh \
   --service bot \
   --exchange-ws-url  ws://exchange.your-server.com/feed \
   --exchange-api-url http://exchange.your-server.com
-
-# Option B — discover exchange URLs from the web topology API
-sudo ./scripts/setup-ubuntu.sh \
-  --service bot \
-  --web-topology-url https://web.your-domain.com
 ```
+
+If `EXCHANGE_WS_URL` / `EXCHANGE_API_URL` are left unset in
+`/etc/crispy/crispy-bot.env`, the bot falls back to local defaults
+(`ws://127.0.0.1:3111/feed`, `http://127.0.0.1:3111`).
 
 > **Note:** The Rust services are plain HTTP servers. Use `ws://` / `http://` on
 > private/internal networks and `wss://` / `https://` for any publicly reachable

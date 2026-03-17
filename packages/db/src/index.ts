@@ -2,7 +2,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
 const connectionString =
-  process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/postgres';
+  process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:55432/postgres';
 
 const adapter = new PrismaPg({ connectionString });
 
