@@ -10,7 +10,7 @@ export interface GeoMapMarker {
   lat: number;
   lng: number;
   label: string;
-  kind: 'bot' | 'exchange' | 'dashboard';
+  kind: 'bot' | 'exchange' | 'simulated-exchange' | 'dashboard';
 }
 
 type DetectedGeo = { lat: number; lng: number; label?: string };
@@ -72,14 +72,14 @@ function buildMarkers(
     }
   }
 
-  // Simulated-exchange marker — auto-detected
+  // Simulated-exchange marker — auto-detected via the exchange service's /geo endpoint
   const exchangeLocation = autoGeo.get('exchange');
   if (exchangeLocation) {
     markers.push({
       lat: exchangeLocation.lat,
       lng: exchangeLocation.lng,
-      label: exchangeLocation.label ?? 'Exchange',
-      kind: 'exchange',
+      label: exchangeLocation.label ?? 'Simulated Exchange',
+      kind: 'simulated-exchange',
     });
   }
 
