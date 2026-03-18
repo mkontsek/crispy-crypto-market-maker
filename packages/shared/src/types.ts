@@ -16,6 +16,8 @@ import {
     pnlSnapshotSchema,
     quoteSnapshotSchema,
     runtimeTopologySchema,
+    setStrategyRequestSchema,
+    strategySchema,
     topologyBotSchema,
 } from './schemas';
 
@@ -31,6 +33,8 @@ export type EngineStreamPayload = z.infer<typeof engineStreamSchema>;
 export type PausePairRequest = z.infer<typeof pausePairRequestSchema>;
 export type HedgeRequest = z.infer<typeof hedgeRequestSchema>;
 export type KillSwitchRequest = z.infer<typeof killSwitchRequestSchema>;
+export type SetStrategyRequest = z.infer<typeof setStrategyRequestSchema>;
+export type Strategy = z.infer<typeof strategySchema>;
 export type GeoLocation = z.infer<typeof geoLocationSchema>;
 export type TopologyBot = z.infer<typeof topologyBotSchema>;
 export type RuntimeTopology = z.infer<typeof runtimeTopologySchema>;

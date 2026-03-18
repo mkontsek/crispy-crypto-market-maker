@@ -3,6 +3,7 @@ import type {
     ExchangeHealth,
     MMConfig,
     QuoteSnapshot,
+    Strategy,
 } from '@crispy/shared';
 import { useQuery } from '@tanstack/react-query';
 
@@ -18,6 +19,7 @@ type QuotesResponse = {
     exchangeHealth: ExchangeHealth[];
     config: MMConfig | null;
     killSwitchEngaged: boolean;
+    strategy: Strategy;
 };
 
 export function useBotQuotesQuery(botId: BotId) {

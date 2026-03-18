@@ -2,7 +2,10 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
 
-use crate::models::{ExchangeFeedPayload, ExchangeOrderRequest, MMConfig, PairConfig, PAIRS};
+use crate::models::{
+    ExchangeFeedPayload, ExchangeOrderRequest, MMConfig, StrategyPreset, PAIRS,
+};
+use crate::state::strategy::strategy_pair_configs;
 use crate::state::PairState;
 
 pub struct EngineState {
@@ -18,6 +21,8 @@ pub struct EngineState {
     pub fill_seq: u64,
     /// When true, no orders are placed and all pairs are kept paused.
     pub kill_switch_engaged: bool,
+    /// Currently active strategy preset name.
+    pub active_strategy: StrategyPreset,
 }
 
 impl EngineState {
@@ -27,22 +32,9 @@ impl EngineState {
         pairs.insert("ETH/USDT".to_string(), PairState::new(dec!(3450)));
         pairs.insert("SOL/USDT".to_string(), PairState::new(dec!(140)));
 
+        let pair_names: Vec<String> = PAIRS.iter().map(|p| (*p).to_string()).collect();
         let config = MMConfig {
-            pairs: PAIRS
-                .iter()
-                .map(|pair| PairConfig {
-                    pair: (*pair).to_string(),
-                    base_spread_bps: dec!(10),
-                    volatility_multiplier: dec!(1.15),
-                    max_inventory: dec!(6),
-                    inventory_skew_sensitivity: dec!(0.35),
-                    quote_refresh_interval_ms: 250,
-                    enabled: true,
-                    hedging_enabled: true,
-                    hedge_threshold: dec!(4.5),
-                    hedge_exchange: "Bybit".to_string(),
-                })
-                .collect(),
+            pairs: strategy_pair_configs(&StrategyPreset::Balanced, &pair_names),
         };
 
         Self {
@@ -56,7 +48,21 @@ impl EngineState {
             adverse_fills: 0,
             fill_seq: 0,
             kill_switch_engaged: false,
+            active_strategy: StrategyPreset::Balanced,
         }
+    }
+
+    /// Apply a strategy preset, updating all pair configs accordingly.
+    pub fn apply_strategy_preset(&mut self, preset: StrategyPreset) {
+        let pair_names: Vec<String> = self.config.pairs.iter().map(|p| p.pair.clone()).collect();
+        let pair_configs = strategy_pair_configs(&preset, &pair_names);
+        self.config.pairs = pair_configs;
+        for cfg in &self.config.pairs {
+            if let Some(pair_state) = self.pairs.get_mut(&cfg.pair) {
+                pair_state.paused = !cfg.enabled;
+            }
+        }
+        self.active_strategy = preset;
     }
 
     /// Called by the exchange WebSocket listener whenever new market data arrives.
@@ -157,7 +163,6 @@ mod tests {
     fn update_from_exchange_marks_connected_and_updates_mid() {
         let mut state = EngineState::new();
         assert!(!state.exchange_connected);
-
         state.update_from_exchange(ExchangeFeedPayload {
             pairs: vec![ExchangePairData {
                 pair: "BTC/USDT".to_string(),
@@ -165,7 +170,6 @@ mod tests {
                 volatility: dec!(1.5),
             }],
         });
-
         assert!(state.exchange_connected);
         assert_eq!(state.pairs["BTC/USDT"].mid, dec!(65000));
         assert_eq!(state.pairs["BTC/USDT"].volatility, dec!(1.5));
@@ -181,7 +185,6 @@ mod tests {
                 volatility: dec!(1),
             }],
         });
-        // Unknown pair should not be inserted
         assert!(!state.pairs.contains_key("UNKNOWN/USDT"));
     }
 
@@ -190,28 +193,13 @@ mod tests {
         let mut state = EngineState::new();
         state.update_from_exchange(ExchangeFeedPayload {
             pairs: vec![
-                ExchangePairData {
-                    pair: "BTC/USDT".to_string(),
-                    mid: dec!(62000),
-                    volatility: dec!(1),
-                },
-                ExchangePairData {
-                    pair: "ETH/USDT".to_string(),
-                    mid: dec!(3450),
-                    volatility: dec!(1),
-                },
-                ExchangePairData {
-                    pair: "SOL/USDT".to_string(),
-                    mid: dec!(140),
-                    volatility: dec!(1),
-                },
+                ExchangePairData { pair: "BTC/USDT".to_string(), mid: dec!(62000), volatility: dec!(1) },
+                ExchangePairData { pair: "ETH/USDT".to_string(), mid: dec!(3450), volatility: dec!(1) },
+                ExchangePairData { pair: "SOL/USDT".to_string(), mid: dec!(140), volatility: dec!(1) },
             ],
         });
-
         let orders = state.compute_orders();
-        // 3 pairs × 2 sides = 6 orders
         assert_eq!(orders.len(), 6);
-
         let btc_orders: Vec<_> = orders.iter().filter(|o| o.pair == "BTC/USDT").collect();
         assert_eq!(btc_orders.len(), 2);
         assert!(btc_orders.iter().any(|o| o.side == "buy"));
@@ -228,24 +216,17 @@ mod tests {
                 volatility: dec!(1),
             }],
         });
-
         let orders = state.compute_orders();
-        let buy = orders
-            .iter()
-            .find(|o| o.pair == "BTC/USDT" && o.side == "buy")
+        let buy = orders.iter().find(|o| o.pair == "BTC/USDT" && o.side == "buy")
             .expect("no buy order for BTC/USDT");
-        let sell = orders
-            .iter()
-            .find(|o| o.pair == "BTC/USDT" && o.side == "sell")
+        let sell = orders.iter().find(|o| o.pair == "BTC/USDT" && o.side == "sell")
             .expect("no sell order for BTC/USDT");
-
         assert!(buy.price < sell.price, "bid must be below ask");
     }
 
     #[test]
     fn compute_orders_skips_disabled_pair() {
         let mut state = EngineState::new();
-        // Disable ETH/USDT
         for cfg in &mut state.config.pairs {
             if cfg.pair == "ETH/USDT" {
                 cfg.enabled = false;
@@ -253,26 +234,12 @@ mod tests {
         }
         state.update_from_exchange(ExchangeFeedPayload {
             pairs: vec![
-                ExchangePairData {
-                    pair: "BTC/USDT".to_string(),
-                    mid: dec!(62000),
-                    volatility: dec!(1),
-                },
-                ExchangePairData {
-                    pair: "ETH/USDT".to_string(),
-                    mid: dec!(3450),
-                    volatility: dec!(1),
-                },
-                ExchangePairData {
-                    pair: "SOL/USDT".to_string(),
-                    mid: dec!(140),
-                    volatility: dec!(1),
-                },
+                ExchangePairData { pair: "BTC/USDT".to_string(), mid: dec!(62000), volatility: dec!(1) },
+                ExchangePairData { pair: "ETH/USDT".to_string(), mid: dec!(3450), volatility: dec!(1) },
+                ExchangePairData { pair: "SOL/USDT".to_string(), mid: dec!(140), volatility: dec!(1) },
             ],
         });
-
         let orders = state.compute_orders();
-        // Disabled pair produces no orders
         assert!(
             orders.iter().all(|o| o.pair != "ETH/USDT"),
             "disabled pair should produce no orders"
@@ -290,7 +257,6 @@ mod tests {
                 volatility: dec!(1),
             }],
         });
-
         let orders = state.compute_orders();
         assert!(orders.is_empty(), "kill switch engaged should produce no orders");
     }

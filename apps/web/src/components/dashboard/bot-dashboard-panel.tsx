@@ -16,6 +16,7 @@ import { LiveQuotesSection } from '@/components/dashboard/live-quotes/live-quote
 import { PnlCurveSection } from '@/components/dashboard/pnl/pnl-curve-section';
 import { QuoteHistorySection } from '@/components/dashboard/quote-history-section';
 import { PnlPerformanceSection } from '@/components/dashboard/pnl/pnl-performance-section';
+import { StrategySection } from '@/components/dashboard/strategy-section';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { dedupeFills, dedupePnl } from '@/lib/bot-data-service';
@@ -28,6 +29,7 @@ import { useBotQuotesQuery } from './use-bot-quotes-query';
 import { useConfigMutation } from './use-config-mutation';
 import { useKillSwitchMutation } from './use-kill-switch-mutation';
 import { usePairActionMutation } from './use-pair-action-mutation';
+import { useStrategyMutation } from './use-strategy-mutation';
 
 type BotDashboardPanelProps = { bot: TopologyBot };
 
@@ -41,6 +43,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
     const configMutation = useConfigMutation(bot.id);
     const pairActionMutation = usePairActionMutation(bot.id);
     const killSwitchMutation = useKillSwitchMutation(bot.id);
+    const strategyMutation = useStrategyMutation(bot.id);
 
     const quotes = quotesQuery.data?.quotes ?? [];
     const fills = dedupeFills(fillsQuery.data?.items ?? []);
@@ -50,6 +53,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
     const config = quotesQuery.data?.config ?? null;
     const connected = quotesQuery.data?.connected ?? false;
     const killSwitchEngaged = quotesQuery.data?.killSwitchEngaged ?? false;
+    const strategy = quotesQuery.data?.strategy ?? 'balanced';
     const pendingPair = pairActionMutation.variables?.pair ?? null;
     const quoteHistoryEntries = quotesQuery.data?.quoteHistory ?? [];
     const latestPnl = pnl[0] ?? null;
@@ -94,6 +98,12 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     engaged={killSwitchEngaged}
                     pending={killSwitchMutation.isPending}
                     onToggle={(engaged) => killSwitchMutation.mutate(engaged)}
+                />
+
+                <StrategySection
+                    strategy={strategy}
+                    pending={strategyMutation.isPending}
+                    onSelect={(next) => strategyMutation.mutate(next)}
                 />
 
                 <AlertPanelSection

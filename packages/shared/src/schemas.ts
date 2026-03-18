@@ -1,9 +1,10 @@
 import { z } from 'zod';
 
-import { EXCHANGES, PAIRS } from './constants';
+import { EXCHANGES, PAIRS, STRATEGIES } from './constants';
 
 export const pairSchema = z.enum(PAIRS);
 export const exchangeSchema = z.enum(EXCHANGES);
+export const strategySchema = z.enum(STRATEGIES);
 export const sideSchema = z.enum(['buy', 'sell']);
 export const endpointUrlSchema = z.url();
 export const botIdSchema = z
@@ -136,6 +137,7 @@ export const engineStreamSchema = z.object({
     exchangeHealth: z.array(exchangeHealthSchema),
     config: mmConfigSchema,
     killSwitchEngaged: z.boolean().default(false),
+    strategy: strategySchema.default('balanced'),
 });
 
 export const pausePairRequestSchema = z.object({
@@ -149,6 +151,10 @@ export const hedgeRequestSchema = z.object({
 
 export const killSwitchRequestSchema = z.object({
     engaged: z.boolean(),
+});
+
+export const setStrategyRequestSchema = z.object({
+    strategy: strategySchema,
 });
 
 export const geoLocationSchema = z.object({
