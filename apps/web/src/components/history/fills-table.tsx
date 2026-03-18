@@ -5,6 +5,8 @@ import type { FC } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SortTh } from '@/components/history/sort-th';
+import { useTableSort } from '@/lib/use-table-sort';
 
 export type DbFill = {
     id: string;
@@ -43,6 +45,14 @@ export const FillsTable: FC<FillsTableProps> = ({
     onPageChange,
 }) => {
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const { sort, toggle, sorted } = useTableSort(fills, 'createdAt', 'desc');
+    const thProps = (col: string) => ({
+        col,
+        activeCol: sort.col,
+        dir: sort.dir,
+        onSort: toggle,
+        className: 'px-4 py-3',
+    });
 
     return (
         <Card>
@@ -74,14 +84,14 @@ export const FillsTable: FC<FillsTableProps> = ({
                 <table className="w-full text-sm">
                     <thead className="border-b border-slate-800 text-left text-slate-400">
                         <tr>
-                            <th className="px-4 py-3">Time</th>
-                            <th className="px-4 py-3">Bot</th>
-                            <th className="px-4 py-3">Pair</th>
-                            <th className="px-4 py-3">Side</th>
-                            <th className="px-4 py-3">Price</th>
-                            <th className="px-4 py-3">Size</th>
-                            <th className="px-4 py-3">Spread</th>
-                            <th className="px-4 py-3">Adverse</th>
+                            <SortTh label="Time" {...thProps('createdAt')} />
+                            <SortTh label="Bot" {...thProps('botId')} />
+                            <SortTh label="Pair" {...thProps('pair')} />
+                            <SortTh label="Side" {...thProps('side')} />
+                            <SortTh label="Price" {...thProps('price')} />
+                            <SortTh label="Size" {...thProps('size')} />
+                            <SortTh label="Spread" {...thProps('realizedSpread')} />
+                            <SortTh label="Adverse" {...thProps('adverseSelection')} />
                         </tr>
                     </thead>
                     <tbody>
@@ -96,7 +106,7 @@ export const FillsTable: FC<FillsTableProps> = ({
                                 </td>
                             </tr>
                         ) : (
-                            fills.map((fill) => (
+                            sorted.map((fill) => (
                                 <tr
                                     key={fill.id}
                                     className="border-b border-slate-800/50 hover:bg-slate-900/50"

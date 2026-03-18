@@ -4,6 +4,8 @@ import type { FC } from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MetricCard } from '@/components/dashboard/metric-card';
+import { SortTh } from '@/components/history/sort-th';
+import { useTableSort } from '@/lib/use-table-sort';
 
 export type DbPnLSnapshot = {
     id: string;
@@ -22,6 +24,18 @@ export const PnlHistorySection: FC<PnlHistorySectionProps> = ({
     snapshots,
 }) => {
     const latest = snapshots[0];
+    const { sort, toggle, sorted } = useTableSort(
+        snapshots,
+        'createdAt',
+        'desc',
+    );
+    const thProps = (col: string) => ({
+        col,
+        activeCol: sort.col,
+        dir: sort.dir,
+        onSort: toggle,
+        className: 'py-2 pr-4',
+    });
 
     return (
         <Card>
@@ -75,15 +89,15 @@ export const PnlHistorySection: FC<PnlHistorySectionProps> = ({
                             <table className="w-full text-sm">
                                 <thead className="sticky top-0 bg-slate-950 text-left text-slate-400">
                                     <tr>
-                                        <th className="py-2 pr-4">Time</th>
-                                        <th className="py-2 pr-4">Bot</th>
-                                        <th className="py-2 pr-4">Total PnL</th>
-                                        <th className="py-2 pr-4">Fill Rate</th>
-                                        <th className="py-2">Adverse</th>
+                                        <SortTh label="Time" {...thProps('createdAt')} />
+                                        <SortTh label="Bot" {...thProps('botId')} />
+                                        <SortTh label="Total PnL" {...thProps('totalPnl')} />
+                                        <SortTh label="Fill Rate" {...thProps('fillRate')} />
+                                        <SortTh label="Adverse" {...thProps('adverseSelectionRate')} className="py-2" />
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {snapshots.map((snap) => (
+                                    {sorted.map((snap) => (
                                         <tr
                                             key={snap.id}
                                             className="border-b border-slate-800/50"
