@@ -49,7 +49,8 @@ export function buildMarkers(
         });
     }
 
-    const exchangeLocation = autoGeo.get('exchange');
+    const exchangeLocation =
+        topology.exchangeLocation ?? autoGeo.get('exchange');
     if (exchangeLocation) {
         markers.push({
             lat: exchangeLocation.lat,
@@ -60,7 +61,7 @@ export function buildMarkers(
     }
 
     for (const bot of topology.bots) {
-        const location = autoGeo.get(bot.id);
+        const location = bot.location ?? autoGeo.get(bot.id);
         if (location) {
             markers.push({
                 lat: location.lat,
@@ -71,11 +72,12 @@ export function buildMarkers(
         }
     }
 
-    if (dashboardGeo) {
+    const resolvedDashboardGeo = topology.dashboardLocation ?? dashboardGeo;
+    if (resolvedDashboardGeo) {
         markers.push({
-            lat: dashboardGeo.lat,
-            lng: dashboardGeo.lng,
-            label: dashboardGeo.label ?? 'Dashboard',
+            lat: resolvedDashboardGeo.lat,
+            lng: resolvedDashboardGeo.lng,
+            label: resolvedDashboardGeo.label ?? 'Dashboard',
             kind: 'dashboard',
         });
     }

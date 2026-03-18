@@ -33,11 +33,18 @@ export const GeoMapSection: FC<GeoMapSectionProps> = ({ topology }) => {
         { id: 'exchange', url: topology.exchangeHttpUrl, name: 'Exchange' },
     ];
 
-    const dashboardGeoResult = useDashboardGeoQuery();
-    const geoResults = useServiceGeoQueries(allEntries);
+    // Only fetch geo for services that don't have a static location in topology
+    const entriesNeedingGeo = allEntries.filter((entry) => {
+        if (entry.id === 'exchange') return !topology.exchangeLocation;
+        const bot = topology.bots.find((b) => b.id === entry.id);
+        return !bot?.location;
+    });
+
+    const dashboardGeoResult = useDashboardGeoQuery(!topology.dashboardLocation);
+    const geoResults = useServiceGeoQueries(entriesNeedingGeo);
 
     const autoGeo = new Map<string, DetectedGeo>();
-    allEntries.forEach((entry, idx) => {
+    entriesNeedingGeo.forEach((entry, idx) => {
         const data = geoResults[idx]?.data;
         if (data) {
             autoGeo.set(entry.id, data);
