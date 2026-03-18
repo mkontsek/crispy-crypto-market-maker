@@ -8,7 +8,7 @@ import { AlertPanelSection } from '@/components/dashboard/alert-panel-section';
 import { ConfigPanelSection } from '@/components/dashboard/config-panel/config-panel-section';
 import { EventLogSection } from '@/components/dashboard/event-log-section';
 import { ExchangeHealthSection } from '@/components/dashboard/exchange-health-section';
-import { ExposureSection } from '@/components/dashboard/exposure-section';
+import { ExposureSection } from '@/components/dashboard/exposure/exposure-section';
 import { FillMetricsSection } from '@/components/dashboard/fill-metrics-section';
 import { InventoryMonitorSection } from '@/components/dashboard/inventory-monitor-section';
 import { KillSwitchSection } from '@/components/dashboard/kill-switch-section';
@@ -21,7 +21,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { dedupeFills, dedupePnl } from '@/lib/bot-data-service';
 import { cn } from '@/lib/utils';
 
-import { useBotFillsQuery } from './use-bot-fills-query';
+import { useBotFillsQuery } from './pnl/use-bot-fills-query';
 import { useBotInventoryQuery } from './use-bot-inventory-query';
 import { useBotPnlQuery } from './use-bot-pnl-query';
 import { useBotQuotesQuery } from './use-bot-quotes-query';
@@ -110,7 +110,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
             }
             onManualHedge={(pair) => pairActionMutation.mutate({ pair, action: 'hedge' })}
           />
-          <PnlPerformanceSection pnl={pnl} fills={fills} />
+          <PnlPerformanceSection botId={bot.id} pnl={pnl} />
         </div>
 
         <ExposureSection inventory={inventory} quotes={quotes} config={config} />

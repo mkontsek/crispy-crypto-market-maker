@@ -23,16 +23,32 @@ type FillsTableProps = {
   total: number;
   page: number;
   pageSize: number;
+  isLoading: boolean;
   onPageChange: (page: number) => void;
 };
 
-export const FillsTable: FC<FillsTableProps> = ({ fills, total, page, pageSize, onPageChange }) => {
+export const FillsTable: FC<FillsTableProps> = ({
+  fills,
+  total,
+  page,
+  pageSize,
+  isLoading,
+  onPageChange,
+}) => {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-wrap items-center justify-between gap-2">
         <CardTitle>Fill History ({total} total)</CardTitle>
+        <div className="flex flex-wrap items-center gap-2">
+          {isLoading ? (
+            <Badge tone="warning">Loading…</Badge>
+          ) : (
+            <Badge tone="success">Loaded</Badge>
+          )}
+          <Badge tone="default">Auto-refreshes every 10s</Badge>
+        </div>
       </CardHeader>
       <CardContent className="overflow-x-auto p-0">
         <table className="w-full text-sm">

@@ -5,6 +5,7 @@ import type { RuntimeTopology, TopologyBot } from '@crispy/shared';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { buildNewBot, cloneTopology } from '@/lib/topology-service';
@@ -28,7 +29,10 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({ topology
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Network Topology</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle>Network Topology</CardTitle>
+            <Badge tone="default">{topology?.bots.length ?? 0} bot(s) configured</Badge>
+          </div>
           <button
             type="button"
             aria-expanded={isOpen}
@@ -89,7 +93,10 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({ topology
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Network Topology</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle>Network Topology</CardTitle>
+          <Badge tone="default">{draft.bots.length} bot(s) configured</Badge>
+        </div>
         <div className="flex items-center gap-2">
           {isOpen && (
             <>
