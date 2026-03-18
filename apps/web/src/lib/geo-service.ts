@@ -1,15 +1,8 @@
 import type { RuntimeTopology } from '@crispy/shared';
 
-import type { GeoMapMarker } from '@/components/dashboard/geo-map-section';
+import type { GeoMapMarker } from '@/components/dashboard/geo-map/geo-map-section';
 
 export type DetectedGeo = { lat: number; lng: number; label?: string };
-
-interface IpapiClientResponse {
-  latitude?: number;
-  longitude?: number;
-  city?: string;
-  country_name?: string;
-}
 
 export const EXCHANGE_LOCATIONS: Record<string, { lat: number; lng: number }> = {
   Binance: { lat: 1.3521, lng: 103.8198 },
@@ -17,53 +10,24 @@ export const EXCHANGE_LOCATIONS: Record<string, { lat: number; lng: number }> = 
   OKX: { lat: 22.3193, lng: 114.1694 },
 };
 
-export function isLocalhostHostname(hostname: string): boolean {
-  const h = hostname.toLowerCase();
-  return (
-    h === 'localhost' ||
-    h === '127.0.0.1' ||
-    h === '::1' ||
-    h === '[::1]' ||
-    h.endsWith('.localhost')
-  );
-}
-
-export async function geoFromIpapiDirect(fallbackLabel: string): Promise<DetectedGeo | null> {
+export async function fetchGeoForUrl(httpUrl: string): Promise<DetectedGeo | null> {
   try {
-    const resp = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+    const resp = await fetch(`/api/geo?url=${encodeURIComponent(httpUrl)}`);
     if (!resp.ok) return null;
-    const raw = (await resp.json()) as IpapiClientResponse;
-    if (typeof raw.latitude !== 'number' || typeof raw.longitude !== 'number') return null;
-    const parts = [raw.city, raw.country_name].filter(Boolean);
-    return { lat: raw.latitude, lng: raw.longitude, label: parts.join(', ') || fallbackLabel };
+    return (await resp.json()) as DetectedGeo;
   } catch {
     return null;
   }
 }
 
-export async function fetchGeoForUrl(httpUrl: string): Promise<DetectedGeo | null> {
-  try {
-    const resp = await fetch(`/api/geo?url=${encodeURIComponent(httpUrl)}`);
-    if (resp.ok) return (await resp.json()) as DetectedGeo;
-  } catch { /* fall through to browser-side fallback */ }
-
-  try {
-    const parsed = new URL(httpUrl);
-    if (isLocalhostHostname(parsed.hostname)) {
-      return geoFromIpapiDirect('Bot');
-    }
-  } catch { /* ignore malformed URLs */ }
-
-  return null;
-}
-
 export async function fetchDashboardGeo(): Promise<DetectedGeo | null> {
   try {
     const resp = await fetch('/api/geo');
-    if (resp.ok) return (await resp.json()) as DetectedGeo;
-  } catch { /* fall through to browser-side fallback */ }
-
-  return geoFromIpapiDirect('Dashboard');
+    if (!resp.ok) return null;
+    return (await resp.json()) as DetectedGeo;
+  } catch {
+    return null;
+  }
 }
 
 export function buildMarkers(

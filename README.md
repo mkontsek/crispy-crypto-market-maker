@@ -131,6 +131,12 @@ browsed at [http://localhost:3008/history](http://localhost:3008/history).
 pnpm run dev:all
 ```
 
+`dev:*` scripts automatically check local listeners and stop processes already bound to these dev ports before startup:
+
+- `3008` (web)
+- `3110` (bot)
+- `3111` (exchange)
+
 **Option 2: Individual terminals with watch mode**
 
 Terminal 1 (exchange with auto-reload):
@@ -163,11 +169,11 @@ pnpm --filter @crispy/web dev
 
 ```bash
 # Development
-pnpm dev            # Turbo parallel dev for web packages
+pnpm dev            # Turbo parallel dev for web packages (auto-frees :3008)
 pnpm dev:all        # All services (exchange + bot + web) in background
-pnpm dev:exchange   # Exchange in watch mode
-pnpm dev:bot        # Bot in watch mode
-pnpm dev:web        # Web only in dev mode
+pnpm dev:exchange   # Exchange in watch mode (auto-frees :3111)
+pnpm dev:bot        # Bot in watch mode (auto-frees :3110)
+pnpm dev:web        # Web only in dev mode (auto-frees :3008)
 
 # Build
 pnpm build          # Turbo build for web packages

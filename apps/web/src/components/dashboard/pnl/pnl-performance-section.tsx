@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { priceFromFp, ratioFromDecimal, sizeFromFp } from '@/lib/fixed-point';
 import { nanosToTime } from '@/lib/timestamp';
-import { MetricCard } from './metric-card';
+import { MetricCard } from '../metric-card';
 
 type PnlPerformanceSectionProps = {
   pnl: PnLSnapshot[];
