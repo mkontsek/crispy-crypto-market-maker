@@ -1,11 +1,10 @@
 export type LogLevel = 'info' | 'warning' | 'critical';
-export type LogEntry = { id: number; time: string; level: LogLevel; message: string };
+export type LogEntry = { id: string; time: string; level: LogLevel; message: string };
 export type LogAction = { type: 'push'; entries: LogEntry[] };
 
-let seq = 0;
-
 export function makeLogEntry(level: LogLevel, message: string): LogEntry {
-  return { id: seq++, time: new Date().toLocaleTimeString(), level, message };
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  return { id, time: new Date().toLocaleTimeString(), level, message };
 }
 
 export function logReducer(state: LogEntry[], action: LogAction): LogEntry[] {

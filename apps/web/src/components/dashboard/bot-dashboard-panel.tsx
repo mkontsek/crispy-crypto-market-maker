@@ -237,5 +237,3 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
     </section>
   );
 };
-
-

@@ -7,14 +7,14 @@ describe('makeLogEntry', () => {
     const entry = makeLogEntry('info', 'test message');
     expect(entry.level).toBe('info');
     expect(entry.message).toBe('test message');
-    expect(typeof entry.id).toBe('number');
+    expect(typeof entry.id).toBe('string');
     expect(typeof entry.time).toBe('string');
   });
 
-  it('increments id for successive entries', () => {
+  it('generates unique ids for successive entries', () => {
     const a = makeLogEntry('info', 'a');
     const b = makeLogEntry('warning', 'b');
-    expect(b.id).toBeGreaterThan(a.id);
+    expect(b.id).not.toBe(a.id);
   });
 });
 
