@@ -16,6 +16,8 @@ pub struct EngineState {
     pub total_fills: u64,
     pub adverse_fills: u64,
     pub fill_seq: u64,
+    /// When true, no orders are placed and all pairs are kept paused.
+    pub kill_switch_engaged: bool,
 }
 
 impl EngineState {
@@ -53,6 +55,7 @@ impl EngineState {
             total_fills: 0,
             adverse_fills: 0,
             fill_seq: 0,
+            kill_switch_engaged: false,
         }
     }
 
@@ -71,6 +74,10 @@ impl EngineState {
     /// Compute MM quotes and return the list of orders to place on the exchange.
     /// Updates bid/ask/spread in `PairState` based on current exchange prices + MM config.
     pub fn compute_orders(&mut self) -> Vec<ExchangeOrderRequest> {
+        if self.kill_switch_engaged {
+            return Vec::new();
+        }
+
         let mut orders = Vec::new();
 
         for cfg in self.config.pairs.clone() {
@@ -270,5 +277,21 @@ mod tests {
             orders.iter().all(|o| o.pair != "ETH/USDT"),
             "disabled pair should produce no orders"
         );
+    }
+
+    #[test]
+    fn compute_orders_returns_empty_when_kill_switch_engaged() {
+        let mut state = EngineState::new();
+        state.kill_switch_engaged = true;
+        state.update_from_exchange(ExchangeFeedPayload {
+            pairs: vec![ExchangePairData {
+                pair: "BTC/USDT".to_string(),
+                mid: dec!(62000),
+                volatility: dec!(1),
+            }],
+        });
+
+        let orders = state.compute_orders();
+        assert!(orders.is_empty(), "kill switch engaged should produce no orders");
     }
 }
