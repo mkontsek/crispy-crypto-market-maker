@@ -2,6 +2,8 @@ import type { RuntimeTopology } from '@crispy/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Dispatch, SetStateAction } from 'react';
 
+import { saveTopologyToStorage } from '@/lib/topology-storage';
+
 interface UseTopologyMutationProps {
     setSelectedBotId: Dispatch<SetStateAction<string | null>>;
 }
@@ -24,6 +26,8 @@ export function useTopologyMutation({
             return (await response.json()) as RuntimeTopology;
         },
         onSuccess: (updatedTopology) => {
+            saveTopologyToStorage(updatedTopology);
+
             const previousTopology = queryClient.getQueryData<RuntimeTopology>([
                 'topology',
             ]);

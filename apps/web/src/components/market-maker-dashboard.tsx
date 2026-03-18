@@ -1,7 +1,7 @@
 'use client';
 
 import type { FC } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { BotDashboardPanel } from '@/components/dashboard/bot-dashboard-panel';
 import { DashboardHeaderNavLinks } from '@/components/dashboard/dashboard-header-nav-links';
@@ -10,6 +10,7 @@ import { GeoMapSection } from '@/components/dashboard/geo-map/geo-map-section';
 import { TopologyConfigSection } from '@/components/dashboard/topology-config/topology-config-section';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { loadTopologyFromStorage } from '@/lib/topology-storage';
 
 import { useTopologyMutation } from './use-topology-mutation';
 import { useTopologyQuery } from './use-topology-query';
@@ -19,6 +20,14 @@ export const MarketMakerDashboard: FC = () => {
 
     const topologyQuery = useTopologyQuery();
     const topologyMutation = useTopologyMutation({ setSelectedBotId });
+    const { mutate: restoreTopology } = topologyMutation;
+
+    useEffect(() => {
+        const saved = loadTopologyFromStorage();
+        if (saved) {
+            restoreTopology(saved);
+        }
+    }, [restoreTopology]);
 
     const topology = topologyQuery.data ?? null;
     const bots = topology?.bots ?? [];
