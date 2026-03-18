@@ -1,0 +1,36 @@
+# dependencies
+node_modules
+**/node_modules
+.pnp
+.pnp.*
+.yarn
+
+# build outputs
+.next
+**/.next
+out
+build
+dist
+**/dist
+.turbo
+**/.turbo
+coverage
+target
+**/target
+
+# runtime and logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# generated or local-only files
+.vercel
+.idea
+*.iml
+*.tsbuildinfo
+next-env.d.ts
+.env*
+pnpm-lock.yaml

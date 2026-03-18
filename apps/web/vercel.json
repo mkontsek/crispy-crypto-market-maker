@@ -1,6 +1,5 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd ../.. && pnpm build --filter=@crispy/web",
-  "installCommand": "cd ../.. && pnpm install"
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "buildCommand": "cd ../.. && pnpm build --filter=@crispy/web",
+    "installCommand": "cd ../.. && pnpm install"
 }
-

@@ -7,9 +7,15 @@ export { CardContent } from './card-content';
 export { CardHeader } from './card-header';
 export { CardTitle } from './card-title';
 
-export const Card: FC<React.ComponentProps<'section'>> = ({ className, ...props }) => (
-  <section
-    className={cn('rounded-xl border border-slate-800 bg-slate-950/80', className)}
-    {...props}
-  />
+export const Card: FC<React.ComponentProps<'section'>> = ({
+    className,
+    ...props
+}) => (
+    <section
+        className={cn(
+            'rounded-xl border border-slate-800 bg-slate-950/80',
+            className
+        )}
+        {...props}
+    />
 );

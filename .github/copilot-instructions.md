@@ -3,6 +3,7 @@
 > **About this file (v1.1.0):** Lean version optimized for context efficiency. Core principles here; detailed patterns loaded on-demand via skills (Next.js, Rust, testing).
 >
 > **Architecture:**
+>
 > - `.github/copilot-instructions.md` (this file): Core philosophy + cross-cutting rules (~100 lines, always loaded).
 > - `.github/skills/`: Detailed, stack-specific patterns (Next.js, Rust, testing) loaded on demand.
 

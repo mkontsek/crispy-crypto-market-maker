@@ -5,36 +5,36 @@ import './globals.css';
 import { Providers } from './providers';
 
 const metadataBase = process.env.NEXT_PUBLIC_APP_URL
-  ? new URL(process.env.NEXT_PUBLIC_APP_URL)
-  : new URL('http://localhost:3008');
+    ? new URL(process.env.NEXT_PUBLIC_APP_URL)
+    : new URL('http://localhost:3008');
 
 export const metadata: Metadata = {
-  metadataBase,
-  title: 'Crispy Crypto Market Maker',
-  description: 'Market making control plane for simulated crypto venues.',
-  openGraph: {
+    metadataBase,
     title: 'Crispy Crypto Market Maker',
     description: 'Market making control plane for simulated crypto venues.',
-    images: ['/og-image.jpg'],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Crispy Crypto Market Maker',
-    description: 'Market making control plane for simulated crypto venues.',
-    images: ['/og-image.jpg'],
-  },
+    openGraph: {
+        title: 'Crispy Crypto Market Maker',
+        description: 'Market making control plane for simulated crypto venues.',
+        images: ['/og-image.jpg'],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Crispy Crypto Market Maker',
+        description: 'Market making control plane for simulated crypto venues.',
+        images: ['/og-image.jpg'],
+    },
 };
 
 type RootLayoutProps = Readonly<{ children: React.ReactNode }>;
 
 const RootLayout: FC<RootLayoutProps> = ({ children }) => {
-  return (
-    <html lang="en">
-      <body>
-        <Providers>{children}</Providers>
-      </body>
-    </html>
-  );
+    return (
+        <html lang="en">
+            <body>
+                <Providers>{children}</Providers>
+            </body>
+        </html>
+    );
 };
 
 export default RootLayout;

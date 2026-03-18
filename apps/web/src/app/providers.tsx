@@ -8,19 +8,21 @@ import { useState } from 'react';
 type ProvidersProps = { children: ReactNode };
 
 export const Providers: FC<ProvidersProps> = ({ children }) => {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 0,
-            refetchOnWindowFocus: false,
-          },
-        },
-      })
-  );
+    const [queryClient] = useState(
+        () =>
+            new QueryClient({
+                defaultOptions: {
+                    queries: {
+                        staleTime: 0,
+                        refetchOnWindowFocus: false,
+                    },
+                },
+            })
+    );
 
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+    return (
+        <QueryClientProvider client={queryClient}>
+            {children}
+        </QueryClientProvider>
+    );
 };
