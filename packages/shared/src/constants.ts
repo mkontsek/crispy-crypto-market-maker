@@ -1,5 +1,6 @@
 export const PAIRS = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'] as const;
 export const EXCHANGES = ['Binance', 'Bybit', 'OKX'] as const;
+export const STRATEGIES = ['conservative', 'balanced', 'aggressive'] as const;
 export const DEFAULT_BOT_ID = 'bot-1';
 
 /** Bot WebSocket stream (consumed by the Next.js BFF). */

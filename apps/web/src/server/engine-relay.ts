@@ -34,6 +34,7 @@ type RelayState = {
     quoteHistory: QuoteHistoryEntry[];
     config: MMConfig | null;
     killSwitchEngaged: boolean;
+    strategy: string;
 };
 
 type BotRelay = {
@@ -58,6 +59,7 @@ function createRelayState(): RelayState {
         quoteHistory: [],
         config: null,
         killSwitchEngaged: false,
+        strategy: 'balanced',
     };
 }
 
@@ -97,6 +99,7 @@ function ingestPayload(botId: BotId, payload: EngineStreamPayload) {
     relay.state.exchangeHealth = payload.exchangeHealth;
     relay.state.config = payload.config;
     relay.state.killSwitchEngaged = payload.killSwitchEngaged;
+    relay.state.strategy = payload.strategy;
 
     relay.state.fills = cap([...payload.fills, ...relay.state.fills], 500);
     relay.state.pnlHistory = cap([payload.pnl, ...relay.state.pnlHistory], 500);
@@ -276,6 +279,7 @@ export function getRelaySnapshot(botId: BotId): RelayState {
         quoteHistory: [...state.quoteHistory],
         config: state.config,
         killSwitchEngaged: state.killSwitchEngaged,
+        strategy: state.strategy,
     };
 }
 

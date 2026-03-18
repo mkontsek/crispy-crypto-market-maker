@@ -6,6 +6,7 @@ export {
     DEFAULT_EXCHANGE_WS_URL,
     EXCHANGES,
     PAIRS,
+    STRATEGIES,
 } from './constants';
 export {
     botIdSchema,
@@ -28,7 +29,9 @@ export {
     pnlSnapshotSchema,
     quoteSnapshotSchema,
     runtimeTopologySchema,
+    setStrategyRequestSchema,
     sideSchema,
+    strategySchema,
     topologyBotSchema,
     wsEndpointUrlSchema,
 } from './schemas';
@@ -48,5 +51,7 @@ export type {
     PnLSnapshot,
     QuoteSnapshot,
     RuntimeTopology,
+    SetStrategyRequest,
+    Strategy,
     TopologyBot,
 } from './types';
