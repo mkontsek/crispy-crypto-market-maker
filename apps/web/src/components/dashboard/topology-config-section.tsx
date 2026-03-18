@@ -1,56 +1,24 @@
 'use client';
 
+import type { FC } from 'react';
 import type { RuntimeTopology, TopologyBot } from '@crispy/shared';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { buildNewBot, cloneTopology } from '@/lib/topology-service';
 
 import { TextField } from './text-field';
 import { UrlField } from './url-field';
 
-function cloneTopology(topology: RuntimeTopology): RuntimeTopology {
-  return {
-    exchangeWsUrl: topology.exchangeWsUrl,
-    exchangeHttpUrl: topology.exchangeHttpUrl,
-    bots: topology.bots.map((bot) => ({ ...bot })),
-  };
-}
-
-function defaultBotName(botId: string) {
-  const suffix = botId.replace(/^bot-/, '').replace(/-/g, ' ').trim();
-  return suffix.length > 0 ? `Bot ${suffix}` : 'Bot';
-}
-
-function nextBotId(existingBots: TopologyBot[]) {
-  const existingIds = new Set(existingBots.map((bot) => bot.id));
-  let counter = existingBots.length + 1;
-  while (existingIds.has(`bot-${counter}`)) {
-    counter += 1;
-  }
-  return `bot-${counter}`;
-}
-
-function buildNewBot(existingBots: TopologyBot[]): TopologyBot {
-  const botId = nextBotId(existingBots);
-  return {
-    id: botId,
-    name: defaultBotName(botId),
-    wsUrl: `wss://${botId}.example.com/stream`,
-    httpUrl: `https://${botId}.example.com`,
-  };
-}
-
-export function TopologyConfigSection({
-  topology,
-  saving,
-  onSubmit,
-}: {
+type TopologyConfigSectionProps = {
   topology: RuntimeTopology | null;
   saving: boolean;
   onSubmit: (next: RuntimeTopology) => void;
-}) {
+};
+
+export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({ topology, saving, onSubmit }) => {
   const [draft, setDraft] = useState<RuntimeTopology | null>(
     topology ? cloneTopology(topology) : null
   );
@@ -217,4 +185,4 @@ export function TopologyConfigSection({
       )}
     </Card>
   );
-}
+};

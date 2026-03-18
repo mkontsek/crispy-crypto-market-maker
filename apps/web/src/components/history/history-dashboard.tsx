@@ -1,5 +1,6 @@
 'use client';
 
+import type { FC } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -13,7 +14,7 @@ type FillsResponse = { items: DbFill[]; total: number; page: number; pageSize: n
 type PnlResponse = { items: DbPnLSnapshot[] };
 type InventoryResponse = { items: DbInventory[] };
 
-export function HistoryDashboard() {
+export const HistoryDashboard: FC = () => {
   const [fillsPage, setFillsPage] = useState(1);
   const PAGE_SIZE = 50;
 
@@ -75,4 +76,4 @@ export function HistoryDashboard() {
       <InventoryHistorySection rows={inventoryRows} />
     </main>
   );
-}
+};

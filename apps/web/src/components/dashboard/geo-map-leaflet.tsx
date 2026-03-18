@@ -1,5 +1,6 @@
 'use client';
 
+import type { FC } from 'react';
 import 'leaflet/dist/leaflet.css';
 
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
@@ -10,11 +11,9 @@ import { buildMarkerPixelOffsets } from './marker-overlap';
 import { markerIcon } from './marker-icon';
 import { BoundsController } from './use-bounds-controller';
 
-export default function GeoMapLeaflet({
-  markers,
-}: {
-  markers: GeoMapMarker[];
-}) {
+type GeoMapLeafletProps = { markers: GeoMapMarker[] };
+
+const GeoMapLeaflet: FC<GeoMapLeafletProps> = ({ markers }) => {
   const defaultCenter: [number, number] = [20, 10];
   const defaultZoom = 2;
   const markerOffsets = buildMarkerPixelOffsets(markers);
@@ -52,4 +51,6 @@ export default function GeoMapLeaflet({
       </div>
     </div>
   );
-}
+};
+
+export default GeoMapLeaflet;

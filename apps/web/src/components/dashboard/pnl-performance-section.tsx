@@ -1,17 +1,19 @@
+import type { FC } from 'react';
+
 import type { Fill, PnLSnapshot } from '@crispy/shared';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { priceFromFp, ratioFromDecimal, sizeFromFp } from '@/lib/fixed-point';
 import { nanosToTime } from '@/lib/timestamp';
+import { MetricCard } from './metric-card';
 
-export function PnlPerformanceSection({
-  pnl,
-  fills,
-}: {
+type PnlPerformanceSectionProps = {
   pnl: PnLSnapshot[];
   fills: Fill[];
-}) {
+};
+
+export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({ pnl, fills }) => {
   const latest = pnl[0];
   const totalFills = fills.length;
   const adverseFills = fills.filter((f) => f.adverseSelection).length;
@@ -24,24 +26,21 @@ export function PnlPerformanceSection({
       <CardContent className="space-y-4">
         {latest ? (
           <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-5">
-            <Metric label="Total PnL" value={priceFromFp(latest.totalPnl).toFixed(2)} />
-            <Metric label="Realized Spread" value={priceFromFp(latest.realizedSpread).toFixed(2)} />
-            <Metric label="Fill Rate" value={`${(ratioFromDecimal(latest.fillRate) * 100).toFixed(1)}%`} />
-            <Metric
+            <MetricCard label="Total PnL" value={priceFromFp(latest.totalPnl).toFixed(2)} />
+            <MetricCard label="Realized Spread" value={priceFromFp(latest.realizedSpread).toFixed(2)} />
+            <MetricCard label="Fill Rate" value={`${(ratioFromDecimal(latest.fillRate) * 100).toFixed(1)}%`} />
+            <MetricCard
               label="Adverse Selection"
               value={`${(ratioFromDecimal(latest.adverseSelectionRate) * 100).toFixed(1)}%`}
             />
-            <Metric label="Hedging Costs" value={priceFromFp(latest.hedgingCosts).toFixed(2)} />
+            <MetricCard label="Hedging Costs" value={priceFromFp(latest.hedgingCosts).toFixed(2)} />
           </div>
         ) : null}
 
         <div className="grid grid-cols-3 gap-3 text-sm">
-          <Metric label="Total Fills" value={String(totalFills)} />
-          <Metric label="Adverse Fills" value={String(adverseFills)} />
-          <Metric
-            label="Clean Fills"
-            value={String(totalFills - adverseFills)}
-          />
+          <MetricCard label="Total Fills" value={String(totalFills)} />
+          <MetricCard label="Adverse Fills" value={String(adverseFills)} />
+          <MetricCard label="Clean Fills" value={String(totalFills - adverseFills)} />
         </div>
 
         <div>
@@ -69,13 +68,4 @@ export function PnlPerformanceSection({
       </CardContent>
     </Card>
   );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded border border-slate-800 p-3">
-      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="mt-1 text-base font-semibold">{value}</div>
-    </div>
-  );
-}
+};

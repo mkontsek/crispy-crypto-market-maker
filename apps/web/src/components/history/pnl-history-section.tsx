@@ -1,6 +1,9 @@
 'use client';
 
+import type { FC } from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MetricCard } from '@/components/dashboard/metric-card';
 
 export type DbPnLSnapshot = {
   id: string;
@@ -13,16 +16,9 @@ export type DbPnLSnapshot = {
   createdAt: string;
 };
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded border border-slate-800 p-3">
-      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="mt-1 text-base font-semibold">{value}</div>
-    </div>
-  );
-}
+type PnlHistorySectionProps = { snapshots: DbPnLSnapshot[] };
 
-export function PnlHistorySection({ snapshots }: { snapshots: DbPnLSnapshot[] }) {
+export const PnlHistorySection: FC<PnlHistorySectionProps> = ({ snapshots }) => {
   const latest = snapshots[0];
 
   return (
@@ -37,14 +33,14 @@ export function PnlHistorySection({ snapshots }: { snapshots: DbPnLSnapshot[] })
               Latest snapshot — {new Date(latest.createdAt).toLocaleString()}
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-5">
-              <Metric label="Total PnL" value={latest.totalPnl.toFixed(2)} />
-              <Metric label="Realized Spread" value={latest.realizedSpread.toFixed(4)} />
-              <Metric label="Fill Rate" value={`${(latest.fillRate * 100).toFixed(1)}%`} />
-              <Metric
+              <MetricCard label="Total PnL" value={latest.totalPnl.toFixed(2)} />
+              <MetricCard label="Realized Spread" value={latest.realizedSpread.toFixed(4)} />
+              <MetricCard label="Fill Rate" value={`${(latest.fillRate * 100).toFixed(1)}%`} />
+              <MetricCard
                 label="Adverse Sel."
                 value={`${(latest.adverseSelectionRate * 100).toFixed(1)}%`}
               />
-              <Metric label="Hedging Costs" value={latest.hedgingCosts.toFixed(4)} />
+              <MetricCard label="Hedging Costs" value={latest.hedgingCosts.toFixed(4)} />
             </div>
           </div>
         ) : (
@@ -91,4 +87,4 @@ export function PnlHistorySection({ snapshots }: { snapshots: DbPnLSnapshot[] })
       </CardContent>
     </Card>
   );
-}
+};

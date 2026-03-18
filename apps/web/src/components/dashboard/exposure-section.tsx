@@ -1,65 +1,19 @@
+import type { FC } from 'react';
+
 import type { InventorySnapshot, MMConfig, QuoteSnapshot } from '@crispy/shared';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { priceFromFp, sizeFromFp } from '@/lib/fixed-point';
+import { buildExposureRows, limitTone } from '@/lib/exposure-service';
 
-type ExposureRow = {
-  pair: string;
-  baseInventory: number;
-  mid: number;
-  notional: number;
-  maxInventory: number;
-  pctOfLimit: number;
-  stressUp5: number;
-  stressDown5: number;
-};
-
-function buildRows(
-  inventory: InventorySnapshot[],
-  quotes: QuoteSnapshot[],
-  config: MMConfig | null
-): ExposureRow[] {
-  const midMap = new Map(quotes.map((q) => [q.pair, priceFromFp(q.mid)]));
-  const maxMap = config
-    ? new Map(config.pairs.map((p) => [p.pair, sizeFromFp(p.maxInventory)]))
-    : new Map<string, number>();
-
-  return inventory.map((inv) => {
-    const baseInventory = sizeFromFp(inv.inventory);
-    const mid = midMap.get(inv.pair) ?? 0;
-    const notional = baseInventory * mid;
-    const maxInventory = maxMap.get(inv.pair) ?? 1;
-    const pctOfLimit = maxInventory > 0 ? (Math.abs(baseInventory) / maxInventory) * 100 : 0;
-    return {
-      pair: inv.pair,
-      baseInventory,
-      mid,
-      notional,
-      maxInventory,
-      pctOfLimit,
-      stressUp5: notional * 0.05,
-      stressDown5: -notional * 0.05,
-    };
-  });
-}
-
-function limitTone(pct: number) {
-  if (pct > 90) return 'danger' as const;
-  if (pct > 70) return 'warning' as const;
-  return 'success' as const;
-}
-
-export function ExposureSection({
-  inventory,
-  quotes,
-  config,
-}: {
+type ExposureSectionProps = {
   inventory: InventorySnapshot[];
   quotes: QuoteSnapshot[];
   config: MMConfig | null;
-}) {
-  const rows = buildRows(inventory, quotes, config);
+};
+
+export const ExposureSection: FC<ExposureSectionProps> = ({ inventory, quotes, config }) => {
+  const rows = buildExposureRows(inventory, quotes, config);
   const totalNotional = rows.reduce((sum, r) => sum + Math.abs(r.notional), 0);
 
   return (
@@ -110,4 +64,4 @@ export function ExposureSection({
       </CardContent>
     </Card>
   );
-}
+};

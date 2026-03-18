@@ -1,5 +1,7 @@
+import type { FC } from 'react';
+
 import { MarketMakerDashboard } from '@/components/market-maker-dashboard';
 
-export default function DashboardPage() {
-  return <MarketMakerDashboard />;
-}
+const DashboardPage: FC = () => <MarketMakerDashboard />;
+
+export default DashboardPage;

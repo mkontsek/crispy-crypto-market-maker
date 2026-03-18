@@ -1,5 +1,6 @@
 'use client';
 
+import type { FC } from 'react';
 import type {
   BotId,
   ExchangeHealth,
@@ -30,6 +31,7 @@ import { PnlPerformanceSection } from '@/components/dashboard/pnl-performance-se
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { fetchJson } from '@/lib/fetch-json';
+import { dedupeFills, dedupePnl } from '@/lib/bot-data-service';
 
 type QuotesResponse = {
   botId: BotId;
@@ -57,7 +59,9 @@ type InventoryResponse = {
   current: InventorySnapshot[];
 };
 
-export function BotDashboardPanel({ bot }: { bot: TopologyBot }) {
+type BotDashboardPanelProps = { bot: TopologyBot };
+
+export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
   const queryClient = useQueryClient();
   const botQuery = encodeURIComponent(bot.id);
 
@@ -232,27 +236,6 @@ export function BotDashboardPanel({ bot }: { bot: TopologyBot }) {
       ) : null}
     </section>
   );
-}
+};
 
-function dedupeFills(fills: Fill[]) {
-  const seen = new Set<string>();
-  const output: Fill[] = [];
-  for (const fill of fills) {
-    if (seen.has(fill.id)) continue;
-    seen.add(fill.id);
-    output.push(fill);
-  }
-  return output.slice(0, 300);
-}
-
-function dedupePnl(pnl: PnLSnapshot[]) {
-  const seen = new Set<string>();
-  const output: PnLSnapshot[] = [];
-  for (const row of pnl) {
-    if (seen.has(row.timestamp)) continue;
-    seen.add(row.timestamp);
-    output.push(row);
-  }
-  return output.slice(0, 300);
-}
 

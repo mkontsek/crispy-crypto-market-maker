@@ -1,56 +1,39 @@
 'use client';
 
+import type { FC } from 'react';
 import { useEffect, useReducer, useRef } from 'react';
 
 import type { QuoteSnapshot } from '@crispy/shared';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { logLevelTone, logReducer, makeLogEntry } from '@/lib/event-log-service';
 
-type LogLevel = 'info' | 'warning' | 'critical';
-type LogEntry = { id: number; time: string; level: LogLevel; message: string };
-
-let seq = 0;
-function makeEntry(level: LogLevel, message: string): LogEntry {
-  return { id: seq++, time: new Date().toLocaleTimeString(), level, message };
-}
-
-type LogAction = { type: 'push'; entries: LogEntry[] };
-
-function logReducer(state: LogEntry[], action: LogAction): LogEntry[] {
-  if (action.type === 'push') {
-    return [...action.entries, ...state].slice(0, 200);
-  }
-  return state;
-}
-
-export function EventLogSection({
-  connected,
-  quotes,
-  killSwitchEngaged,
-}: {
+type EventLogSectionProps = {
   connected: boolean;
   quotes: QuoteSnapshot[];
   killSwitchEngaged: boolean;
-}) {
+};
+
+export const EventLogSection: FC<EventLogSectionProps> = ({ connected, quotes, killSwitchEngaged }) => {
   const [log, dispatch] = useReducer(logReducer, []);
   const prevConnected = useRef<boolean | null>(null);
   const prevKillSwitch = useRef<boolean | null>(null);
   const prevPaused = useRef(new Map<string, boolean>());
 
   useEffect(() => {
-    const entries: LogEntry[] = [];
+    const entries = [];
 
     if (prevConnected.current !== null && prevConnected.current !== connected) {
       entries.push(
-        makeEntry(connected ? 'info' : 'critical', connected ? 'Bot stream connected' : 'Bot stream disconnected')
+        makeLogEntry(connected ? 'info' : 'critical', connected ? 'Bot stream connected' : 'Bot stream disconnected')
       );
     }
     prevConnected.current = connected;
 
     if (prevKillSwitch.current !== null && prevKillSwitch.current !== killSwitchEngaged) {
       entries.push(
-        makeEntry(
+        makeLogEntry(
           killSwitchEngaged ? 'critical' : 'info',
           killSwitchEngaged ? 'Kill switch ENGAGED — all quoting halted' : 'Kill switch DISENGAGED'
         )
@@ -62,7 +45,7 @@ export function EventLogSection({
       const prev = prevPaused.current.get(quote.pair);
       if (prev !== undefined && prev !== quote.paused) {
         entries.push(
-          makeEntry(
+          makeLogEntry(
             quote.paused ? 'warning' : 'info',
             `${quote.pair} quoting ${quote.paused ? 'PAUSED' : 'RESUMED'}`
           )
@@ -75,12 +58,6 @@ export function EventLogSection({
       dispatch({ type: 'push', entries });
     }
   }, [connected, quotes, killSwitchEngaged]);
-
-  const levelTone = (level: LogLevel) => {
-    if (level === 'critical') return 'danger' as const;
-    if (level === 'warning') return 'warning' as const;
-    return 'default' as const;
-  };
 
   return (
     <Card>
@@ -96,7 +73,7 @@ export function EventLogSection({
             {log.slice(0, 100).map((entry) => (
               <div key={entry.id} className="flex items-center gap-2 font-mono text-xs">
                 <span className="min-w-[5rem] text-slate-500">{entry.time}</span>
-                <Badge tone={levelTone(entry.level)}>{entry.level}</Badge>
+                <Badge tone={logLevelTone(entry.level)}>{entry.level}</Badge>
                 <span>{entry.message}</span>
               </div>
             ))}
@@ -105,4 +82,4 @@ export function EventLogSection({
       </CardContent>
     </Card>
   );
-}
+};

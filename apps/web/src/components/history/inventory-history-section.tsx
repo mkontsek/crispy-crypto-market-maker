@@ -1,6 +1,9 @@
 'use client';
 
+import type { FC } from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { inventorySkewColor, inventorySkewWidth } from '@/lib/inventory-skew-service';
 
 export type DbInventory = {
   id: string;
@@ -11,23 +14,9 @@ export type DbInventory = {
   createdAt: string;
 };
 
-function skewColor(skew: number) {
-  const abs = Math.abs(skew);
-  if (abs < 0.4) return 'bg-emerald-500';
-  if (abs < 0.8) return 'bg-amber-500';
-  return 'bg-red-500';
-}
+type InventoryHistorySectionProps = { rows: DbInventory[] };
 
-function skewWidth(skew: number) {
-  const abs = Math.abs(skew);
-  if (abs < 0.01) return 'w-0';
-  if (abs < 0.25) return 'w-1/4';
-  if (abs < 0.5) return 'w-1/2';
-  if (abs < 0.75) return 'w-3/4';
-  return 'w-full';
-}
-
-export function InventoryHistorySection({ rows }: { rows: DbInventory[] }) {
+export const InventoryHistorySection: FC<InventoryHistorySectionProps> = ({ rows }) => {
   const byPair = rows.reduce<Record<string, DbInventory[]>>((acc, row) => {
     acc[row.pair] = acc[row.pair] ?? [];
     acc[row.pair].push(row);
@@ -59,7 +48,7 @@ export function InventoryHistorySection({ rows }: { rows: DbInventory[] }) {
                 </div>
                 <div className="mb-3 h-2 w-full overflow-hidden rounded bg-slate-800">
                   <div
-                    className={`h-full rounded transition-all ${skewColor(latest.normalizedSkew)} ${skewWidth(latest.normalizedSkew)}`}
+                    className={`h-full rounded transition-all ${inventorySkewColor(latest.normalizedSkew)} ${inventorySkewWidth(latest.normalizedSkew)}`}
                   />
                 </div>
                 <div className="max-h-36 overflow-y-auto">
@@ -91,4 +80,4 @@ export function InventoryHistorySection({ rows }: { rows: DbInventory[] }) {
       </CardContent>
     </Card>
   );
-}
+};

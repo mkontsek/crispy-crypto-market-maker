@@ -1,6 +1,7 @@
+import type { FC } from 'react';
 import Link from 'next/link';
 
-export default function HomePage() {
+const HomePage: FC = () => {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center gap-8 p-6">
       <section className="space-y-3">
@@ -38,4 +39,6 @@ export default function HomePage() {
       </section>
     </main>
   );
-}
+};
+
+export default HomePage;
