@@ -7,6 +7,8 @@ import {
     inventorySkewColor,
     inventorySkewWidth,
 } from '@/lib/inventory-skew-service';
+import { SortTh } from '@/components/history/sort-th';
+import { useTableSort } from '@/lib/use-table-sort';
 
 export type DbInventory = {
     id: string;
@@ -15,6 +17,78 @@ export type DbInventory = {
     inventory: number;
     normalizedSkew: number;
     createdAt: string;
+};
+
+type PairTableProps = { pair: string; history: DbInventory[] };
+
+const PairTable: FC<PairTableProps> = ({ pair, history }) => {
+    const latest = history[0];
+    const { sort, toggle, sorted } = useTableSort(history, 'createdAt', 'desc');
+    const thProps = (col: string) => ({
+        col,
+        activeCol: sort.col,
+        dir: sort.dir,
+        onSort: toggle,
+    });
+    if (!latest) return null;
+    return (
+        <div className="rounded border border-slate-800 p-3">
+            <div className="mb-2 flex items-center justify-between text-sm">
+                <span className="font-semibold">{pair}</span>
+                <span className="text-xs text-slate-400">
+                    inventory: {latest.inventory.toFixed(4)}
+                </span>
+            </div>
+            <div className="mb-3 h-2 w-full overflow-hidden rounded bg-slate-800">
+                <div
+                    className={`h-full rounded transition-all ${inventorySkewColor(latest.normalizedSkew)} ${inventorySkewWidth(latest.normalizedSkew)}`}
+                />
+            </div>
+            <div className="max-h-36 overflow-y-auto">
+                <table className="w-full text-xs">
+                    <thead className="sticky top-0 bg-slate-950 text-left text-slate-400">
+                        <tr>
+                            <SortTh
+                                label="Time"
+                                {...thProps('createdAt')}
+                                className="py-1 pr-3"
+                            />
+                            <SortTh
+                                label="Inventory"
+                                {...thProps('inventory')}
+                                className="py-1 pr-3"
+                            />
+                            <SortTh
+                                label="Skew"
+                                {...thProps('normalizedSkew')}
+                                className="py-1"
+                            />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sorted.map((row) => (
+                            <tr
+                                key={row.id}
+                                className="border-b border-slate-800/30"
+                            >
+                                <td className="py-1 pr-3 font-mono text-slate-400">
+                                    {new Date(
+                                        row.createdAt,
+                                    ).toLocaleTimeString()}
+                                </td>
+                                <td className="py-1 pr-3 font-mono">
+                                    {row.inventory.toFixed(4)}
+                                </td>
+                                <td className="py-1 font-mono">
+                                    {row.normalizedSkew.toFixed(3)}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
 };
 
 type InventoryHistorySectionProps = { rows: DbInventory[] };
@@ -43,70 +117,13 @@ export const InventoryHistorySection: FC<InventoryHistorySectionProps> = ({
                         No inventory snapshots stored yet.
                     </p>
                 ) : (
-                    pairs.map((pair) => {
-                        const history = byPair[pair] ?? [];
-                        const latest = history[0];
-                        if (!latest) return null;
-                        return (
-                            <div
-                                key={pair}
-                                className="rounded border border-slate-800 p-3"
-                            >
-                                <div className="mb-2 flex items-center justify-between text-sm">
-                                    <span className="font-semibold">
-                                        {pair}
-                                    </span>
-                                    <span className="text-xs text-slate-400">
-                                        inventory: {latest.inventory.toFixed(4)}
-                                    </span>
-                                </div>
-                                <div className="mb-3 h-2 w-full overflow-hidden rounded bg-slate-800">
-                                    <div
-                                        className={`h-full rounded transition-all ${inventorySkewColor(latest.normalizedSkew)} ${inventorySkewWidth(latest.normalizedSkew)}`}
-                                    />
-                                </div>
-                                <div className="max-h-36 overflow-y-auto">
-                                    <table className="w-full text-xs">
-                                        <thead className="sticky top-0 bg-slate-950 text-left text-slate-400">
-                                            <tr>
-                                                <th className="py-1 pr-3">
-                                                    Time
-                                                </th>
-                                                <th className="py-1 pr-3">
-                                                    Inventory
-                                                </th>
-                                                <th className="py-1">Skew</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {history.map((row) => (
-                                                <tr
-                                                    key={row.id}
-                                                    className="border-b border-slate-800/30"
-                                                >
-                                                    <td className="py-1 pr-3 font-mono text-slate-400">
-                                                        {new Date(
-                                                            row.createdAt
-                                                        ).toLocaleTimeString()}
-                                                    </td>
-                                                    <td className="py-1 pr-3 font-mono">
-                                                        {row.inventory.toFixed(
-                                                            4
-                                                        )}
-                                                    </td>
-                                                    <td className="py-1 font-mono">
-                                                        {row.normalizedSkew.toFixed(
-                                                            3
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        );
-                    })
+                    pairs.map((pair) => (
+                        <PairTable
+                            key={pair}
+                            pair={pair}
+                            history={byPair[pair] ?? []}
+                        />
+                    ))
                 )}
             </CardContent>
         </Card>
