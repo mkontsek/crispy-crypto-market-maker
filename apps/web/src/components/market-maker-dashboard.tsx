@@ -1,18 +1,19 @@
 'use client';
 
-import { type RuntimeTopology, type TopologyBot } from '@crispy/shared';
+import type { FC } from 'react';
+import { type RuntimeTopology } from '@crispy/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { BotDashboardPanel } from '@/components/dashboard/bot-dashboard-panel';
+import { BotTabButton } from '@/components/dashboard/bot-tab-button';
 import { GeoMapSection } from '@/components/dashboard/geo-map-section';
 import { TopologyConfigSection } from '@/components/dashboard/topology-config-section';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchJson } from '@/lib/fetch-json';
-import { cn } from '@/lib/utils';
 
-export function MarketMakerDashboard() {
+export const MarketMakerDashboard: FC = () => {
   const queryClient = useQueryClient();
   const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
 
@@ -126,31 +127,4 @@ export function MarketMakerDashboard() {
       {topology ? <GeoMapSection topology={topology} /> : null}
     </main>
   );
-}
-
-function BotTabButton({
-  bot,
-  active,
-  onClick,
-}: {
-  bot: TopologyBot;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'max-w-full rounded-md border px-3 py-2 text-left text-sm transition',
-        active
-          ? 'border-cyan-400 bg-cyan-950/40'
-          : 'border-slate-700 bg-slate-900 hover:bg-slate-800'
-      )}
-    >
-      <div className="font-medium">{bot.name}</div>
-      <div className="mt-1 text-xs text-slate-400">WS: {bot.wsUrl}</div>
-      <div className="text-xs text-slate-400">API: {bot.httpUrl}</div>
-    </button>
-  );
-}
+};

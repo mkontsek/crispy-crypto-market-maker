@@ -1,5 +1,7 @@
+import type { FC } from 'react';
+
 import { HistoryDashboard } from '@/components/history/history-dashboard';
 
-export default function HistoryPage() {
-  return <HistoryDashboard />;
-}
+const HistoryPage: FC = () => <HistoryDashboard />;
+
+export default HistoryPage;

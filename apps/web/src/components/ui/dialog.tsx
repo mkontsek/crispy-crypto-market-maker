@@ -1,20 +1,21 @@
 'use client';
 
+import type { FC } from 'react';
 import * as React from 'react';
 
-import { cn } from '@/lib/utils';
+import { TITLE_ID } from './dialog-title';
 
-const TITLE_ID = 'dialog-title';
+export { DialogContent } from './dialog-content';
+export { DialogHeader } from './dialog-header';
+export { DialogTitle } from './dialog-title';
 
-export function Dialog({
-  open,
-  onClose,
-  children,
-}: {
+type DialogProps = {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
-}) {
+};
+
+export const Dialog: FC<DialogProps> = ({ open, onClose, children }) => {
   const panelRef = React.useRef<HTMLDivElement>(null);
   const triggerRef = React.useRef<Element | null>(null);
 
@@ -52,22 +53,4 @@ export function Dialog({
       </div>
     </div>
   );
-}
-
-export function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div className={cn('mb-4 flex items-center justify-between', className)} {...props} />;
-}
-
-export function DialogTitle({ className, ...props }: React.ComponentProps<'h3'>) {
-  return (
-    <h3
-      id={TITLE_ID}
-      className={cn('text-sm font-semibold uppercase tracking-wide', className)}
-      {...props}
-    />
-  );
-}
-
-export function DialogContent({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div className={cn('space-y-3 text-sm text-slate-300', className)} {...props} />;
-}
+};

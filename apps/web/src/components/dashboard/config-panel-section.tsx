@@ -1,20 +1,21 @@
 'use client';
 
+import type { FC } from 'react';
 import { EXCHANGES, type MMConfig } from '@crispy/shared';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfigNumberField } from './config-number-field';
+import { DecimalField } from './decimal-field';
 
-export function ConfigPanelSection({
-  config,
-  saving,
-  onSubmit,
-}: {
+type ConfigPanelSectionProps = {
   config: MMConfig | null;
   saving: boolean;
   onSubmit: (next: MMConfig) => void;
-}) {
+};
+
+export const ConfigPanelSection: FC<ConfigPanelSectionProps> = ({ config, saving, onSubmit }) => {
   const [pairOverrides, setPairOverrides] = useState<
     Record<string, Partial<MMConfig['pairs'][number]>>
   >({});
@@ -91,7 +92,7 @@ export function ConfigPanelSection({
                   })
                 }
               />
-              <NumberField
+              <ConfigNumberField
                 label="Refresh (ms)"
                 value={pairConfig.quoteRefreshIntervalMs}
                 onChange={(value) =>
@@ -152,49 +153,4 @@ export function ConfigPanelSection({
       </CardContent>
     </Card>
   );
-}
-
-function NumberField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <label className="space-y-1">
-      <span className="block text-xs text-slate-400">{label}</span>
-      <input
-        className="h-9 w-full rounded border border-slate-700 bg-slate-900 px-2"
-        type="number"
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
-    </label>
-  );
-}
-
-function DecimalField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="space-y-1">
-      <span className="block text-xs text-slate-400">{label}</span>
-      <input
-        className="h-9 w-full rounded border border-slate-700 bg-slate-900 px-2"
-        type="text"
-        inputMode="decimal"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </label>
-  );
-}
+};

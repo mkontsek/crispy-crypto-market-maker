@@ -1,3 +1,4 @@
+import type { FC } from 'react';
 import type { Metadata } from 'next';
 
 import './globals.css';
@@ -24,9 +25,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+type RootLayoutProps = Readonly<{ children: React.ReactNode }>;
+
+const RootLayout: FC<RootLayoutProps> = ({ children }) => {
   return (
     <html lang="en">
       <body>
@@ -34,4 +35,6 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+};
+
+export default RootLayout;
