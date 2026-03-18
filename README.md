@@ -215,11 +215,19 @@ vercel
 
 `scripts/setup-ubuntu.sh` builds the exchange from source, installs it as a
 systemd service, and writes a `/etc/crispy/crispy-exchange.env` config file.
+The script is idempotent: you can safely run it again and unchanged steps/files
+are skipped.
 
 ```bash
 git clone https://github.com/mkontsek/crispy-crypto-market-maker.git
 cd crispy-crypto-market-maker
 sudo ./scripts/setup-ubuntu.sh --service exchange
+```
+
+Optional: configure public TLS (`https://` + `wss://`) with Caddy in the same run:
+
+```bash
+sudo ./scripts/setup-ubuntu.sh --service exchange --caddy-domain exchange.your-server.com
 ```
 
 The service starts automatically and restarts on failure. Ports exposed:
@@ -255,6 +263,12 @@ If `EXCHANGE_WS_URL` / `EXCHANGE_API_URL` are left unset in
 > private/internal networks and `wss://` / `https://` for any publicly reachable
 > endpoint (place the service behind a TLS-terminating reverse proxy such as
 > nginx or Caddy — see [HTTP vs HTTPS](#http-vs-https) below).
+
+You can also let `setup-ubuntu.sh` configure Caddy for the selected service:
+
+```bash
+sudo ./scripts/setup-ubuntu.sh --service bot --caddy-domain bot.your-server.com
+```
 
 The service is installed under systemd and the config lives in
 `/etc/crispy/crispy-bot.env`. Edit it to change endpoints, then restart:
