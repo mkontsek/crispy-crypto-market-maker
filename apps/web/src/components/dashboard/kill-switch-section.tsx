@@ -1,5 +1,6 @@
 'use client';
 
+import type { FC } from 'react';
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -7,15 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-export function KillSwitchSection({
-  engaged,
-  pending,
-  onToggle,
-}: {
+type KillSwitchSectionProps = {
   engaged: boolean;
   pending: boolean;
   onToggle: (engaged: boolean) => void;
-}) {
+};
+
+export const KillSwitchSection: FC<KillSwitchSectionProps> = ({ engaged, pending, onToggle }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
@@ -73,4 +72,4 @@ export function KillSwitchSection({
       </Dialog>
     </>
   );
-}
+};

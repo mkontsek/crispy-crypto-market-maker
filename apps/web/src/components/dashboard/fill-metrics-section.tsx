@@ -1,26 +1,19 @@
+import type { FC } from 'react';
+
 import type { Fill } from '@crispy/shared';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { priceFromFp } from '@/lib/fixed-point';
+import { MetricCard } from './metric-card';
 
 import type { QuoteHistoryEntry } from './quote-history-section';
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded border border-slate-800 p-3">
-      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="mt-1 text-base font-semibold">{value}</div>
-    </div>
-  );
-}
-
-export function FillMetricsSection({
-  fills,
-  quoteHistory,
-}: {
+type FillMetricsSectionProps = {
   fills: Fill[];
   quoteHistory: QuoteHistoryEntry[];
-}) {
+};
+
+export const FillMetricsSection: FC<FillMetricsSectionProps> = ({ fills, quoteHistory }) => {
   const total = fills.length;
   const taker = fills.filter((f) => f.adverseSelection).length;
   const maker = total - taker;
@@ -54,17 +47,17 @@ export function FillMetricsSection({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-          <Metric label="Total Fills" value={String(total)} />
-          <Metric label="Maker (passive)" value={`${maker} (${pct(maker)}%)`} />
-          <Metric label="Taker (aggressive)" value={`${taker} (${pct(taker)}%)`} />
-          <Metric label="Win Rate" value={`${winRate}%`} />
+          <MetricCard label="Total Fills" value={String(total)} />
+          <MetricCard label="Maker (passive)" value={`${maker} (${pct(maker)}%)`} />
+          <MetricCard label="Taker (aggressive)" value={`${taker} (${pct(taker)}%)`} />
+          <MetricCard label="Win Rate" value={`${winRate}%`} />
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-          <Metric label="Cancel-to-Trade" value={cancelToTrade} />
-          <Metric label="Avg Realized Spread" value={avgSpread} />
-          <Metric label="Buys" value={String(buys)} />
-          <Metric label="Sells" value={String(sells)} />
+          <MetricCard label="Cancel-to-Trade" value={cancelToTrade} />
+          <MetricCard label="Avg Realized Spread" value={avgSpread} />
+          <MetricCard label="Buys" value={String(buys)} />
+          <MetricCard label="Sells" value={String(sells)} />
         </div>
 
         {pairCounts.size > 0 && (
@@ -97,4 +90,4 @@ export function FillMetricsSection({
       </CardContent>
     </Card>
   );
-}
+};

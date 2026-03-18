@@ -1,26 +1,16 @@
 'use client';
 
+import type { FC } from 'react';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { resolveNextPath } from '@/lib/login-service';
 
 const DEMO_AUTH_COOKIE = 'crispy_demo_auth';
 
-function resolveNextPath(rawNext: string | null) {
-  if (!rawNext) {
-    return '/dashboard';
-  }
-
-  if (rawNext.startsWith('/') && !rawNext.startsWith('//')) {
-    return rawNext;
-  }
-
-  return '/dashboard';
-}
-
-export default function LoginPage() {
+const LoginPage: FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -82,4 +72,6 @@ export default function LoginPage() {
       </Card>
     </main>
   );
-}
+};
+
+export default LoginPage;

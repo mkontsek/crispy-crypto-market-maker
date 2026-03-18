@@ -1,75 +1,22 @@
 'use client';
 
+import type { FC } from 'react';
 import { useState } from 'react';
 
 import type { QuoteSnapshot } from '@crispy/shared';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { priceFromFp } from '@/lib/fixed-point';
+import { InfoIcon } from './info-icon';
+import { StateInfoDialog } from './state-info-dialog';
 
-function InfoIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      className="h-3.5 w-3.5"
-      aria-hidden="true"
-    >
-      <circle cx="10" cy="10" r="9" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <text x="10" y="14.5" textAnchor="middle" fontSize="11" fontWeight="bold" fill="currentColor">
-        i
-      </text>
-    </svg>
-  );
-}
-
-function StateInfoDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogHeader>
-        <DialogTitle>Quote States</DialogTitle>
-        <button
-          onClick={onClose}
-          className="text-slate-400 hover:text-slate-200 transition"
-          aria-label="Close"
-        >
-          ✕
-        </button>
-      </DialogHeader>
-      <DialogContent>
-        <div>
-          <div className="mb-1 flex items-center gap-2">
-            <Badge tone="success">quoting</Badge>
-          </div>
-          <p className="text-slate-400">
-            The pair is actively being quoted on the exchange. Bid and ask orders are placed and
-            refreshed according to the configured spread and refresh rate.
-          </p>
-        </div>
-        <div>
-          <div className="mb-1 flex items-center gap-2">
-            <Badge tone="warning">paused</Badge>
-          </div>
-          <p className="text-slate-400">
-            Quote submission is paused for this pair. No new orders will be placed until quoting is
-            resumed, for example via the Inventory Monitor controls.
-          </p>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-export function LiveQuotesSection({
-  quotes,
-  connected,
-}: {
+type LiveQuotesSectionProps = {
   quotes: QuoteSnapshot[];
   connected: boolean;
-}) {
+};
+
+export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({ quotes, connected }) => {
   const [stateInfoOpen, setStateInfoOpen] = useState(false);
 
   return (
@@ -139,4 +86,4 @@ export function LiveQuotesSection({
       <StateInfoDialog open={stateInfoOpen} onClose={() => setStateInfoOpen(false)} />
     </>
   );
-}
+};

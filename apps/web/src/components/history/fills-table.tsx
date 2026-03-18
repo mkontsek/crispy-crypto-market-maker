@@ -1,5 +1,7 @@
 'use client';
 
+import type { FC } from 'react';
+
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -16,19 +18,15 @@ export type DbFill = {
   createdAt: string;
 };
 
-export function FillsTable({
-  fills,
-  total,
-  page,
-  pageSize,
-  onPageChange,
-}: {
+type FillsTableProps = {
   fills: DbFill[];
   total: number;
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
-}) {
+};
+
+export const FillsTable: FC<FillsTableProps> = ({ fills, total, page, pageSize, onPageChange }) => {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
@@ -109,4 +107,4 @@ export function FillsTable({
       </CardContent>
     </Card>
   );
-}
+};

@@ -1,11 +1,14 @@
 import L from 'leaflet';
+import type { FC } from 'react';
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 
 import type { GeoMapMarker } from './geo-map-section';
 
+type BoundsControllerProps = { markers: GeoMapMarker[] };
+
 /** Re-fits the map bounds whenever markers change. */
-export function BoundsController({ markers }: { markers: GeoMapMarker[] }) {
+export const BoundsController: FC<BoundsControllerProps> = ({ markers }) => {
   const map = useMap();
 
   useEffect(() => {
@@ -15,4 +18,4 @@ export function BoundsController({ markers }: { markers: GeoMapMarker[] }) {
   }, [map, markers]);
 
   return null;
-}
+};

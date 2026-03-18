@@ -1,27 +1,15 @@
+import type { FC } from 'react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-export function Card({ className, ...props }: React.ComponentProps<'section'>) {
-  return (
-    <section
-      className={cn('rounded-xl border border-slate-800 bg-slate-950/80', className)}
-      {...props}
-    />
-  );
-}
+export { CardContent } from './card-content';
+export { CardHeader } from './card-header';
+export { CardTitle } from './card-title';
 
-export function CardHeader({
-  className,
-  ...props
-}: React.ComponentProps<'header'>) {
-  return <header className={cn('border-b border-slate-800 p-4', className)} {...props} />;
-}
-
-export function CardTitle({ className, ...props }: React.ComponentProps<'h2'>) {
-  return <h2 className={cn('text-sm font-semibold uppercase tracking-wide', className)} {...props} />;
-}
-
-export function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div className={cn('p-4', className)} {...props} />;
-}
+export const Card: FC<React.ComponentProps<'section'>> = ({ className, ...props }) => (
+  <section
+    className={cn('rounded-xl border border-slate-800 bg-slate-950/80', className)}
+    {...props}
+  />
+);
