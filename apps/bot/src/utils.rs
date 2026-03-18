@@ -168,5 +168,6 @@ mod tests {
             .as_array()
             .expect("quotes should be an array");
         assert_eq!(quotes.len(), 3);
+        assert_eq!(parsed["killSwitchEngaged"].as_bool(), Some(false));
     }
 }

@@ -6,8 +6,6 @@ export {
   DEFAULT_EXCHANGE_WS_URL,
   EXCHANGES,
   PAIRS,
-  PRICE_SCALE,
-  SIZE_SCALE,
 } from './constants';
 export {
   botIdSchema,

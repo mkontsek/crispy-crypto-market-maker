@@ -4,7 +4,7 @@ import type { PnLSnapshot } from '@crispy/shared';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { priceFromFp } from '@/lib/fixed-point';
-import { MetricCard } from './metric-card';
+import { MetricCard } from '../metric-card';
 import { PnlChart } from './pnl-chart';
 
 type PnlCurveSectionProps = { pnl: PnLSnapshot[] };

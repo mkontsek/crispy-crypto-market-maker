@@ -129,7 +129,7 @@ export const engineStreamSchema = z.object({
   pnl: pnlSnapshotSchema,
   exchangeHealth: z.array(exchangeHealthSchema),
   config: mmConfigSchema,
-  killSwitchEngaged: z.boolean(),
+  killSwitchEngaged: z.boolean().default(false),
 });
 
 export const pausePairRequestSchema = z.object({

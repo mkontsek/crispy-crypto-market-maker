@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { GeoMapMarker } from '../geo-map-section';
-import { buildMarkerPixelOffsets } from '../marker-overlap';
+import type { GeoMapMarker } from '../geo-map/geo-map-section';
+import { buildMarkerPixelOffsets } from '../geo-map/marker-overlap';
 
 function marker(overrides: Partial<GeoMapMarker>): GeoMapMarker {
   return {
