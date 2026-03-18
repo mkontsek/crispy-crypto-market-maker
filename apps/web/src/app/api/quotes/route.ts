@@ -20,5 +20,6 @@ export async function GET(request: Request) {
     quoteHistory: snapshot.quoteHistory,
     exchangeHealth: snapshot.exchangeHealth,
     config: snapshot.config,
+    killSwitchEngaged: snapshot.killSwitchEngaged,
   });
 }

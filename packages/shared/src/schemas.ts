@@ -129,6 +129,7 @@ export const engineStreamSchema = z.object({
   pnl: pnlSnapshotSchema,
   exchangeHealth: z.array(exchangeHealthSchema),
   config: mmConfigSchema,
+  killSwitchEngaged: z.boolean(),
 });
 
 export const pausePairRequestSchema = z.object({
@@ -138,6 +139,10 @@ export const pausePairRequestSchema = z.object({
 export const hedgeRequestSchema = z.object({
   pair: pairSchema,
   targetExchange: exchangeSchema.optional(),
+});
+
+export const killSwitchRequestSchema = z.object({
+  engaged: z.boolean(),
 });
 
 export const geoLocationSchema = z.object({
