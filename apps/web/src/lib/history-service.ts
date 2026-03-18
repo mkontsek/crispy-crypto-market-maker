@@ -1,0 +1,1 @@
+export const HISTORY_REFETCH_INTERVAL_MS = 10_000;

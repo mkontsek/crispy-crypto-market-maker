@@ -282,10 +282,3 @@ export function getRelaySnapshot(botId: BotId): RelayState {
         strategy: state.strategy,
     };
 }
-
-export function ensureEngineRelaysRunning() {
-    pruneInactiveRelays();
-    for (const bot of getRuntimeTopology().bots) {
-        syncBotRelay(bot.id);
-    }
-}

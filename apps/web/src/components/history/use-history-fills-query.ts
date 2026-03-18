@@ -2,6 +2,7 @@ import type { DbFill } from '@/components/history/fills-table';
 import { useQuery } from '@tanstack/react-query';
 
 import { fetchJson } from '@/lib/fetch-json';
+import { HISTORY_REFETCH_INTERVAL_MS } from '@/lib/history-service';
 
 type FillsResponse = {
     items: DbFill[];
@@ -17,6 +18,6 @@ export function useHistoryFillsQuery(page: number, pageSize: number) {
             fetchJson<FillsResponse>(
                 `/api/history/fills?page=${page}&pageSize=${pageSize}`
             ),
-        refetchInterval: 10_000,
+        refetchInterval: HISTORY_REFETCH_INTERVAL_MS,
     });
 }
