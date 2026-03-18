@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { priceFromFp } from '@/lib/fixed-point';
 import { InfoIcon } from './info-icon';
+import { LiveQuotesInfoDialog } from './live-quotes-info-dialog';
 import { StateInfoDialog } from './state-info-dialog';
 
 type LiveQuotesSectionProps = {
@@ -17,13 +18,24 @@ type LiveQuotesSectionProps = {
 };
 
 export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({ quotes, connected }) => {
+  const [sectionInfoOpen, setSectionInfoOpen] = useState(false);
   const [stateInfoOpen, setStateInfoOpen] = useState(false);
 
   return (
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Live Quoting Dashboard</CardTitle>
+          <div className="inline-flex items-center gap-2">
+            <CardTitle>Live Quoting Dashboard</CardTitle>
+            <button
+              type="button"
+              onClick={() => setSectionInfoOpen(true)}
+              className="text-slate-500 transition hover:text-slate-300"
+              aria-label="Live quoting section information"
+            >
+              <InfoIcon />
+            </button>
+          </div>
           <Badge tone={connected ? 'success' : 'danger'}>
             {connected ? 'stream connected' : 'stream disconnected'}
           </Badge>
@@ -83,6 +95,7 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({ quotes, connecte
           </table>
         </CardContent>
       </Card>
+      <LiveQuotesInfoDialog open={sectionInfoOpen} onClose={() => setSectionInfoOpen(false)} />
       <StateInfoDialog open={stateInfoOpen} onClose={() => setStateInfoOpen(false)} />
     </>
   );

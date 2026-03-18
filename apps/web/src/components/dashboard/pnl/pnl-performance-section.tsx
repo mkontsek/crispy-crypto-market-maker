@@ -1,19 +1,26 @@
 import type { FC } from 'react';
 
-import type { Fill, PnLSnapshot } from '@crispy/shared';
+import type { BotId, PnLSnapshot } from '@crispy/shared';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { dedupeFills } from '@/lib/bot-data-service';
 import { priceFromFp, ratioFromDecimal, sizeFromFp } from '@/lib/fixed-point';
 import { nanosToTime } from '@/lib/timestamp';
 import { MetricCard } from '../metric-card';
+import { useBotFillsQuery } from './use-bot-fills-query';
 
 type PnlPerformanceSectionProps = {
+  botId: BotId;
   pnl: PnLSnapshot[];
-  fills: Fill[];
 };
 
-export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({ pnl, fills }) => {
+export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
+  botId,
+  pnl,
+}) => {
+  const fillsQuery = useBotFillsQuery(botId);
+  const fills = dedupeFills(fillsQuery.data?.items ?? []);
   const latest = pnl[0];
   const totalFills = fills.length;
   const adverseFills = fills.filter((f) => f.adverseSelection).length;

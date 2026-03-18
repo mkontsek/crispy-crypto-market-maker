@@ -36,7 +36,6 @@ export const MarketMakerDashboard: FC = () => {
         </div>
         <div className="mt-3 flex items-center gap-2">
           <DashboardHeaderNavLinks activePage="dashboard" />
-          <Badge tone="default">{bots.length} bot(s) configured</Badge>
           {topologyMutation.isPending ? (
             <Badge tone="warning">Applying topology...</Badge>
           ) : null}

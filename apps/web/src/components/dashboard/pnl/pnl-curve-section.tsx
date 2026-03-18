@@ -1,15 +1,20 @@
-import type { FC } from 'react';
+'use client';
+
+import { useState, type FC } from 'react';
 
 import type { PnLSnapshot } from '@crispy/shared';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { InfoIcon } from '@/components/dashboard/live-quotes/info-icon';
 import { priceFromFp } from '@/lib/fixed-point';
 import { MetricCard } from '../metric-card';
 import { PnlChart } from './pnl-chart';
+import { PnlCurveInfoDialog } from './pnl-curve-info-dialog';
 
 type PnlCurveSectionProps = { pnl: PnLSnapshot[] };
 
 export const PnlCurveSection: FC<PnlCurveSectionProps> = ({ pnl }) => {
+  const [infoOpen, setInfoOpen] = useState(false);
   const values = pnl.map((p) => priceFromFp(p.totalPnl)).reverse();
 
   const current = values[values.length - 1] ?? 0;
@@ -21,29 +26,50 @@ export const PnlCurveSection: FC<PnlCurveSectionProps> = ({ pnl }) => {
   const hedgingLatest = pnl[0] ? priceFromFp(pnl[0].hedgingCosts) : 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Intraday P&L Curve</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <PnlChart values={values} />
+    <>
+      <Card>
+        <CardHeader>
+          <div className="inline-flex items-center gap-2">
+            <CardTitle>Intraday P&L Curve</CardTitle>
+            <button
+              type="button"
+              onClick={() => setInfoOpen(true)}
+              className="text-slate-500 transition hover:text-slate-300"
+              aria-label="P&L curve section information"
+            >
+              <InfoIcon />
+            </button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <PnlChart values={values} />
 
-        <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-          <MetricCard label="Current P&L" value={current.toFixed(2)} positive={current >= 0} />
-          <MetricCard label="Peak P&L" value={peak.toFixed(2)} positive={peak >= 0} />
-          <MetricCard
-            label="Drawdown"
-            value={`${drawdown.toFixed(2)} (${drawdownPct}%)`}
-            positive={drawdown >= 0}
-          />
-          <MetricCard label="Snapshots" value={String(pnl.length)} positive={true} />
-        </div>
+          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+            <MetricCard label="Current P&L" value={current.toFixed(2)} positive={current >= 0} />
+            <MetricCard label="Peak P&L" value={peak.toFixed(2)} positive={peak >= 0} />
+            <MetricCard
+              label="Drawdown"
+              value={`${drawdown.toFixed(2)} (${drawdownPct}%)`}
+              positive={drawdown >= 0}
+            />
+            <MetricCard label="Snapshots" value={String(pnl.length)} positive={true} />
+          </div>
 
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <MetricCard label="Realized Spread" value={realizedLatest.toFixed(4)} positive={realizedLatest >= 0} />
-          <MetricCard label="Hedging Costs" value={hedgingLatest.toFixed(4)} positive={hedgingLatest <= 0} />
-        </div>
-      </CardContent>
-    </Card>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <MetricCard
+              label="Realized Spread"
+              value={realizedLatest.toFixed(4)}
+              positive={realizedLatest >= 0}
+            />
+            <MetricCard
+              label="Hedging Costs"
+              value={hedgingLatest.toFixed(4)}
+              positive={hedgingLatest <= 0}
+            />
+          </div>
+        </CardContent>
+      </Card>
+      <PnlCurveInfoDialog open={infoOpen} onClose={() => setInfoOpen(false)} />
+    </>
   );
 };

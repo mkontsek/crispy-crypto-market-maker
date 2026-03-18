@@ -57,12 +57,6 @@ export const HistoryDashboard: FC = () => {
           {clearHistoryMutation.isError ? (
             <Badge tone="danger">Delete failed</Badge>
           ) : null}
-          {isLoading ? (
-            <Badge tone="warning">Loading…</Badge>
-          ) : (
-            <Badge tone="success">Loaded</Badge>
-          )}
-          <Badge tone="default">Auto-refreshes every 10s</Badge>
         </div>
       </header>
 
@@ -72,6 +66,7 @@ export const HistoryDashboard: FC = () => {
           total={fillsTotal}
           page={fillsPage}
           pageSize={PAGE_SIZE}
+          isLoading={isLoading}
           onPageChange={setFillsPage}
         />
 
