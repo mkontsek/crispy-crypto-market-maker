@@ -4,17 +4,19 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/fetch-json';
 
 type FillsResponse = {
-  botId: BotId;
-  items: Fill[];
+    botId: BotId;
+    items: Fill[];
 };
 
 export function useBotFillsQuery(botId: BotId) {
-  const botQuery = encodeURIComponent(botId);
+    const botQuery = encodeURIComponent(botId);
 
-  return useQuery({
-    queryKey: ['fills', botId],
-    queryFn: () =>
-      fetchJson<FillsResponse>(`/api/fills?botId=${botQuery}&page=1&pageSize=100`),
-    refetchInterval: 1_500,
-  });
+    return useQuery({
+        queryKey: ['fills', botId],
+        queryFn: () =>
+            fetchJson<FillsResponse>(
+                `/api/fills?botId=${botQuery}&page=1&pageSize=100`
+            ),
+        refetchInterval: 1_500,
+    });
 }

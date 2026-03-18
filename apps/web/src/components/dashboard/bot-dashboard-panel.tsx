@@ -32,119 +32,139 @@ import { usePairActionMutation } from './use-pair-action-mutation';
 type BotDashboardPanelProps = { bot: TopologyBot };
 
 export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
-  const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
 
-  const quotesQuery = useBotQuotesQuery(bot.id);
-  const fillsQuery = useBotFillsQuery(bot.id);
-  const pnlQuery = useBotPnlQuery(bot.id);
-  const inventoryQuery = useBotInventoryQuery(bot.id);
-  const configMutation = useConfigMutation(bot.id);
-  const pairActionMutation = usePairActionMutation(bot.id);
-  const killSwitchMutation = useKillSwitchMutation(bot.id);
+    const quotesQuery = useBotQuotesQuery(bot.id);
+    const fillsQuery = useBotFillsQuery(bot.id);
+    const pnlQuery = useBotPnlQuery(bot.id);
+    const inventoryQuery = useBotInventoryQuery(bot.id);
+    const configMutation = useConfigMutation(bot.id);
+    const pairActionMutation = usePairActionMutation(bot.id);
+    const killSwitchMutation = useKillSwitchMutation(bot.id);
 
-  const quotes = quotesQuery.data?.quotes ?? [];
-  const fills = dedupeFills(fillsQuery.data?.items ?? []);
-  const pnl = dedupePnl(pnlQuery.data?.items ?? []);
-  const inventory = inventoryQuery.data?.current ?? [];
-  const health = quotesQuery.data?.exchangeHealth ?? [];
-  const config = quotesQuery.data?.config ?? null;
-  const connected = quotesQuery.data?.connected ?? false;
-  const killSwitchEngaged = quotesQuery.data?.killSwitchEngaged ?? false;
-  const pendingPair = pairActionMutation.variables?.pair ?? null;
-  const quoteHistoryEntries = quotesQuery.data?.quoteHistory ?? [];
-  const latestPnl = pnl[0] ?? null;
+    const quotes = quotesQuery.data?.quotes ?? [];
+    const fills = dedupeFills(fillsQuery.data?.items ?? []);
+    const pnl = dedupePnl(pnlQuery.data?.items ?? []);
+    const inventory = inventoryQuery.data?.current ?? [];
+    const health = quotesQuery.data?.exchangeHealth ?? [];
+    const config = quotesQuery.data?.config ?? null;
+    const connected = quotesQuery.data?.connected ?? false;
+    const killSwitchEngaged = quotesQuery.data?.killSwitchEngaged ?? false;
+    const pendingPair = pairActionMutation.variables?.pair ?? null;
+    const quoteHistoryEntries = quotesQuery.data?.quoteHistory ?? [];
+    const latestPnl = pnl[0] ?? null;
 
-  return (
-    <section id={`${bot.id}-section`} className="space-y-4 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-semibold">{bot.name}</h2>
-          <p className="text-xs text-slate-400">
-            WS: {bot.wsUrl} | API: {bot.httpUrl}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge tone={connected ? 'success' : 'danger'}>
-            {connected ? 'connected' : 'disconnected'}
-          </Badge>
-          <button
-            type="button"
-            aria-controls={`${bot.id}-section-content`}
-            aria-expanded={!collapsed}
-            onClick={() => setCollapsed((isCollapsed) => !isCollapsed)}
-            className={cn('text-xs text-slate-400 hover:text-slate-200')}
-          >
-            {collapsed ? '▼ Expand' : '▲ Collapse'}
-          </button>
-        </div>
-      </header>
+    return (
+        <section
+            id={`${bot.id}-section`}
+            className="space-y-4 rounded-xl border border-slate-800 bg-slate-950/50 p-4"
+        >
+            <header className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h2 className="text-lg font-semibold">{bot.name}</h2>
+                    <p className="text-xs text-slate-400">
+                        WS: {bot.wsUrl} | API: {bot.httpUrl}
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Badge tone={connected ? 'success' : 'danger'}>
+                        {connected ? 'connected' : 'disconnected'}
+                    </Badge>
+                    <button
+                        type="button"
+                        aria-controls={`${bot.id}-section-content`}
+                        aria-expanded={!collapsed}
+                        onClick={() =>
+                            setCollapsed((isCollapsed) => !isCollapsed)
+                        }
+                        className={cn(
+                            'text-xs text-slate-400 hover:text-slate-200'
+                        )}
+                    >
+                        {collapsed ? '▼ Expand' : '▲ Collapse'}
+                    </button>
+                </div>
+            </header>
 
-      <div
-        id={`${bot.id}-section-content`}
-        className={cn('space-y-4', collapsed && 'hidden')}
-      >
-        <KillSwitchSection
-          engaged={killSwitchEngaged}
-          pending={killSwitchMutation.isPending}
-          onToggle={(engaged) => killSwitchMutation.mutate(engaged)}
-        />
+            <div
+                id={`${bot.id}-section-content`}
+                className={cn('space-y-4', collapsed && 'hidden')}
+            >
+                <KillSwitchSection
+                    engaged={killSwitchEngaged}
+                    pending={killSwitchMutation.isPending}
+                    onToggle={(engaged) => killSwitchMutation.mutate(engaged)}
+                />
 
-        <AlertPanelSection
-          health={health}
-          inventory={inventory}
-          config={config}
-          pnl={latestPnl}
-          killSwitchEngaged={killSwitchEngaged}
-          quotes={quotes}
-        />
+                <AlertPanelSection
+                    health={health}
+                    inventory={inventory}
+                    config={config}
+                    pnl={latestPnl}
+                    killSwitchEngaged={killSwitchEngaged}
+                    quotes={quotes}
+                />
 
-        <LiveQuotesSection quotes={quotes} connected={connected} />
+                <LiveQuotesSection quotes={quotes} connected={connected} />
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          <InventoryMonitorSection
-            inventory={inventory}
-            quotes={quotes}
-            pendingPair={pendingPair}
-            onTogglePause={(pair, paused) =>
-              pairActionMutation.mutate({ pair, action: 'pause', paused })
-            }
-            onManualHedge={(pair) => pairActionMutation.mutate({ pair, action: 'hedge' })}
-          />
-          <PnlPerformanceSection botId={bot.id} pnl={pnl} />
-        </div>
+                <div className="grid gap-4 xl:grid-cols-2">
+                    <InventoryMonitorSection
+                        inventory={inventory}
+                        quotes={quotes}
+                        pendingPair={pendingPair}
+                        onTogglePause={(pair, paused) =>
+                            pairActionMutation.mutate({
+                                pair,
+                                action: 'pause',
+                                paused,
+                            })
+                        }
+                        onManualHedge={(pair) =>
+                            pairActionMutation.mutate({ pair, action: 'hedge' })
+                        }
+                    />
+                    <PnlPerformanceSection botId={bot.id} pnl={pnl} />
+                </div>
 
-        <ExposureSection inventory={inventory} quotes={quotes} config={config} />
+                <ExposureSection
+                    inventory={inventory}
+                    quotes={quotes}
+                    config={config}
+                />
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          <FillMetricsSection fills={fills} quoteHistory={quoteHistoryEntries} />
-          <PnlCurveSection pnl={pnl} />
-        </div>
+                <div className="grid gap-4 xl:grid-cols-2">
+                    <FillMetricsSection
+                        fills={fills}
+                        quoteHistory={quoteHistoryEntries}
+                    />
+                    <PnlCurveSection pnl={pnl} />
+                </div>
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          <QuoteHistorySection entries={quoteHistoryEntries} />
-          <ConfigPanelSection
-            config={config}
-            saving={configMutation.isPending}
-            onSubmit={(next) => configMutation.mutate(next)}
-          />
-        </div>
+                <div className="grid gap-4 xl:grid-cols-2">
+                    <QuoteHistorySection entries={quoteHistoryEntries} />
+                    <ConfigPanelSection
+                        config={config}
+                        saving={configMutation.isPending}
+                        onSubmit={(next) => configMutation.mutate(next)}
+                    />
+                </div>
 
-        <ExchangeHealthSection health={health} />
+                <ExchangeHealthSection health={health} />
 
-        <EventLogSection
-          connected={connected}
-          quotes={quotes}
-          killSwitchEngaged={killSwitchEngaged}
-        />
+                <EventLogSection
+                    connected={connected}
+                    quotes={quotes}
+                    killSwitchEngaged={killSwitchEngaged}
+                />
 
-        {quotesQuery.isError ? (
-          <Card>
-            <CardContent className="py-4 text-sm text-red-300">
-              Failed to load bot quotes stream.
-            </CardContent>
-          </Card>
-        ) : null}
-      </div>
-    </section>
-  );
+                {quotesQuery.isError ? (
+                    <Card>
+                        <CardContent className="py-4 text-sm text-red-300">
+                            Failed to load bot quotes stream.
+                        </CardContent>
+                    </Card>
+                ) : null}
+            </div>
+        </section>
+    );
 };

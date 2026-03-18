@@ -42,8 +42,8 @@ Default local-development addresses (override with `EXCHANGE_WS_URL` / `EXCHANGE
 
 - WebSocket feed: `ws://127.0.0.1:3111/feed`
 - HTTP order API: `http://127.0.0.1:3111`
-  - `POST /orders` — place an order; returns fill result (fake mode: probability-based fill)
-  - `GET /health`
+    - `POST /orders` — place an order; returns fill result (fake mode: probability-based fill)
+    - `GET /health`
 
 ## Bot interfaces
 
@@ -51,10 +51,10 @@ Default local-development addresses (override with `BOT_1_WS_URL` / `BOT_1_HTTP_
 
 - WebSocket stream: `ws://127.0.0.1:3110/stream`
 - HTTP command API: `http://127.0.0.1:3110`
-  - `POST /config`
-  - `POST /pairs/:id/pause`
-  - `POST /hedge`
-  - `GET /health`
+    - `POST /config`
+    - `POST /pairs/:id/pause`
+    - `POST /hedge`
+    - `GET /health`
 
 ## Web API routes
 
@@ -199,10 +199,10 @@ pnpm hooks:install   # Configure Git hooks to use .githooks/
 - Create a Vercel project with **Root Directory** set to `apps/web`.
 - Vercel will automatically detect `pnpm` from the `pnpm-lock.yaml` file.
 - Add environment variables:
-  - `BOT_1_HTTP_URL`, `BOT_1_WS_URL` (initial bot endpoints)
-  - `EXCHANGE_HTTP_URL`, `EXCHANGE_WS_URL` (exchange endpoints)
-  - `ENGINE_HTTP_URL`, `ENGINE_WS_URL` remain supported as bot-1 aliases
-  - `DATABASE_URL` (Postgres connection string)
+    - `BOT_1_HTTP_URL`, `BOT_1_WS_URL` (initial bot endpoints)
+    - `EXCHANGE_HTTP_URL`, `EXCHANGE_WS_URL` (exchange endpoints)
+    - `ENGINE_HTTP_URL`, `ENGINE_WS_URL` remain supported as bot-1 aliases
+    - `DATABASE_URL` (Postgres connection string)
 - Deploy from Git or with CLI:
 
 ```bash
@@ -223,6 +223,7 @@ sudo ./scripts/setup-ubuntu.sh --service exchange
 ```
 
 The service starts automatically and restarts on failure. Ports exposed:
+
 - `3111` WebSocket feed (`/feed`)
 - `3111` HTTP API (`/orders`, `/health`)
 
@@ -264,6 +265,7 @@ journalctl -fu         crispy-bot
 ```
 
 Ports exposed:
+
 - `3110` WebSocket stream (`/stream`)
 - `3110` HTTP API (`/config`, `/pairs/:id/pause`, `/hedge`, `/health`)
 
@@ -298,6 +300,7 @@ postgresql://crispy:change-me@localhost:5432/crispy
 ### Production topology
 
 Best results come from:
+
 - **Vercel** for `apps/web`
 - **Ubuntu VMs or bare-metal** for `apps/exchange` and `apps/bot` (provisioned with `setup-ubuntu.sh`)
 - **Managed Postgres** for persistence

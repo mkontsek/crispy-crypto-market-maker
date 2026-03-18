@@ -26,4 +26,4 @@ Applies to both TypeScript/Next.js and Rust crates in this monorepo.
 
 ## Rust Testing
 
-- Unit tests colocated 
+- Unit tests colocated

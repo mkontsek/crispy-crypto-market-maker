@@ -8,52 +8,53 @@ import { sanitize } from '@/lib/sanitize';
 export const runtime = 'nodejs';
 
 export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
 ) {
-  const target = parseBotIdFromRequest(request);
-  if ('error' in target) {
-    return target.error;
-  }
+    const target = parseBotIdFromRequest(request);
+    if ('error' in target) {
+        return target.error;
+    }
 
-  const { id } = await params;
-  const parsedPair = pairSchema.safeParse(sanitize(id));
-  if (!parsedPair.success) {
-    return NextResponse.json(
-      {
-        error: 'invalid pair id',
-        details: parsedPair.error.flatten(),
-      },
-      { status: 400 }
-    );
-  }
+    const { id } = await params;
+    const parsedPair = pairSchema.safeParse(sanitize(id));
+    if (!parsedPair.success) {
+        return NextResponse.json(
+            {
+                error: 'invalid pair id',
+                details: parsedPair.error.flatten(),
+            },
+            { status: 400 }
+        );
+    }
 
-  const body = await request.json();
-  const parsed = pausePairRequestSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      {
-        error: 'invalid pause payload',
-        details: parsed.error.flatten(),
-      },
-      { status: 400 }
-    );
-  }
+    const body = await request.json();
+    const parsed = pausePairRequestSchema.safeParse(body);
+    if (!parsed.success) {
+        return NextResponse.json(
+            {
+                error: 'invalid pause payload',
+                details: parsed.error.flatten(),
+            },
+            { status: 400 }
+        );
+    }
 
-  try {
-    const response = await forwardEnginePost(
-      target.botId,
-      `/pairs/${encodeURIComponent(parsedPair.data)}/pause`,
-      parsed.data
-    );
-    return NextResponse.json(response.body, { status: response.status });
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'failed to pause pair via engine',
-        details: error instanceof Error ? error.message : 'unknown error',
-      },
-      { status: 502 }
-    );
-  }
+    try {
+        const response = await forwardEnginePost(
+            target.botId,
+            `/pairs/${encodeURIComponent(parsedPair.data)}/pause`,
+            parsed.data
+        );
+        return NextResponse.json(response.body, { status: response.status });
+    } catch (error) {
+        return NextResponse.json(
+            {
+                error: 'failed to pause pair via engine',
+                details:
+                    error instanceof Error ? error.message : 'unknown error',
+            },
+            { status: 502 }
+        );
+    }
 }
