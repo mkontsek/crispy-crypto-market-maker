@@ -185,6 +185,7 @@ mod tests {
                 volatility: dec!(1),
             }],
         });
+        // Unknown pair should not be inserted
         assert!(!state.pairs.contains_key("UNKNOWN/USDT"));
     }
 
@@ -193,12 +194,25 @@ mod tests {
         let mut state = EngineState::new();
         state.update_from_exchange(ExchangeFeedPayload {
             pairs: vec![
-                ExchangePairData { pair: "BTC/USDT".to_string(), mid: dec!(62000), volatility: dec!(1) },
-                ExchangePairData { pair: "ETH/USDT".to_string(), mid: dec!(3450), volatility: dec!(1) },
-                ExchangePairData { pair: "SOL/USDT".to_string(), mid: dec!(140), volatility: dec!(1) },
+                ExchangePairData {
+                    pair: "BTC/USDT".to_string(),
+                    mid: dec!(62000),
+                    volatility: dec!(1),
+                },
+                ExchangePairData {
+                    pair: "ETH/USDT".to_string(),
+                    mid: dec!(3450),
+                    volatility: dec!(1),
+                },
+                ExchangePairData {
+                    pair: "SOL/USDT".to_string(),
+                    mid: dec!(140),
+                    volatility: dec!(1),
+                },
             ],
         });
         let orders = state.compute_orders();
+        // 3 pairs × 2 sides = 6 orders
         assert_eq!(orders.len(), 6);
         let btc_orders: Vec<_> = orders.iter().filter(|o| o.pair == "BTC/USDT").collect();
         assert_eq!(btc_orders.len(), 2);
@@ -217,9 +231,13 @@ mod tests {
             }],
         });
         let orders = state.compute_orders();
-        let buy = orders.iter().find(|o| o.pair == "BTC/USDT" && o.side == "buy")
+        let buy = orders
+            .iter()
+            .find(|o| o.pair == "BTC/USDT" && o.side == "buy")
             .expect("no buy order for BTC/USDT");
-        let sell = orders.iter().find(|o| o.pair == "BTC/USDT" && o.side == "sell")
+        let sell = orders
+            .iter()
+            .find(|o| o.pair == "BTC/USDT" && o.side == "sell")
             .expect("no sell order for BTC/USDT");
         assert!(buy.price < sell.price, "bid must be below ask");
     }
@@ -227,6 +245,7 @@ mod tests {
     #[test]
     fn compute_orders_skips_disabled_pair() {
         let mut state = EngineState::new();
+        // Disable ETH/USDT
         for cfg in &mut state.config.pairs {
             if cfg.pair == "ETH/USDT" {
                 cfg.enabled = false;
@@ -234,9 +253,21 @@ mod tests {
         }
         state.update_from_exchange(ExchangeFeedPayload {
             pairs: vec![
-                ExchangePairData { pair: "BTC/USDT".to_string(), mid: dec!(62000), volatility: dec!(1) },
-                ExchangePairData { pair: "ETH/USDT".to_string(), mid: dec!(3450), volatility: dec!(1) },
-                ExchangePairData { pair: "SOL/USDT".to_string(), mid: dec!(140), volatility: dec!(1) },
+                ExchangePairData {
+                    pair: "BTC/USDT".to_string(),
+                    mid: dec!(62000),
+                    volatility: dec!(1),
+                },
+                ExchangePairData {
+                    pair: "ETH/USDT".to_string(),
+                    mid: dec!(3450),
+                    volatility: dec!(1),
+                },
+                ExchangePairData {
+                    pair: "SOL/USDT".to_string(),
+                    mid: dec!(140),
+                    volatility: dec!(1),
+                },
             ],
         });
         let orders = state.compute_orders();
