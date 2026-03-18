@@ -21,5 +21,6 @@ export async function GET(request: Request) {
         exchangeHealth: snapshot.exchangeHealth,
         config: snapshot.config,
         killSwitchEngaged: snapshot.killSwitchEngaged,
+        strategy: snapshot.strategy,
     });
 }

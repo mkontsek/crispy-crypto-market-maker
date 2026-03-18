@@ -178,6 +178,7 @@ impl EngineState {
             exchange_health,
             config: self.config.clone(),
             kill_switch_engaged: self.kill_switch_engaged,
+            strategy: self.active_strategy.as_str().to_string(),
         }
     }
 }

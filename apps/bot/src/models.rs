@@ -4,6 +4,25 @@ use serde::{Deserialize, Serialize};
 pub const PAIRS: [&str; 3] = ["BTC/USDT", "ETH/USDT", "SOL/USDT"];
 pub const EXCHANGES: [&str; 3] = ["Binance", "Bybit", "OKX"];
 
+/// Available bot strategy presets.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum StrategyPreset {
+    Conservative,
+    Balanced,
+    Aggressive,
+}
+
+impl StrategyPreset {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            StrategyPreset::Conservative => "conservative",
+            StrategyPreset::Balanced => "balanced",
+            StrategyPreset::Aggressive => "aggressive",
+        }
+    }
+}
+
 /// Market data received from the exchange over its WebSocket feed.
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -163,6 +182,7 @@ pub struct EngineStreamPayload {
     pub exchange_health: Vec<ExchangeHealth>,
     pub config: MMConfig,
     pub kill_switch_engaged: bool,
+    pub strategy: String,
 }
 
 #[derive(Clone, Deserialize)]
@@ -181,4 +201,9 @@ pub struct HedgeRequest {
 #[serde(rename_all = "camelCase")]
 pub struct KillSwitchRequest {
     pub engaged: bool,
+}
+
+#[derive(Clone, Deserialize)]
+pub struct SetStrategyRequest {
+    pub strategy: StrategyPreset,
 }
