@@ -203,6 +203,10 @@ pnpm hooks:install   # Configure Git hooks to use .githooks/
     - `EXCHANGE_HTTP_URL`, `EXCHANGE_WS_URL` (exchange endpoints)
     - `ENGINE_HTTP_URL`, `ENGINE_WS_URL` remain supported as bot-1 aliases
     - `DATABASE_URL` (Postgres connection string)
+    - Optional static map locations (replaces geo API calls):
+        - `BOT_1_GEO_LAT`, `BOT_1_GEO_LNG`, `BOT_1_GEO_LABEL` — bot-1 map pin
+        - `EXCHANGE_GEO_LAT`, `EXCHANGE_GEO_LNG`, `EXCHANGE_GEO_LABEL` — simulated exchange map pin
+        - `DASHBOARD_GEO_LAT`, `DASHBOARD_GEO_LNG`, `DASHBOARD_GEO_LABEL` — dashboard/browser map pin
 - Deploy from Git or with CLI:
 
 ```bash
@@ -222,6 +226,13 @@ are skipped.
 git clone https://github.com/mkontsek/crispy-crypto-market-maker.git
 cd crispy-crypto-market-maker
 sudo ./scripts/setup-ubuntu.sh --service exchange
+```
+
+Optional: pin the exchange location on the infrastructure map (skips IP geolocation):
+
+```bash
+sudo ./scripts/setup-ubuntu.sh --service exchange \
+  --geo-lat 51.5074 --geo-lng -0.1278 --geo-label "London, UK"
 ```
 
 Optional: configure public TLS (`https://` + `wss://`) with Caddy in the same run:
@@ -253,6 +264,16 @@ sudo ./scripts/setup-ubuntu.sh \
   --service bot \
   --exchange-ws-url  ws://exchange.your-server.com/feed \
   --exchange-api-url http://exchange.your-server.com
+```
+
+Pin the bot's location on the infrastructure map (skips IP geolocation):
+
+```bash
+sudo ./scripts/setup-ubuntu.sh \
+  --service bot \
+  --exchange-ws-url  ws://exchange.your-server.com/feed \
+  --exchange-api-url http://exchange.your-server.com \
+  --geo-lat 40.7128 --geo-lng -74.0060 --geo-label "New York, US"
 ```
 
 If `EXCHANGE_WS_URL` / `EXCHANGE_API_URL` are left unset in
