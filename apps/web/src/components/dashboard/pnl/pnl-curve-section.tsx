@@ -44,7 +44,6 @@ export const PnlCurveSection: FC<PnlCurveSectionProps> = ({ pnl }) => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                     <PnlChart values={values} />
-
                     <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                         <MetricCard
                             label="Current P&L"
@@ -67,7 +66,6 @@ export const PnlCurveSection: FC<PnlCurveSectionProps> = ({ pnl }) => {
                             positive={true}
                         />
                     </div>
-
                     <div className="grid grid-cols-2 gap-3 text-sm">
                         <MetricCard
                             label="Realized Spread"

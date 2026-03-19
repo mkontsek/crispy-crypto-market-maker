@@ -89,11 +89,12 @@ export const EventLogSection: FC<EventLogSectionProps> = ({
                 </span>
             </CardHeader>
             <CardContent>
-                {log.length === 0 ? (
+                {log.length === 0 && (
                     <p className="text-sm text-slate-400">
                         Waiting for events…
                     </p>
-                ) : (
+                )}
+                {log.length > 0 && (
                     <div className="max-h-48 space-y-1 overflow-y-auto">
                         {log.slice(0, 100).map((entry) => (
                             <div

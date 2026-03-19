@@ -58,12 +58,11 @@ export const MarketMakerDashboard: FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                     <DashboardHeaderNavLinks activePage="dashboard" />
-                    {topologyMutation.isPending ? (
+                    {topologyMutation.isPending && (
                         <Badge tone="warning">Applying topology...</Badge>
-                    ) : null}
+                    )}
                 </div>
             </header>
-
             <div className="mx-auto max-w-7xl space-y-4">
                 <TopologyConfigSection
                     key={topologyKey}
@@ -71,15 +70,13 @@ export const MarketMakerDashboard: FC = () => {
                     saving={topologyMutation.isPending}
                     onSubmit={(next) => topologyMutation.mutate(next)}
                 />
-
-                {topologyQuery.isError ? (
+                {topologyQuery.isError && (
                     <Card>
                         <CardContent className="py-4 text-sm text-red-300">
                             Failed to load topology from `/api/topology`.
                         </CardContent>
                     </Card>
-                ) : null}
-
+                )}
                 <Card>
                     <CardHeader>
                         <CardTitle>Bot Dashboards</CardTitle>
@@ -95,10 +92,8 @@ export const MarketMakerDashboard: FC = () => {
                         ))}
                     </CardContent>
                 </Card>
-
-                {activeBot ? (
-                    <BotDashboardPanel key={activeBot.id} bot={activeBot} />
-                ) : (
+                {activeBot && <BotDashboardPanel key={activeBot.id} bot={activeBot} />}
+                {!activeBot && (
                     <Card>
                         <CardContent className="py-4 text-sm text-slate-300">
                             No bots configured. Add at least one bot in Network
@@ -106,8 +101,7 @@ export const MarketMakerDashboard: FC = () => {
                         </CardContent>
                     </Card>
                 )}
-
-                {topology ? <GeoMapSection topology={topology} /> : null}
+                {topology && <GeoMapSection topology={topology} />}
             </div>
         </main>
     );
