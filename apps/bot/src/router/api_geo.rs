@@ -1,3 +1,5 @@
+use std::env;
+
 use axum::{http::StatusCode, Json};
 use serde::Deserialize;
 use tracing::warn;
@@ -13,6 +15,15 @@ struct IpGeoResponse {
 }
 
 pub async fn geo() -> (StatusCode, Json<serde_json::Value>) {
+    if let (Ok(lat_str), Ok(lng_str)) = (env::var("GEO_LAT"), env::var("GEO_LNG")) {
+        if let (Ok(lat), Ok(lng)) = (lat_str.parse::<f64>(), lng_str.parse::<f64>()) {
+            let mut resp = serde_json::json!({ "lat": lat, "lng": lng });
+            if let Ok(label) = env::var("GEO_LABEL") {
+                resp["label"] = serde_json::Value::String(label);
+            }
+            return (StatusCode::OK, Json(resp));
+        }
+    }
     match reqwest::get(GEO_API_URL).await {
         Ok(resp) => match resp.json::<IpGeoResponse>().await {
             Ok(data) => {

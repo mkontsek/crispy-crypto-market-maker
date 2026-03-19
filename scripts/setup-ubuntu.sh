@@ -9,6 +9,9 @@ SERVICE=""
 EXCHANGE_WS_URL=""
 EXCHANGE_API_URL=""
 CADDY_DOMAIN=""
+GEO_LAT=""
+GEO_LNG=""
+GEO_LABEL=""
 RUN_USER="crispy"
 INSTALL_DIR="/usr/local/bin"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -59,6 +62,9 @@ while [[ $# -gt 0 ]]; do
     --exchange-ws-url)   EXCHANGE_WS_URL="$2";    shift 2 ;;
     --exchange-api-url)  EXCHANGE_API_URL="$2";   shift 2 ;;
     --caddy-domain)      CADDY_DOMAIN="$2";       shift 2 ;;
+    --geo-lat)           GEO_LAT="$2";            shift 2 ;;
+    --geo-lng)           GEO_LNG="$2";            shift 2 ;;
+    --geo-label)         GEO_LABEL="$2";          shift 2 ;;
     --user)              RUN_USER="$2";            shift 2 ;;
     --install-dir)       INSTALL_DIR="$2";         shift 2 ;;
     --repo-dir)          REPO_DIR="$2";            shift 2 ;;
@@ -172,12 +178,24 @@ if [[ "$SERVICE" == "bot" ]]; then
 # Leave empty to let the bot use its built-in local defaults.
 EXCHANGE_WS_URL=${EXCHANGE_WS_URL}
 EXCHANGE_API_URL=${EXCHANGE_API_URL}
+
+# Static location for the infrastructure map (optional).
+# Leave empty to auto-detect via IP geolocation on GET /geo.
+GEO_LAT=${GEO_LAT}
+GEO_LNG=${GEO_LNG}
+GEO_LABEL=${GEO_LABEL}
 EOF
 )
 else
   ENV_CONTENT=$(cat <<EOF
 # crispy-exchange environment configuration
 # Edit this file, then run: systemctl restart ${SERVICE_NAME}
+
+# Static location for the infrastructure map (optional).
+# Leave empty to auto-detect via IP geolocation on GET /geo.
+GEO_LAT=${GEO_LAT}
+GEO_LNG=${GEO_LNG}
+GEO_LABEL=${GEO_LABEL}
 EOF
 )
 fi
