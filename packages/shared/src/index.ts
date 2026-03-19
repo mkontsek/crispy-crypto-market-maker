@@ -6,6 +6,10 @@ export {
     DEFAULT_EXCHANGE_WS_URL,
     EXCHANGES,
     PAIRS,
+    PROD_ENGINE_HTTP_URL,
+    PROD_ENGINE_WS_URL,
+    PROD_EXCHANGE_HTTP_URL,
+    PROD_EXCHANGE_WS_URL,
     STRATEGIES,
 } from './constants';
 export {

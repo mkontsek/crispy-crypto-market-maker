@@ -4,6 +4,10 @@ import {
     DEFAULT_ENGINE_WS_URL,
     DEFAULT_EXCHANGE_HTTP_URL,
     DEFAULT_EXCHANGE_WS_URL,
+    PROD_ENGINE_HTTP_URL,
+    PROD_ENGINE_WS_URL,
+    PROD_EXCHANGE_HTTP_URL,
+    PROD_EXCHANGE_WS_URL,
     geoLocationSchema,
     runtimeTopologySchema,
     type BotId,
@@ -12,6 +16,8 @@ import {
     type RuntimeTopology,
     type TopologyBot,
 } from '@crispy/shared';
+
+const isLocalEnv = process.env.NODE_ENV === 'development';
 
 function canonicalUrl(url: string) {
     return new URL(url).toString();
@@ -41,10 +47,14 @@ function parseOptionalGeo(
 function buildInitialTopology(): RuntimeTopology {
     return runtimeTopologySchema.parse({
         exchangeWsUrl: canonicalUrl(
-            process.env.EXCHANGE_WS_URL ?? DEFAULT_EXCHANGE_WS_URL
+            process.env.EXCHANGE_WS_URL ??
+                (isLocalEnv ? DEFAULT_EXCHANGE_WS_URL : PROD_EXCHANGE_WS_URL)
         ),
         exchangeHttpUrl: canonicalUrl(
-            process.env.EXCHANGE_HTTP_URL ?? DEFAULT_EXCHANGE_HTTP_URL
+            process.env.EXCHANGE_HTTP_URL ??
+                (isLocalEnv
+                    ? DEFAULT_EXCHANGE_HTTP_URL
+                    : PROD_EXCHANGE_HTTP_URL)
         ),
         exchangeLocation: parseOptionalGeo(
             process.env.EXCHANGE_GEO_LAT,
@@ -65,12 +75,16 @@ function buildInitialTopology(): RuntimeTopology {
                 wsUrl: canonicalUrl(
                     process.env.BOT_1_WS_URL ??
                         process.env.ENGINE_WS_URL ??
-                        DEFAULT_ENGINE_WS_URL
+                        (isLocalEnv
+                            ? DEFAULT_ENGINE_WS_URL
+                            : PROD_ENGINE_WS_URL)
                 ),
                 httpUrl: canonicalUrl(
                     process.env.BOT_1_HTTP_URL ??
                         process.env.ENGINE_HTTP_URL ??
-                        DEFAULT_ENGINE_HTTP_URL
+                        (isLocalEnv
+                            ? DEFAULT_ENGINE_HTTP_URL
+                            : PROD_ENGINE_HTTP_URL)
                 ),
                 location: parseOptionalGeo(
                     process.env.BOT_1_GEO_LAT,
