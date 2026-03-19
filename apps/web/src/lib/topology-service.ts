@@ -41,6 +41,25 @@ export function botUrlsFromDomain(domain: string): {
     };
 }
 
+export function domainFromExchangeUrl(url: string): string {
+    try {
+        return new URL(url).host;
+    } catch {
+        return url;
+    }
+}
+
+export function exchangeUrlsFromDomain(domain: string): {
+    wsUrl: string;
+    httpUrl: string;
+} {
+    const trimmed = domain.trim().replace(/^(wss?|https?):\/\//i, '');
+    return {
+        wsUrl: `wss://${trimmed}/feed`,
+        httpUrl: `https://${trimmed}`,
+    };
+}
+
 export function buildNewBot(existingBots: TopologyBot[]): TopologyBot {
     const botId = nextBotId(existingBots);
     const { wsUrl, httpUrl } = botUrlsFromDomain(`${botId}.example.com`);

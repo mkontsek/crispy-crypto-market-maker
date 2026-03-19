@@ -6,6 +6,8 @@ import {
     cloneTopology,
     defaultBotName,
     domainFromBotUrl,
+    domainFromExchangeUrl,
+    exchangeUrlsFromDomain,
     nextBotId,
 } from '../topology-service';
 
@@ -100,6 +102,50 @@ describe('botUrlsFromDomain', () => {
         );
         expect(wsUrl).toBe('wss://bot-joe.sabercrown.com/stream');
         expect(httpUrl).toBe('https://bot-joe.sabercrown.com');
+    });
+});
+
+describe('domainFromExchangeUrl', () => {
+    it('extracts hostname from a wss URL', () => {
+        expect(
+            domainFromExchangeUrl('wss://exchange-nancy.sabercrown.com/feed')
+        ).toBe('exchange-nancy.sabercrown.com');
+    });
+
+    it('extracts host with port from a ws URL', () => {
+        expect(domainFromExchangeUrl('ws://127.0.0.1:3111/feed')).toBe(
+            '127.0.0.1:3111'
+        );
+    });
+
+    it('returns the value unchanged for invalid URLs', () => {
+        expect(domainFromExchangeUrl('not-a-url')).toBe('not-a-url');
+    });
+});
+
+describe('exchangeUrlsFromDomain', () => {
+    it('creates wss and https URLs from a domain', () => {
+        const { wsUrl, httpUrl } = exchangeUrlsFromDomain(
+            'exchange-nancy.sabercrown.com'
+        );
+        expect(wsUrl).toBe('wss://exchange-nancy.sabercrown.com/feed');
+        expect(httpUrl).toBe('https://exchange-nancy.sabercrown.com');
+    });
+
+    it('trims whitespace from the domain', () => {
+        const { wsUrl, httpUrl } = exchangeUrlsFromDomain(
+            '  exchange-nancy.sabercrown.com  '
+        );
+        expect(wsUrl).toBe('wss://exchange-nancy.sabercrown.com/feed');
+        expect(httpUrl).toBe('https://exchange-nancy.sabercrown.com');
+    });
+
+    it('strips protocol prefixes if user pastes a full URL', () => {
+        const { wsUrl, httpUrl } = exchangeUrlsFromDomain(
+            'https://exchange-nancy.sabercrown.com'
+        );
+        expect(wsUrl).toBe('wss://exchange-nancy.sabercrown.com/feed');
+        expect(httpUrl).toBe('https://exchange-nancy.sabercrown.com');
     });
 });
 
