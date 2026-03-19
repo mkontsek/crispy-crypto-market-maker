@@ -59,11 +59,8 @@ export const FillsTable: FC<FillsTableProps> = ({
             <CardHeader className="flex flex-wrap items-center justify-between gap-2">
                 <CardTitle>Fill History ({total} total)</CardTitle>
                 <div className="flex flex-wrap items-center gap-2">
-                    {isLoading ? (
-                        <Badge tone="warning">Loading…</Badge>
-                    ) : (
-                        <Badge tone="success">Loaded</Badge>
-                    )}
+                    {isLoading && <Badge tone="warning">Loading…</Badge>}
+                    {!isLoading && <Badge tone="success">Loaded</Badge>}
                     <Badge tone="default">Auto-refreshes every 5s</Badge>
                     <Button
                         className="h-5"
@@ -75,9 +72,9 @@ export const FillsTable: FC<FillsTableProps> = ({
                             ? 'Deleting…'
                             : 'Delete all history'}
                     </Button>
-                    {deleteAllHistoryError ? (
+                    {deleteAllHistoryError && (
                         <Badge tone="danger">Delete failed</Badge>
-                    ) : null}
+                    )}
                 </div>
             </CardHeader>
             <CardContent className="overflow-x-auto p-0">
@@ -95,7 +92,7 @@ export const FillsTable: FC<FillsTableProps> = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {fills.length === 0 ? (
+                        {fills.length === 0 && (
                             <tr>
                                 <td
                                     colSpan={8}
@@ -105,59 +102,44 @@ export const FillsTable: FC<FillsTableProps> = ({
                                     generate data.
                                 </td>
                             </tr>
-                        ) : (
-                            sorted.map((fill) => (
-                                <tr
-                                    key={fill.id}
-                                    className="border-b border-slate-800/50 hover:bg-slate-900/50"
-                                >
-                                    <td className="px-4 py-2 font-mono text-xs text-slate-400">
-                                        {new Date(
-                                            fill.createdAt
-                                        ).toLocaleTimeString()}
-                                    </td>
-                                    <td className="px-4 py-2 text-xs text-slate-400">
-                                        {fill.botId ?? '—'}
-                                    </td>
-                                    <td className="px-4 py-2 font-medium">
-                                        {fill.pair}
-                                    </td>
-                                    <td className="px-4 py-2">
-                                        <Badge
-                                            tone={
-                                                fill.side === 'buy'
-                                                    ? 'success'
-                                                    : 'danger'
-                                            }
-                                        >
-                                            {fill.side}
-                                        </Badge>
-                                    </td>
-                                    <td className="px-4 py-2 font-mono">
-                                        {fill.price.toFixed(2)}
-                                    </td>
-                                    <td className="px-4 py-2 font-mono">
-                                        {fill.size.toFixed(4)}
-                                    </td>
-                                    <td className="px-4 py-2 font-mono">
-                                        {fill.realizedSpread.toFixed(4)}
-                                    </td>
-                                    <td className="px-4 py-2">
-                                        <Badge
-                                            tone={
-                                                fill.adverseSelection
-                                                    ? 'danger'
-                                                    : 'success'
-                                            }
-                                        >
-                                            {fill.adverseSelection
-                                                ? 'yes'
-                                                : 'no'}
-                                        </Badge>
-                                    </td>
-                                </tr>
-                            ))
                         )}
+                        {fills.length > 0 && sorted.map((fill) => (
+                            <tr
+                                key={fill.id}
+                                className="border-b border-slate-800/50 hover:bg-slate-900/50"
+                            >
+                                <td className="px-4 py-2 font-mono text-xs text-slate-400">
+                                    {new Date(
+                                        fill.createdAt
+                                    ).toLocaleTimeString()}
+                                </td>
+                                <td className="px-4 py-2 text-xs text-slate-400">
+                                    {fill.botId ?? '—'}
+                                </td>
+                                <td className="px-4 py-2 font-medium">
+                                    {fill.pair}
+                                </td>
+                                <td className="px-4 py-2">
+                                    <Badge tone={fill.side === 'buy' ? 'success' : 'danger'}>
+                                        {fill.side}
+                                    </Badge>
+                                </td>
+                                <td className="px-4 py-2 font-mono">
+                                    {fill.price.toFixed(2)}
+                                </td>
+                                <td className="px-4 py-2 font-mono">
+                                    {fill.size.toFixed(4)}
+                                </td>
+                                <td className="px-4 py-2 font-mono">
+                                    {fill.realizedSpread.toFixed(4)}
+                                </td>
+                                <td className="px-4 py-2">
+                                    <Badge tone={fill.adverseSelection ? 'danger' : 'success'}>
+                                        {fill.adverseSelection ? 'yes' : 'no'}
+                                    </Badge>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
                 {totalPages > 1 && (

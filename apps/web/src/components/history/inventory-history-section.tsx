@@ -112,19 +112,18 @@ export const InventoryHistorySection: FC<InventoryHistorySectionProps> = ({
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                {pairs.length === 0 ? (
+                {pairs.length === 0 && (
                     <p className="text-sm text-slate-400">
                         No inventory snapshots stored yet.
                     </p>
-                ) : (
-                    pairs.map((pair) => (
-                        <PairTable
-                            key={pair}
-                            pair={pair}
-                            history={byPair[pair] ?? []}
-                        />
-                    ))
                 )}
+                {pairs.length > 0 && pairs.map((pair) => (
+                    <PairTable
+                        key={pair}
+                        pair={pair}
+                        history={byPair[pair] ?? []}
+                    />
+                ))}
             </CardContent>
         </Card>
     );

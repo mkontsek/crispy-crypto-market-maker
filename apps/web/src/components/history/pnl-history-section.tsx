@@ -45,7 +45,7 @@ export const PnlHistorySection: FC<PnlHistorySectionProps> = ({
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                {latest ? (
+                {latest && (
                     <div>
                         <div className="mb-2 text-xs uppercase tracking-wide text-slate-400">
                             Latest snapshot —{' '}
@@ -74,12 +74,12 @@ export const PnlHistorySection: FC<PnlHistorySectionProps> = ({
                             />
                         </div>
                     </div>
-                ) : (
+                )}
+                {!latest && (
                     <p className="text-sm text-slate-400">
                         No PnL snapshots stored yet.
                     </p>
                 )}
-
                 {snapshots.length > 1 && (
                     <div>
                         <div className="mb-2 text-xs uppercase tracking-wide text-slate-400">

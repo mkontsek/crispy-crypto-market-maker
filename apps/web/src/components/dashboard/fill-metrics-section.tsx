@@ -83,7 +83,6 @@ export const FillMetricsSection: FC<FillMetricsSectionProps> = ({
                         />
                         <MetricCard label="Win Rate" value={`${winRate}%`} />
                     </div>
-
                     <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                         <MetricCard
                             label="Cancel-to-Trade"
@@ -96,7 +95,6 @@ export const FillMetricsSection: FC<FillMetricsSectionProps> = ({
                         <MetricCard label="Buys" value={String(buys)} />
                         <MetricCard label="Sells" value={String(sells)} />
                     </div>
-
                     {pairCounts.size > 0 && (
                         <div>
                             <div className="mb-2 text-xs uppercase tracking-wide text-slate-400">
@@ -121,7 +119,6 @@ export const FillMetricsSection: FC<FillMetricsSectionProps> = ({
                             </div>
                         </div>
                     )}
-
                     <div>
                         <div className="mb-1 text-xs uppercase tracking-wide text-slate-400">
                             Quote outcomes — {filled} filled / {expired} expired
