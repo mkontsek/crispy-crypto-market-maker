@@ -37,7 +37,7 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
     if (!topology || !draft) {
         return (
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2">
                         <CardTitle>Network Topology</CardTitle>
                         <Badge tone="default">
@@ -127,7 +127,7 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
 
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                     <CardTitle>Network Topology</CardTitle>
                     <Badge tone="default">
