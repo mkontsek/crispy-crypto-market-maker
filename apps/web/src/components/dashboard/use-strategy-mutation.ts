@@ -57,9 +57,6 @@ export function useStrategyMutation(botId: BotId) {
         onSuccess: (data, strategy) => {
             const confirmed = data.strategy ?? strategy;
             optimisticStrategyByBot.set(botId, confirmed);
-            queryClient.setQueryData<QuotesCacheData>(queryKey, (old) =>
-                old ? { ...old, strategy: confirmed } : old
-            );
             queryClient.invalidateQueries({ queryKey });
         },
     });
