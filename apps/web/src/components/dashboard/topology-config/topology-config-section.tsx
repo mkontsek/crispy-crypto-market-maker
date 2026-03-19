@@ -8,7 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { buildNewBot, cloneTopology } from '@/lib/topology-service';
+import {
+    buildNewBot,
+    botUrlsFromDomain,
+    cloneTopology,
+    domainFromBotUrl,
+} from '@/lib/topology-service';
 
 import { TextField } from './text-field';
 import { UrlField } from './url-field';
@@ -75,6 +80,22 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                       ...current,
                       bots: current.bots.map((bot) =>
                           bot.id === botId ? { ...bot, [key]: value } : bot
+                      ),
+                  }
+                : current
+        );
+    };
+
+    const setBotDomain = (botId: string, domain: string) => {
+        const { wsUrl, httpUrl } = botUrlsFromDomain(domain);
+        setDraft((current) =>
+            current
+                ? {
+                      ...current,
+                      bots: current.bots.map((bot) =>
+                          bot.id === botId
+                              ? { ...bot, wsUrl, httpUrl }
+                              : bot
                       ),
                   }
                 : current
@@ -192,7 +213,7 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                                         Remove Bot
                                     </Button>
                                 </div>
-                                <div className="grid gap-3 md:grid-cols-3">
+                                <div className="grid gap-3 md:grid-cols-2">
                                     <TextField
                                         label="Bot Name"
                                         value={bot.name}
@@ -200,22 +221,11 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                                             setBotField(bot.id, 'name', value)
                                         }
                                     />
-                                    <UrlField
-                                        label="Bot WSS URL"
-                                        value={bot.wsUrl}
+                                    <TextField
+                                        label="Bot Domain"
+                                        value={domainFromBotUrl(bot.wsUrl)}
                                         onChange={(value) =>
-                                            setBotField(bot.id, 'wsUrl', value)
-                                        }
-                                    />
-                                    <UrlField
-                                        label="Bot HTTPS API URL"
-                                        value={bot.httpUrl}
-                                        onChange={(value) =>
-                                            setBotField(
-                                                bot.id,
-                                                'httpUrl',
-                                                value
-                                            )
+                                            setBotDomain(bot.id, value)
                                         }
                                     />
                                 </div>

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    botUrlsFromDomain,
     buildNewBot,
     cloneTopology,
     defaultBotName,
+    domainFromBotUrl,
     nextBotId,
 } from '../topology-service';
 
@@ -56,6 +58,48 @@ describe('nextBotId', () => {
             { id: 'bot-2', name: 'Bot 2', wsUrl: '', httpUrl: '' },
         ];
         expect(nextBotId(bots)).toBe('bot-3');
+    });
+});
+
+describe('domainFromBotUrl', () => {
+    it('extracts hostname from a wss URL', () => {
+        expect(domainFromBotUrl('wss://bot-joe.sabercrown.com/stream')).toBe(
+            'bot-joe.sabercrown.com'
+        );
+    });
+
+    it('extracts host with port from a ws URL', () => {
+        expect(domainFromBotUrl('ws://127.0.0.1:3110/stream')).toBe(
+            '127.0.0.1:3110'
+        );
+    });
+
+    it('returns the value unchanged for invalid URLs', () => {
+        expect(domainFromBotUrl('not-a-url')).toBe('not-a-url');
+    });
+});
+
+describe('botUrlsFromDomain', () => {
+    it('creates wss and https URLs from a domain', () => {
+        const { wsUrl, httpUrl } = botUrlsFromDomain('bot-joe.sabercrown.com');
+        expect(wsUrl).toBe('wss://bot-joe.sabercrown.com/stream');
+        expect(httpUrl).toBe('https://bot-joe.sabercrown.com');
+    });
+
+    it('trims whitespace from the domain', () => {
+        const { wsUrl, httpUrl } = botUrlsFromDomain(
+            '  bot-joe.sabercrown.com  '
+        );
+        expect(wsUrl).toBe('wss://bot-joe.sabercrown.com/stream');
+        expect(httpUrl).toBe('https://bot-joe.sabercrown.com');
+    });
+
+    it('strips protocol prefixes if user pastes a full URL', () => {
+        const { wsUrl, httpUrl } = botUrlsFromDomain(
+            'https://bot-joe.sabercrown.com'
+        );
+        expect(wsUrl).toBe('wss://bot-joe.sabercrown.com/stream');
+        expect(httpUrl).toBe('https://bot-joe.sabercrown.com');
     });
 });
 

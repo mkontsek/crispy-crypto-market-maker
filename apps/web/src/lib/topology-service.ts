@@ -22,12 +22,32 @@ export function nextBotId(existingBots: TopologyBot[]): string {
     return `bot-${counter}`;
 }
 
+export function domainFromBotUrl(url: string): string {
+    try {
+        return new URL(url).host;
+    } catch {
+        return url;
+    }
+}
+
+export function botUrlsFromDomain(domain: string): {
+    wsUrl: string;
+    httpUrl: string;
+} {
+    const trimmed = domain.trim().replace(/^(wss?|https?):\/\//i, '');
+    return {
+        wsUrl: `wss://${trimmed}/stream`,
+        httpUrl: `https://${trimmed}`,
+    };
+}
+
 export function buildNewBot(existingBots: TopologyBot[]): TopologyBot {
     const botId = nextBotId(existingBots);
+    const { wsUrl, httpUrl } = botUrlsFromDomain(`${botId}.example.com`);
     return {
         id: botId,
         name: defaultBotName(botId),
-        wsUrl: `wss://${botId}.example.com/stream`,
-        httpUrl: `https://${botId}.example.com`,
+        wsUrl,
+        httpUrl,
     };
 }
