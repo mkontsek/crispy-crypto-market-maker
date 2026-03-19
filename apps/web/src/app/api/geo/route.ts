@@ -4,13 +4,15 @@ import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const IPAPI_URL = 'https://ipapi.co/json/';
+const IPWHOIS_URL = 'https://ipwho.is/';
 
-interface IpapiResponse {
-    latitude: number;
-    longitude: number;
+interface IpWhoIsResponse {
+    success?: boolean;
+    message?: string;
+    latitude?: number;
+    longitude?: number;
     city?: string;
-    country_name?: string;
+    country?: string;
 }
 
 function isLocalhost(hostname: string): boolean {
@@ -24,30 +26,44 @@ function isLocalhost(hostname: string): boolean {
     );
 }
 
-async function geoFromIpapi(): Promise<Response> {
-    const resp = await fetch(IPAPI_URL, { cache: 'no-store' });
-    if (!resp.ok) {
+async function geoFromIpwhois(): Promise<Response> {
+    try {
+        const resp = await fetch(IPWHOIS_URL, { cache: 'no-store' });
+        if (!resp.ok) {
+            return NextResponse.json(
+                { error: 'geo lookup failed' },
+                { status: 502 }
+            );
+        }
+        const raw = (await resp.json()) as IpWhoIsResponse;
+        if (raw.success === false) {
+            return NextResponse.json(
+                { error: raw.message ?? 'geo lookup failed' },
+                { status: 502 }
+            );
+        }
+
+        // Build label in the same "{city}, {country}" format as the remote /geo endpoint.
+        const parts = [raw.city, raw.country].filter(Boolean);
+        const label = parts.length > 0 ? parts.join(', ') : 'Unknown';
+        const result = geoLocationSchema.safeParse({
+            lat: raw.latitude,
+            lng: raw.longitude,
+            label,
+        });
+        if (!result.success) {
+            return NextResponse.json(
+                { error: 'invalid geo response' },
+                { status: 502 }
+            );
+        }
+        return NextResponse.json(result.data);
+    } catch {
         return NextResponse.json(
-            { error: 'geo lookup failed' },
+            { error: 'failed to reach geo provider' },
             { status: 502 }
         );
     }
-    const raw = (await resp.json()) as IpapiResponse;
-    // Build label in the same "{city}, {country_name}" format as the remote /geo endpoint.
-    const parts = [raw.city, raw.country_name].filter(Boolean);
-    const label = parts.length > 0 ? parts.join(', ') : 'Unknown';
-    const result = geoLocationSchema.safeParse({
-        lat: raw.latitude,
-        lng: raw.longitude,
-        label,
-    });
-    if (!result.success) {
-        return NextResponse.json(
-            { error: 'invalid geo response' },
-            { status: 502 }
-        );
-    }
-    return NextResponse.json(result.data);
 }
 
 export async function GET(request: Request) {
@@ -56,7 +72,7 @@ export async function GET(request: Request) {
 
     // When called without a URL, return the dashboard server's own location.
     if (!serviceUrl) {
-        return geoFromIpapi();
+        return geoFromIpwhois();
     }
 
     let parsed: URL;
@@ -69,10 +85,10 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'invalid url' }, { status: 400 });
     }
 
-    // For localhost URLs, call ipapi.co directly from the web server rather than
+    // For localhost URLs, call the geo provider directly from the web server rather than
     // proxying to the service, since the web server shares the same public IP.
     if (isLocalhost(parsed.hostname)) {
-        return geoFromIpapi();
+        return geoFromIpwhois();
     }
 
     const geoUrl = new URL('/geo', parsed).toString();

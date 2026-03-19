@@ -1,6 +1,7 @@
 import type { BotId, InventorySnapshot } from '@crispy/shared';
 import { useQuery } from '@tanstack/react-query';
 
+import { BOT_REFETCH_INTERVAL_MS } from '@/lib/bot-data-service';
 import { fetchJson } from '@/lib/fetch-json';
 
 type InventoryResponse = {
@@ -15,6 +16,6 @@ export function useBotInventoryQuery(botId: BotId) {
         queryKey: ['inventory', botId],
         queryFn: () =>
             fetchJson<InventoryResponse>(`/api/inventory?botId=${botQuery}`),
-        refetchInterval: 1_500,
+        refetchInterval: BOT_REFETCH_INTERVAL_MS,
     });
 }

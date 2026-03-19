@@ -33,6 +33,34 @@ export async function fetchDashboardGeo(): Promise<DetectedGeo | null> {
     }
 }
 
+function firstDetectedBotGeo(
+    topology: RuntimeTopology,
+    autoGeo: Map<string, DetectedGeo>
+): DetectedGeo | null {
+    for (const bot of topology.bots) {
+        const location = autoGeo.get(bot.id);
+        if (location) {
+            return location;
+        }
+    }
+    return null;
+}
+
+function dashboardLabel(
+    explicitDashboardGeo: DetectedGeo | undefined,
+    resolvedDashboardGeo: DetectedGeo
+): string {
+    if (explicitDashboardGeo?.label) {
+        return `Dashboard - ${explicitDashboardGeo.label}`;
+    }
+    if (explicitDashboardGeo) {
+        return 'Dashboard';
+    }
+    return resolvedDashboardGeo.label
+        ? `Dashboard - ${resolvedDashboardGeo.label} (inferred)`
+        : 'Dashboard (inferred)';
+}
+
 export function buildMarkers(
     topology: RuntimeTopology,
     autoGeo: Map<string, DetectedGeo>,
@@ -72,12 +100,16 @@ export function buildMarkers(
         }
     }
 
-    const resolvedDashboardGeo = topology.dashboardLocation ?? dashboardGeo;
+    const explicitDashboardGeo =
+        topology.dashboardLocation ?? dashboardGeo ?? undefined;
+    const fallbackDashboardGeo =
+        autoGeo.get('exchange') ?? firstDetectedBotGeo(topology, autoGeo);
+    const resolvedDashboardGeo = explicitDashboardGeo ?? fallbackDashboardGeo;
     if (resolvedDashboardGeo) {
         markers.push({
             lat: resolvedDashboardGeo.lat,
             lng: resolvedDashboardGeo.lng,
-            label: resolvedDashboardGeo.label ?? 'Dashboard',
+            label: dashboardLabel(explicitDashboardGeo, resolvedDashboardGeo),
             kind: 'dashboard',
         });
     }
