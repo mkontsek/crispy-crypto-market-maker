@@ -38,9 +38,9 @@ export const MarketMakerDashboard: FC = () => {
         : 'topology-loading';
 
     return (
-        <main className="w-full">
-            <header className="flex rounded-xl border border-slate-800 bg-slate-950 p-4 mb-4">
-                <div className="w-full">
+        <main className="w-full px-4 py-4">
+            <header className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-950 p-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
                     <h1 className="text-xl font-semibold">
                         Crispy Crypto Market Maker
                     </h1>

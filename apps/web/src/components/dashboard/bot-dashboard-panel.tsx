@@ -107,6 +107,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                 <StrategySection
                     strategy={strategy}
                     pending={strategyMutation.isPending}
+                    connected={connected}
                     onSelect={(next) => strategyMutation.mutate(next)}
                 />
 
