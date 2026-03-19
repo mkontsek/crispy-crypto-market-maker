@@ -249,6 +249,7 @@ Wants=network.target
 Type=simple
 User=${RUN_USER}
 EnvironmentFile=${ENV_FILE}
+ExecStartPre=-/bin/sh -c 'ss -Htlnp "sport = :${UPSTREAM_PORT}" | grep -oE "pid=[0-9]+" | cut -d= -f2 | xargs -r kill 2>/dev/null || true'
 ExecStart=${BINARY_DEST}
 Restart=on-failure
 RestartSec=5
