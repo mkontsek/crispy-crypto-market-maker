@@ -7,6 +7,7 @@ import type { InventorySnapshot, QuoteSnapshot } from '@crispy/shared';
 import { InfoIcon } from '@/components/dashboard/live-quotes/info-icon';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ratioFromDecimal, sizeFromFp } from '@/lib/fixed-point';
 import {
     inventorySkewColor,
@@ -18,6 +19,7 @@ type InventoryMonitorSectionProps = {
     inventory: InventorySnapshot[];
     quotes: QuoteSnapshot[];
     pendingPair: string | null;
+    loading: boolean;
     onTogglePause: (pair: string, paused: boolean) => void;
     onManualHedge: (pair: string) => void;
 };
@@ -26,6 +28,7 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
     inventory,
     quotes,
     pendingPair,
+    loading,
     onTogglePause,
     onManualHedge,
 }) => {
@@ -49,6 +52,21 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {loading && inventory.length === 0 && Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="rounded-lg border border-slate-800 p-3 space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-2 w-full" />
+                            <div className="flex gap-2 mt-3">
+                                <Skeleton className="h-8 w-24" />
+                                <Skeleton className="h-8 w-24" />
+                            </div>
+                        </div>
+                    ))}
+                    {!loading && inventory.length === 0 && (
+                        <p className="text-sm text-slate-400">
+                            No inventory data available.
+                        </p>
+                    )}
                     {inventory.map((item) => {
                         const quote = quoteMap.get(item.pair);
                         const normalizedSkew = ratioFromDecimal(

@@ -7,6 +7,7 @@ import type { QuoteSnapshot } from '@crispy/shared';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { priceFromFp } from '@/lib/fixed-point';
 import { InfoIcon } from './info-icon';
 import { LiveQuotesInfoDialog } from './live-quotes-info-dialog';
@@ -15,11 +16,13 @@ import { StateInfoDialog } from './state-info-dialog';
 type LiveQuotesSectionProps = {
     quotes: QuoteSnapshot[];
     connected: boolean;
+    loading: boolean;
 };
 
 export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
     quotes,
     connected,
+    loading,
 }) => {
     const [sectionInfoOpen, setSectionInfoOpen] = useState(false);
     const [stateInfoOpen, setStateInfoOpen] = useState(false);
@@ -71,6 +74,22 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                             </tr>
                         </thead>
                         <tbody>
+                            {loading && quotes.length === 0 && Array.from({ length: 3 }).map((_, i) => (
+                                <tr key={i} className="border-t border-slate-800">
+                                    {Array.from({ length: 8 }).map((__, j) => (
+                                        <td key={j} className="py-2 pr-4">
+                                            <Skeleton className="h-4 w-16" />
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                            {!loading && quotes.length === 0 && (
+                                <tr>
+                                    <td colSpan={8} className="py-4 text-center text-sm text-slate-400">
+                                        No quotes available.
+                                    </td>
+                                </tr>
+                            )}
                             {quotes.map((quote) => {
                                 const skewVal = priceFromFp(
                                     quote.inventorySkew
