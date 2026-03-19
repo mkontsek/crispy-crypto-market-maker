@@ -3,6 +3,7 @@ import type { FC } from 'react';
 import type { TopologyBot } from '@crispy/shared';
 
 import { cn } from '@/lib/utils';
+import { domainFromBotUrl } from '@/lib/topology-service';
 
 type BotTabButtonProps = {
     bot: TopologyBot;
@@ -26,7 +27,8 @@ export const BotTabButton: FC<BotTabButtonProps> = ({
         )}
     >
         <div className="font-medium">{bot.name}</div>
-        <div className="mt-1 text-xs text-slate-400">WS: {bot.wsUrl}</div>
-        <div className="text-xs text-slate-400">API: {bot.httpUrl}</div>
+        <div className="mt-1 text-xs text-slate-400">
+            {domainFromBotUrl(bot.wsUrl)}
+        </div>
     </button>
 );
