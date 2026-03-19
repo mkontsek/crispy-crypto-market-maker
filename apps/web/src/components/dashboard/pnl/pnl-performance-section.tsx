@@ -47,7 +47,7 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {latest ? (
+                    {latest && (
                         <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-5">
                             <MetricCard
                                 label="Total PnL"
@@ -74,8 +74,7 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                                 )}
                             />
                         </div>
-                    ) : null}
-
+                    )}
                     <div className="grid grid-cols-3 gap-3 text-sm">
                         <MetricCard
                             label="Total Fills"
@@ -90,7 +89,6 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                             value={String(totalFills - adverseFills)}
                         />
                     </div>
-
                     <div>
                         <div className="mb-2 text-xs uppercase tracking-wide text-slate-400">
                             Latest fills

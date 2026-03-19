@@ -90,7 +90,6 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     </button>
                 </div>
             </header>
-
             <div
                 id={`${bot.id}-section-content`}
                 className={cn('space-y-4', collapsed && 'hidden')}
@@ -100,14 +99,12 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     pending={killSwitchMutation.isPending}
                     onToggle={(engaged) => killSwitchMutation.mutate(engaged)}
                 />
-
                 <StrategySection
                     strategy={strategy}
                     pending={strategyMutation.isPending}
                     connected={connected}
                     onSelect={(next) => strategyMutation.mutate(next)}
                 />
-
                 <AlertPanelSection
                     health={health}
                     inventory={inventory}
@@ -116,9 +113,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     killSwitchEngaged={killSwitchEngaged}
                     quotes={quotes}
                 />
-
                 <LiveQuotesSection quotes={quotes} connected={connected} />
-
                 <div className="grid gap-4 xl:grid-cols-2">
                     <InventoryMonitorSection
                         inventory={inventory}
@@ -137,13 +132,11 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     />
                     <PnlPerformanceSection botId={bot.id} pnl={pnl} />
                 </div>
-
                 <ExposureSection
                     inventory={inventory}
                     quotes={quotes}
                     config={config}
                 />
-
                 <div className="grid gap-4 xl:grid-cols-2">
                     <FillMetricsSection
                         fills={fills}
@@ -151,7 +144,6 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     />
                     <PnlCurveSection pnl={pnl} />
                 </div>
-
                 <div className="grid gap-4 xl:grid-cols-2">
                     <QuoteHistorySection entries={quoteHistoryEntries} />
                     <ConfigPanelSection
@@ -160,22 +152,19 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                         onSubmit={(next) => configMutation.mutate(next)}
                     />
                 </div>
-
                 <ExchangeHealthSection health={health} />
-
                 <EventLogSection
                     connected={connected}
                     quotes={quotes}
                     killSwitchEngaged={killSwitchEngaged}
                 />
-
-                {quotesQuery.isError ? (
+                {quotesQuery.isError && (
                     <Card>
                         <CardContent className="py-4 text-sm text-red-300">
                             Failed to load bot quotes stream.
                         </CardContent>
                     </Card>
-                ) : null}
+                )}
             </div>
         </section>
     );

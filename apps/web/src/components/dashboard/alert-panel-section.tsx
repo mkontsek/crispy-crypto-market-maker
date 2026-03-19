@@ -28,7 +28,7 @@ export const AlertPanelSection: FC<AlertPanelSectionProps> = (props) => {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Alerts</CardTitle>
-                {alerts.length > 0 ? (
+                {alerts.length > 0 && (
                     <Badge
                         tone={
                             alerts.some((a) => a.severity === 'critical')
@@ -38,14 +38,14 @@ export const AlertPanelSection: FC<AlertPanelSectionProps> = (props) => {
                     >
                         {alerts.length} alert{alerts.length !== 1 ? 's' : ''}
                     </Badge>
-                ) : (
-                    <Badge tone="success">all clear</Badge>
                 )}
+                {alerts.length === 0 && <Badge tone="success">all clear</Badge>}
             </CardHeader>
             <CardContent>
-                {alerts.length === 0 ? (
+                {alerts.length === 0 && (
                     <p className="text-sm text-slate-400">No active alerts.</p>
-                ) : (
+                )}
+                {alerts.length > 0 && (
                     <ul className="space-y-2">
                         {alerts.map((alert) => (
                             <li
