@@ -21,33 +21,44 @@ const STRATEGY_DESCRIPTIONS: Record<Strategy, string> = {
 type StrategySectionProps = {
     strategy: Strategy;
     pending: boolean;
+    connected: boolean;
     onSelect: (strategy: Strategy) => void;
 };
 
 export const StrategySection: FC<StrategySectionProps> = ({
     strategy,
     pending,
+    connected,
     onSelect,
 }) => {
+    const isDisabled = !connected || pending;
+
     return (
-        <Card>
+        <Card className={!connected ? 'opacity-50' : ''}>
             <CardHeader>
-                <CardTitle>Strategy</CardTitle>
+                <CardTitle>
+                    Strategy
+                    {!connected && (
+                        <span className="ml-2 text-xs font-normal text-slate-400">
+                            (connect to bot to change)
+                        </span>
+                    )}
+                </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {STRATEGIES.map((preset) => (
                         <button
                             key={preset}
                             type="button"
-                            disabled={pending}
+                            disabled={isDisabled}
                             onClick={() => onSelect(preset)}
                             className={[
                                 'rounded border p-3 text-left transition',
                                 strategy === preset
                                     ? 'border-sky-500 bg-sky-950 text-sky-200'
                                     : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500',
-                                pending ? 'opacity-50 cursor-not-allowed' : '',
+                                isDisabled ? 'opacity-50 cursor-not-allowed' : '',
                             ].join(' ')}
                         >
                             <div className="mb-1 text-sm font-semibold">
