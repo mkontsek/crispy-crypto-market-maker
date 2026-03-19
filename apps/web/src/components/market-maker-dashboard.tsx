@@ -2,16 +2,20 @@
 
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 
+import type { RuntimeTopology } from '@crispy/shared';
 import { BotDashboardPanel } from '@/components/dashboard/bot-dashboard-panel';
 import { DashboardHeaderNavLinks } from '@/components/dashboard/dashboard-header-nav-links';
 import { BotTabButton } from '@/components/dashboard/bot-tab-button';
 import { GeoMapSection } from '@/components/dashboard/geo-map/geo-map-section';
 import { TopologyConfigSection } from '@/components/dashboard/topology-config/topology-config-section';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { loadTopologyFromStorage } from '@/lib/topology-storage';
 
+import { useResetAllMutation } from './dashboard/use-reset-all-mutation';
 import { useTopologyMutation } from './use-topology-mutation';
 import { useTopologyQuery } from './use-topology-query';
 
@@ -25,6 +29,7 @@ export const MarketMakerDashboard: FC = () => {
     const topologyQuery = useTopologyQuery();
     const topologyMutation = useTopologyMutation({ setSelectedBotId });
     const { mutate: restoreTopology } = topologyMutation;
+    const resetAllMutation = useResetAllMutation();
 
     useEffect(() => {
         const saved = loadTopologyFromStorage();
@@ -44,9 +49,18 @@ export const MarketMakerDashboard: FC = () => {
         ? JSON.stringify(topology)
         : 'topology-loading';
 
+    const resetAllData = () => resetAllMutation.mutate();
+    const saveTopology = (next: RuntimeTopology) => topologyMutation.mutate(next);
+    const selectBotTab = (id: string) => () => setSelectedBotId(id);
+
     return (
         <main className="w-full px-4 py-4">
-            <header className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-950 p-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
+            <motion.header
+                className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-950 p-4 mb-4 sm:flex-row sm:items-center sm:justify-between"
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+            >
                 <div>
                     <h1 className="text-xl font-semibold">
                         Crispy Crypto Market Maker
@@ -57,18 +71,30 @@ export const MarketMakerDashboard: FC = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        disabled={resetAllMutation.isPending}
+                        onClick={resetAllData}
+                    >
+                        {resetAllMutation.isPending ? 'Resetting...' : 'Reset all test data'}
+                    </Button>
                     <DashboardHeaderNavLinks activePage="dashboard" />
                     {topologyMutation.isPending && (
                         <Badge tone="warning">Applying topology...</Badge>
                     )}
                 </div>
-            </header>
-            <div className="mx-auto max-w-7xl space-y-4">
+            </motion.header>
+            <motion.div
+                className="mx-auto max-w-7xl space-y-4"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+            >
                 <TopologyConfigSection
                     key={topologyKey}
                     topology={topology}
                     saving={topologyMutation.isPending}
-                    onSubmit={(next) => topologyMutation.mutate(next)}
+                    onSubmit={saveTopology}
                 />
                 {topologyQuery.isError && (
                     <Card>
@@ -87,7 +113,7 @@ export const MarketMakerDashboard: FC = () => {
                                 key={bot.id}
                                 bot={bot}
                                 active={activeBot?.id === bot.id}
-                                onClick={() => setSelectedBotId(bot.id)}
+                                onClick={selectBotTab(bot.id)}
                             />
                         ))}
                     </CardContent>
@@ -102,7 +128,7 @@ export const MarketMakerDashboard: FC = () => {
                     </Card>
                 )}
                 {topology && <GeoMapSection topology={topology} />}
-            </div>
+            </motion.div>
         </main>
     );
 };

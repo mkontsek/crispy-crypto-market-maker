@@ -91,10 +91,20 @@ const PairTable: FC<PairTableProps> = ({ pair, history }) => {
     );
 };
 
-type InventoryHistorySectionProps = { rows: DbInventory[] };
+type InventoryHistorySectionProps = {
+    rows: DbInventory[];
+    total: number;
+    page: number;
+    pageSize: number;
+    onPageChange: (page: number) => void;
+};
 
 export const InventoryHistorySection: FC<InventoryHistorySectionProps> = ({
     rows,
+    total,
+    page,
+    pageSize,
+    onPageChange,
 }) => {
     const byPair = rows.reduce<Record<string, DbInventory[]>>((acc, row) => {
         acc[row.pair] = acc[row.pair] ?? [];
@@ -103,12 +113,13 @@ export const InventoryHistorySection: FC<InventoryHistorySectionProps> = ({
     }, {});
 
     const pairs = Object.keys(byPair).sort();
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>
-                    Inventory History ({rows.length} snapshots stored)
+                    Inventory History ({total} snapshots stored)
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -124,6 +135,31 @@ export const InventoryHistorySection: FC<InventoryHistorySectionProps> = ({
                         history={byPair[pair] ?? []}
                     />
                 ))}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-slate-800 pt-3">
+                        <span className="text-xs text-slate-400">
+                            Page {page} of {totalPages}
+                        </span>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                disabled={page <= 1}
+                                onClick={() => onPageChange(page - 1)}
+                                className="rounded border border-slate-700 px-3 py-1 text-xs disabled:opacity-40 hover:bg-slate-800"
+                            >
+                                Prev
+                            </button>
+                            <button
+                                type="button"
+                                disabled={page >= totalPages}
+                                onClick={() => onPageChange(page + 1)}
+                                className="rounded border border-slate-700 px-3 py-1 text-xs disabled:opacity-40 hover:bg-slate-800"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

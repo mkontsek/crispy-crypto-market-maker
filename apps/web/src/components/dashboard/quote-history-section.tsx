@@ -7,6 +7,7 @@ import type { QuoteSnapshot } from '@crispy/shared';
 import { InfoIcon } from '@/components/dashboard/live-quotes/info-icon';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { priceFromFp } from '@/lib/fixed-point';
 import { QuoteHistoryInfoDialog } from './quote-history-info-dialog';
 import { QuoteHistoryStatusInfoDialog } from './quote-history-status-info-dialog';
@@ -16,31 +17,48 @@ export type QuoteHistoryEntry = QuoteSnapshot & {
     timestamp: string;
 };
 
-type QuoteHistorySectionProps = { entries: QuoteHistoryEntry[] };
+type QuoteHistorySectionProps = { entries: QuoteHistoryEntry[]; loading: boolean; stale: boolean };
 
 export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
     entries,
+    loading,
+    stale,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
     const [statusInfoOpen, setStatusInfoOpen] = useState(false);
 
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
+    const openStatusInfo = () => setStatusInfoOpen(true);
+    const closeStatusInfo = () => setStatusInfoOpen(false);
+
     return (
         <>
-            <Card className="flex h-full flex-col">
+            <Card>
                 <CardHeader>
                     <div className="inline-flex items-center gap-2">
                         <CardTitle>Quote History</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="Quote history section information"
                         >
                             <InfoIcon />
                         </button>
+                        {stale && (
+                            <span
+                                className="text-amber-400"
+                                title="Stale data - showing last known values"
+                                role="status"
+                                aria-label="Stale data - reconnecting"
+                            >
+                                !
+                            </span>
+                        )}
                     </div>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto">
+                <CardContent className="h-[800px] overflow-y-auto">
                     <table className="w-full text-sm">
                         <thead className="text-left text-slate-400">
                             <tr>
@@ -54,9 +72,7 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                                         Status
                                         <button
                                             type="button"
-                                            onClick={() =>
-                                                setStatusInfoOpen(true)
-                                            }
+                                            onClick={openStatusInfo}
                                             className="text-slate-500 transition hover:text-slate-300"
                                             aria-label="Quote history status information"
                                         >
@@ -67,6 +83,22 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                             </tr>
                         </thead>
                         <tbody>
+                            {loading && entries.length === 0 && Array.from({ length: 5 }).map((_, i) => (
+                                <tr key={i} className="border-t border-slate-800">
+                                    {Array.from({ length: 6 }).map((__, j) => (
+                                        <td key={j} className="py-2 pr-4">
+                                            <Skeleton className="h-4 w-14" />
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                            {!loading && entries.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="py-4 text-center text-sm text-slate-400">
+                                        No quote history yet.
+                                    </td>
+                                </tr>
+                            )}
                             {entries.slice(0, 40).map((entry, index) => (
                                 <tr
                                     key={`${entry.pair}-${entry.timestamp}-${index}`}
@@ -108,11 +140,11 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
             </Card>
             <QuoteHistoryInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
             <QuoteHistoryStatusInfoDialog
                 open={statusInfoOpen}
-                onClose={() => setStatusInfoOpen(false)}
+                onClose={closeStatusInfo}
             />
         </>
     );

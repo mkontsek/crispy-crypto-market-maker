@@ -18,20 +18,21 @@ const STRATEGY_DESCRIPTIONS: Record<Strategy, string> = {
     aggressive: 'Tight spreads · High inventory · No hedging',
 };
 
-type StrategySectionProps = {
+type Props = {
     strategy: Strategy;
     pending: boolean;
     connected: boolean;
     onSelect: (strategy: Strategy) => void;
 };
 
-export const StrategySection: FC<StrategySectionProps> = ({
+export const StrategySection: FC<Props> = ({
     strategy,
     pending,
     connected,
     onSelect,
 }) => {
     const isDisabled = !connected || pending;
+    const selectPreset = (preset: Strategy) => () => onSelect(preset);
 
     return (
         <Card className={!connected ? 'opacity-50' : ''}>
@@ -52,7 +53,7 @@ export const StrategySection: FC<StrategySectionProps> = ({
                             key={preset}
                             type="button"
                             disabled={isDisabled}
-                            onClick={() => onSelect(preset)}
+                            onClick={selectPreset(preset)}
                             className={[
                                 'rounded border p-3 text-left transition',
                                 strategy === preset

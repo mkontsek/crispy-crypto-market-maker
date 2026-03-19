@@ -35,11 +35,13 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
     );
     const [isOpen, setIsOpen] = useState(false);
 
+    const toggleSection = () => setIsOpen((v) => !v);
+
     if (!topology || !draft) {
         return (
             <Card>
                 <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-center gap-2">
                         <CardTitle>Network Topology</CardTitle>
                         <Badge tone="default">
                             {topology?.bots.length ?? 0} bot(s) configured
@@ -48,7 +50,7 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                     <button
                         type="button"
                         aria-expanded={isOpen}
-                        onClick={() => setIsOpen((v) => !v)}
+                        onClick={toggleSection}
                         className="text-xs text-slate-400 hover:text-slate-200"
                     >
                         {isOpen ? '▲ Collapse' : '▼ Expand'}
@@ -118,46 +120,46 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
     };
 
     const addBot = () => {
-        const nextDraft: RuntimeTopology = {
-            ...draft,
-            bots: [...draft.bots, buildNewBot(draft.bots)],
-        };
-        setDraft(nextDraft);
-        onSubmit(nextDraft);
+        setDraft((current) =>
+            current
+                ? {
+                      ...current,
+                      bots: [...current.bots, buildNewBot(current.bots)],
+                  }
+                : current
+        );
     };
+
+    const saveTopology = () => onSubmit(draft);
+    const removeBotById = (id: string) => () => removeBot(id);
+    const setBotNameById = (id: string) => (value: string) =>
+        setBotField(id, 'name', value);
+    const setBotDomainById = (id: string) => (value: string) =>
+        setBotDomain(id, value);
 
     return (
         <Card>
             <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2">
                     <CardTitle>Network Topology</CardTitle>
                     <Badge tone="default">
                         {draft.bots.length} bot(s) configured
                     </Badge>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-end gap-2">
                     {isOpen && (
-                        <>
-                            <Button
-                                variant="outline"
-                                onClick={() =>
-                                    setDraft(cloneTopology(topology))
-                                }
-                            >
-                                Reset
-                            </Button>
-                            <Button
-                                disabled={saving}
-                                onClick={() => onSubmit(draft)}
-                            >
-                                {saving ? 'Saving...' : 'Save Topology'}
-                            </Button>
-                        </>
+                        <Button
+                            className="h-6"
+                            disabled={saving}
+                            onClick={saveTopology}
+                        >
+                            {saving ? 'Saving...' : 'Save Topology'}
+                        </Button>
                     )}
                     <button
                         type="button"
                         aria-expanded={isOpen}
-                        onClick={() => setIsOpen((v) => !v)}
+                        onClick={toggleSection}
                         className={cn(
                             'text-xs text-slate-400 hover:text-slate-200'
                         )}
@@ -198,7 +200,7 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                                     <Button
                                         variant="danger"
                                         disabled={draft.bots.length <= 1}
-                                        onClick={() => removeBot(bot.id)}
+                                        onClick={removeBotById(bot.id)}
                                     >
                                         Remove Bot
                                     </Button>
@@ -207,16 +209,12 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                                     <TextField
                                         label="Bot Name"
                                         value={bot.name}
-                                        onChange={(value) =>
-                                            setBotField(bot.id, 'name', value)
-                                        }
+                                        onChange={setBotNameById(bot.id)}
                                     />
                                     <TextField
                                         label="Bot Domain"
                                         value={domainFromBotUrl(bot.wsUrl)}
-                                        onChange={(value) =>
-                                            setBotDomain(bot.id, value)
-                                        }
+                                        onChange={setBotDomainById(bot.id)}
                                     />
                                 </div>
                             </div>

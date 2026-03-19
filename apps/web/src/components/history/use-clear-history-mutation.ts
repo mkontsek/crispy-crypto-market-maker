@@ -12,10 +12,14 @@ type DeleteHistoryResponse = {
 
 interface UseClearHistoryMutationProps {
     setFillsPage: Dispatch<SetStateAction<number>>;
+    setPnlPage: Dispatch<SetStateAction<number>>;
+    setInventoryPage: Dispatch<SetStateAction<number>>;
 }
 
 export function useClearHistoryMutation({
     setFillsPage,
+    setPnlPage,
+    setInventoryPage,
 }: UseClearHistoryMutationProps) {
     const queryClient = useQueryClient();
 
@@ -31,6 +35,8 @@ export function useClearHistoryMutation({
         },
         onSuccess: () => {
             setFillsPage(1);
+            setPnlPage(1);
+            setInventoryPage(1);
             queryClient.invalidateQueries({ queryKey: ['history', 'fills'] });
             queryClient.invalidateQueries({ queryKey: ['history', 'pnl'] });
             queryClient.invalidateQueries({

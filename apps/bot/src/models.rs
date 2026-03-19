@@ -1,5 +1,7 @@
+pub use crispy_shared::OrderSide;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 pub const PAIRS: [&str; 3] = ["BTC/USDT", "ETH/USDT", "SOL/USDT"];
 pub const EXCHANGES: [&str; 3] = ["Binance", "Bybit", "OKX"];
@@ -46,7 +48,7 @@ pub struct ExchangeFeedPayload {
 #[serde(rename_all = "camelCase")]
 pub struct ExchangeOrderRequest {
     pub pair: String,
-    pub side: String,
+    pub side: OrderSide,
     #[serde(with = "rust_decimal::serde::str")]
     pub price: Decimal,
     #[serde(with = "rust_decimal::serde::str")]
@@ -58,7 +60,7 @@ pub struct ExchangeOrderRequest {
 #[serde(rename_all = "camelCase")]
 pub struct ExchangeOrderResponse {
     pub pair: String,
-    pub side: String,
+    pub side: OrderSide,
     pub filled: bool,
     #[serde(with = "rust_decimal::serde::str")]
     pub fill_price: Decimal,
@@ -111,15 +113,15 @@ pub struct QuoteSnapshot {
     #[serde(with = "rust_decimal::serde::str")]
     pub volatility: Decimal,
     pub paused: bool,
-    pub updated_at: String,
+    pub updated_at: u64,
 }
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Fill {
-    pub id: String,
+    pub id: Uuid,
     pub pair: String,
-    pub side: String,
+    pub side: OrderSide,
     #[serde(with = "rust_decimal::serde::str")]
     pub price: Decimal,
     #[serde(with = "rust_decimal::serde::str")]
@@ -129,7 +131,7 @@ pub struct Fill {
     #[serde(with = "rust_decimal::serde::str")]
     pub realized_spread: Decimal,
     pub adverse_selection: bool,
-    pub timestamp: String,
+    pub timestamp: u64,
 }
 
 #[derive(Clone, Serialize)]
@@ -140,13 +142,13 @@ pub struct InventorySnapshot {
     pub inventory: Decimal,
     #[serde(with = "rust_decimal::serde::str")]
     pub normalized_skew: Decimal,
-    pub timestamp: String,
+    pub timestamp: u64,
 }
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PnLSnapshot {
-    pub timestamp: String,
+    pub timestamp: u64,
     #[serde(with = "rust_decimal::serde::str")]
     pub total_pnl: Decimal,
     #[serde(with = "rust_decimal::serde::str")]
@@ -174,7 +176,7 @@ pub struct ExchangeHealth {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EngineStreamPayload {
-    pub timestamp: String,
+    pub timestamp: u64,
     pub quotes: Vec<QuoteSnapshot>,
     pub fills: Vec<Fill>,
     pub inventory: Vec<InventorySnapshot>,
@@ -182,7 +184,7 @@ pub struct EngineStreamPayload {
     pub exchange_health: Vec<ExchangeHealth>,
     pub config: MMConfig,
     pub kill_switch_engaged: bool,
-    pub strategy: String,
+    pub strategy: StrategyPreset,
 }
 
 #[derive(Clone, Deserialize)]

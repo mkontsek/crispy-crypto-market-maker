@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { useOptimisticStrategyStore } from '@/stores/optimistic-strategy-store';
 import {
     applyOptimisticStrategy,
     useStrategyMutation,
@@ -42,6 +43,15 @@ function baseQuotes(botId: BotId): QuotesData {
     };
 }
 
+function expireLock(botId: BotId) {
+    useOptimisticStrategyStore.setState((state) => ({
+        strategyLockedUntilByBot: {
+            ...state.strategyLockedUntilByBot,
+            [botId]: Date.now() - 1,
+        },
+    }));
+}
+
 type DeferredFetchResponse = {
     ok: boolean;
     json: () => Promise<{ strategy: Strategy }>;
@@ -49,6 +59,7 @@ type DeferredFetchResponse = {
 
 afterEach(() => {
     vi.restoreAllMocks();
+    useOptimisticStrategyStore.getState().clearAllOptimisticStrategies();
 });
 
 describe('useStrategyMutation', () => {
@@ -94,6 +105,16 @@ describe('useStrategyMutation', () => {
         await waitFor(() => {
             expect(result.current.isSuccess).toBe(true);
         });
+
+        // Lock is still active after onSuccess: stale server data stays overridden.
+        const duringLock = applyOptimisticStrategy(botId, {
+            ...baseQuotes(botId),
+            strategy: 'balanced' as Strategy,
+        });
+        expect(duringLock.strategy).toBe('aggressive');
+
+        // Manually expire the 3-second lock so we can test post-lock behaviour.
+        expireLock(botId);
 
         const postConfirm = applyOptimisticStrategy(botId, {
             ...baseQuotes(botId),

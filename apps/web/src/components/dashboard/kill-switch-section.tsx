@@ -12,59 +12,67 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { deriveKillSwitchUiState } from '@/lib/kill-switch-ui-service';
 
 type KillSwitchSectionProps = {
     engaged: boolean;
+    stateKnown: boolean;
     pending: boolean;
     onToggle: (engaged: boolean) => void;
 };
 
 export const KillSwitchSection: FC<KillSwitchSectionProps> = ({
     engaged,
+    stateKnown,
     pending,
     onToggle,
 }) => {
     const [confirmOpen, setConfirmOpen] = useState(false);
 
+    const closeConfirm = () => setConfirmOpen(false);
+    const toggleKillSwitch = () =>
+        engaged ? onToggle(false) : setConfirmOpen(true);
+    const engageKillSwitch = () => {
+        setConfirmOpen(false);
+        onToggle(true);
+    };
+    const uiState = deriveKillSwitchUiState({
+        engaged,
+        stateKnown,
+        pending,
+    });
+
     return (
         <>
-            <Card className={engaged ? 'border-red-600' : ''}>
+            <Card className={uiState.cardClassName}>
                 <CardContent className="flex flex-wrap items-center justify-between gap-3 py-3">
                     <div className="flex items-center gap-3">
                         <span className="text-sm font-semibold uppercase tracking-wide">
                             Kill Switch
                         </span>
-                        <Badge tone={engaged ? 'danger' : 'success'}>
-                            {engaged
-                                ? 'ENGAGED — all quoting halted'
-                                : 'DISENGAGED'}
+                        <Badge tone={uiState.statusTone}>
+                            {uiState.statusLabel}
                         </Badge>
                     </div>
                     <Button
-                        variant={engaged ? 'outline' : 'danger'}
-                        disabled={pending}
-                        onClick={() =>
-                            engaged ? onToggle(false) : setConfirmOpen(true)
-                        }
+                        variant={uiState.buttonVariant}
+                        disabled={uiState.buttonDisabled}
+                        onClick={toggleKillSwitch}
                     >
-                        {pending
-                            ? 'Applying…'
-                            : engaged
-                              ? 'Disengage Kill Switch'
-                              : 'Engage Kill Switch'}
+                        {uiState.buttonLabel}
                     </Button>
                 </CardContent>
             </Card>
 
-            <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+            <Dialog open={confirmOpen} onClose={closeConfirm}>
                 <DialogHeader>
                     <DialogTitle>Confirm Kill Switch</DialogTitle>
                     <button
-                        onClick={() => setConfirmOpen(false)}
+                        onClick={closeConfirm}
                         className="text-slate-400 transition hover:text-slate-200"
                         aria-label="Close"
                     >
-                        ✕
+                        X
                     </button>
                 </DialogHeader>
                 <DialogContent>
@@ -79,16 +87,13 @@ export const KillSwitchSection: FC<KillSwitchSectionProps> = ({
                     <div className="flex justify-end gap-2 pt-2">
                         <Button
                             variant="outline"
-                            onClick={() => setConfirmOpen(false)}
+                            onClick={closeConfirm}
                         >
                             Cancel
                         </Button>
                         <Button
                             variant="danger"
-                            onClick={() => {
-                                setConfirmOpen(false);
-                                onToggle(true);
-                            }}
+                            onClick={engageKillSwitch}
                         >
                             Engage Kill Switch
                         </Button>

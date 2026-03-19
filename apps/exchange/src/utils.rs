@@ -7,15 +7,6 @@ pub fn apply_bps(value: Decimal, bps_delta: i64) -> Decimal {
     value * Decimal::from(multiplier) / Decimal::from(RATE_DENOM_BPS)
 }
 
-pub fn chrono_string() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis();
-    now.to_string()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -36,10 +27,4 @@ mod tests {
         assert_eq!(apply_bps(dec!(5000), 0), dec!(5000));
     }
 
-    #[test]
-    fn chrono_string_is_non_empty_and_numeric() {
-        let ts = chrono_string();
-        assert!(!ts.is_empty());
-        assert!(ts.parse::<u128>().is_ok(), "timestamp is not numeric: {ts}");
-    }
 }

@@ -13,9 +13,9 @@ import { BoundsController } from './use-bounds-controller';
 
 type GeoMapLeafletProps = { markers: GeoMapMarker[] };
 
-const GeoMapLeaflet: FC<GeoMapLeafletProps> = ({ markers }) => {
+export const GeoMapLeaflet: FC<GeoMapLeafletProps> = ({ markers }) => {
     const defaultCenter: [number, number] = [20, 10];
-    const defaultZoom = 2;
+    const defaultZoom = 7;
     const markerOffsets = buildMarkerPixelOffsets(markers);
 
     return (
@@ -48,7 +48,13 @@ const GeoMapLeaflet: FC<GeoMapLeafletProps> = ({ markers }) => {
                         <Popup>{marker.label}</Popup>
                     </Marker>
                 ))}
-                {markers.length > 0 && <BoundsController markers={markers} />}
+                {markers.length > 0 && (
+                    <BoundsController
+                        markers={markers}
+                        markerOffsets={markerOffsets}
+                        maxZoom={defaultZoom}
+                    />
+                )}
             </MapContainer>
 
             <div className="flex flex-wrap gap-4 text-xs text-slate-400">
@@ -60,5 +66,3 @@ const GeoMapLeaflet: FC<GeoMapLeafletProps> = ({ markers }) => {
         </div>
     );
 };
-
-export default GeoMapLeaflet;

@@ -14,9 +14,18 @@ export async function GET(request: Request) {
     const rawBotId = searchParams.get('botId');
     const botId = rawBotId ? sanitize(rawBotId) : null;
 
-    const limit = Math.min(
+    const page = Math.max(
+        1,
+        Math.floor(Number(searchParams.get('page') ?? '1'))
+    );
+    const pageSize = Math.min(
         500,
-        Math.max(1, Math.floor(Number(searchParams.get('limit') ?? '200')))
+        Math.max(
+            1,
+            Math.floor(
+                Number(searchParams.get('pageSize') ?? searchParams.get('limit') ?? '200')
+            )
+        )
     );
 
     const where = {
@@ -24,11 +33,15 @@ export async function GET(request: Request) {
         ...(botId ? { botId } : {}),
     };
 
-    const items = await prisma.inventory.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-    });
+    const [items, total] = await Promise.all([
+        prisma.inventory.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+        }),
+        prisma.inventory.count({ where }),
+    ]);
 
-    return NextResponse.json({ items });
+    return NextResponse.json({ items, total, page, pageSize });
 }

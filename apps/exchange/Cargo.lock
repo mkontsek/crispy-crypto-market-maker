@@ -334,6 +334,7 @@ name = "crispy-exchange"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "crispy-shared",
  "rand 0.10.0",
  "reqwest",
  "rust_decimal",
@@ -343,6 +344,17 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "crispy-shared"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tracing",
 ]
 
 [[package]]

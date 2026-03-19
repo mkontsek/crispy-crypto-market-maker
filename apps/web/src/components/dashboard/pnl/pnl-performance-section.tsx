@@ -2,33 +2,38 @@
 
 import { useState, type FC } from 'react';
 
-import type { BotId, PnLSnapshot } from '@crispy/shared';
+import type { Fill, PnLSnapshot } from '@crispy/shared';
 
 import { InfoIcon } from '@/components/dashboard/live-quotes/info-icon';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { dedupeFills } from '@/lib/bot-data-service';
+import { Skeleton } from '@/components/ui/skeleton';
 import { priceFromFp, ratioFromDecimal, sizeFromFp } from '@/lib/fixed-point';
 import { nanosToTime } from '@/lib/timestamp';
 import { MetricCard } from '../metric-card';
 import { PnlPerformanceInfoDialog } from './pnl-performance-info-dialog';
-import { useBotFillsQuery } from './use-bot-fills-query';
 
 type PnlPerformanceSectionProps = {
-    botId: BotId;
     pnl: PnLSnapshot[];
+    fills: Fill[];
+    stale: boolean;
+    loading: boolean;
 };
 
 export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
-    botId,
     pnl,
+    fills,
+    stale,
+    loading,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
-    const fillsQuery = useBotFillsQuery(botId);
-    const fills = dedupeFills(fillsQuery.data?.items ?? []);
+    const isLoading = loading;
     const latest = pnl[0];
     const totalFills = fills.length;
     const adverseFills = fills.filter((f) => f.adverseSelection).length;
+
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
 
     return (
         <>
@@ -38,15 +43,50 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                         <CardTitle>PnL & Performance Analytics</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="P&L performance section information"
                         >
                             <InfoIcon />
                         </button>
+                        {stale && (
+                            <span
+                                className="text-amber-400"
+                                title="Stale data - showing last known values"
+                                role="status"
+                                aria-label="Stale data - reconnecting"
+                            >
+                                !
+                            </span>
+                        )}
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent>
+                    <div className="h-[500px] space-y-4 overflow-y-auto">
+                    {isLoading && pnl.length === 0 && fills.length === 0 ? (
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <Skeleton key={i} className="h-14 w-full" />
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-3 gap-3">
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <Skeleton key={i} className="h-14 w-full" />
+                                ))}
+                            </div>
+                            <div className="space-y-1">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <Skeleton key={i} className="h-10 w-full" />
+                                ))}
+                            </div>
+                        </div>
+                    ) : !isLoading && pnl.length === 0 && fills.length === 0 ? (
+                        <p className="text-sm text-slate-400">
+                            No performance data available yet.
+                        </p>
+                    ) : (
+                        <>
                     {latest && (
                         <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-5">
                             <MetricCard
@@ -93,7 +133,7 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                         <div className="mb-2 text-xs uppercase tracking-wide text-slate-400">
                             Latest fills
                         </div>
-                        <div className="h-[260px] space-y-1 overflow-y-auto">
+                        <div className="h-[280px] space-y-1 overflow-y-auto">
                             {fills.slice(0, 10).map((fill) => (
                                 <div
                                     key={fill.id}
@@ -128,11 +168,14 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                             ))}
                         </div>
                     </div>
+                        </>
+                    )}
+                    </div>
                 </CardContent>
             </Card>
             <PnlPerformanceInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
         </>
     );

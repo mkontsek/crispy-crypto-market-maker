@@ -1,26 +1,32 @@
 import type { BotId, Strategy } from '@crispy/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { useOptimisticStrategyStore } from '@/stores/optimistic-strategy-store';
+
 type QuotesCacheData = { strategy: Strategy } & Record<string, unknown>;
 
 type StrategyMutationResult = {
     strategy?: Strategy;
 } & Record<string, unknown>;
 
-const optimisticStrategyByBot = new Map<BotId, Strategy>();
-
 export function applyOptimisticStrategy<T extends { strategy: Strategy }>(
     botId: BotId,
     data: T
 ): T {
-    const optimistic = optimisticStrategyByBot.get(botId);
+    const store = useOptimisticStrategyStore.getState();
+    const optimistic = store.getOptimisticStrategy(botId);
+
     if (!optimistic) {
         return data;
     }
-    if (data.strategy === optimistic) {
-        optimisticStrategyByBot.delete(botId);
+
+    // Hold the optimistic value for the full lock window so the bot has time
+    // to propagate the new strategy before we let server data take over.
+    if (!store.isStrategyLocked(botId) && data.strategy === optimistic) {
+        store.clearOptimisticStrategy(botId);
         return data;
     }
+
     return { ...data, strategy: optimistic };
 }
 
@@ -42,24 +48,27 @@ export function useStrategyMutation(botId: BotId) {
         onMutate: async (strategy: Strategy) => {
             await queryClient.cancelQueries({ queryKey });
             const previous = queryClient.getQueryData<QuotesCacheData>(queryKey);
-            optimisticStrategyByBot.set(botId, strategy);
+            useOptimisticStrategyStore
+                .getState()
+                .setOptimisticStrategy(botId, strategy);
             queryClient.setQueryData<QuotesCacheData>(queryKey, (old) =>
                 old ? { ...old, strategy } : old
             );
             return { previous };
         },
         onError: (_err, _strategy, context) => {
-            optimisticStrategyByBot.delete(botId);
+            useOptimisticStrategyStore
+                .getState()
+                .clearOptimisticStrategy(botId);
             if (context?.previous !== undefined) {
                 queryClient.setQueryData(queryKey, context.previous);
             }
         },
         onSuccess: (data, strategy) => {
             const confirmed = data.strategy ?? strategy;
-            optimisticStrategyByBot.set(botId, confirmed);
-            queryClient.setQueryData<QuotesCacheData>(queryKey, (old) =>
-                old ? { ...old, strategy: confirmed } : old
-            );
+            useOptimisticStrategyStore
+                .getState()
+                .setOptimisticStrategy(botId, confirmed);
             queryClient.invalidateQueries({ queryKey });
         },
     });

@@ -24,6 +24,7 @@
 **/dist
 **/.turbo
 apps/engine/target
+packages/rust-shared/target
 
 # misc
 .DS_Store
@@ -37,6 +38,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+**/.env*
+!apps/web/.env.prod.example
+!packages/db/.env.example
+!packages/db/.env.prod.example
+packages/db/.env.prod
 
 # vercel
 .vercel
@@ -46,5 +52,8 @@ yarn-error.log*
 next-env.d.ts
 .idea
 *.iml
-.env*.local
 logs/
+package-lock.json
+.github
+apps/bot/target/
+apps/exchange/target/

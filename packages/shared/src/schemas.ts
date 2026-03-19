@@ -7,6 +7,7 @@ export const exchangeSchema = z.enum(EXCHANGES);
 export const strategySchema = z.enum(STRATEGIES);
 export const sideSchema = z.enum(['buy', 'sell']);
 export const endpointUrlSchema = z.url();
+const timestampSchema = z.union([z.string(), z.number()]).transform(String);
 export const botIdSchema = z
     .string()
     .trim()
@@ -72,7 +73,7 @@ export const quoteSnapshotSchema = z.object({
     quoteRefreshRate: decimalStringSchema,
     volatility: decimalStringSchema,
     paused: z.boolean(),
-    updatedAt: z.string(),
+    updatedAt: timestampSchema,
 });
 
 export const fillSchema = z.object({
@@ -84,18 +85,18 @@ export const fillSchema = z.object({
     midAtFill: decimalStringSchema,
     realizedSpread: decimalStringSchema,
     adverseSelection: z.boolean(),
-    timestamp: z.string(),
+    timestamp: timestampSchema,
 });
 
 export const inventorySnapshotSchema = z.object({
     pair: pairSchema,
     inventory: decimalStringSchema,
     normalizedSkew: decimalStringSchema,
-    timestamp: z.string(),
+    timestamp: timestampSchema,
 });
 
 export const pnlSnapshotSchema = z.object({
-    timestamp: z.string(),
+    timestamp: timestampSchema,
     totalPnl: decimalStringSchema,
     realizedSpread: decimalStringSchema,
     hedgingCosts: decimalStringSchema,
@@ -129,7 +130,7 @@ export const mmConfigSchema = z.object({
 });
 
 export const engineStreamSchema = z.object({
-    timestamp: z.string(),
+    timestamp: timestampSchema,
     quotes: z.array(quoteSnapshotSchema),
     fills: z.array(fillSchema),
     inventory: z.array(inventorySnapshotSchema),

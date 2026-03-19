@@ -54,6 +54,9 @@ export const FillsTable: FC<FillsTableProps> = ({
         className: 'px-4 py-3',
     });
 
+    const goToPrevPage = () => onPageChange(page - 1);
+    const goToNextPage = () => onPageChange(page + 1);
+
     return (
         <Card>
             <CardHeader className="flex flex-wrap items-center justify-between gap-2">
@@ -151,7 +154,7 @@ export const FillsTable: FC<FillsTableProps> = ({
                             <button
                                 type="button"
                                 disabled={page <= 1}
-                                onClick={() => onPageChange(page - 1)}
+                                onClick={goToPrevPage}
                                 className="rounded border border-slate-700 px-3 py-1 text-xs disabled:opacity-40 hover:bg-slate-800"
                             >
                                 Prev
@@ -159,7 +162,7 @@ export const FillsTable: FC<FillsTableProps> = ({
                             <button
                                 type="button"
                                 disabled={page >= totalPages}
-                                onClick={() => onPageChange(page + 1)}
+                                onClick={goToNextPage}
                                 className="rounded border border-slate-700 px-3 py-1 text-xs disabled:opacity-40 hover:bg-slate-800"
                             >
                                 Next

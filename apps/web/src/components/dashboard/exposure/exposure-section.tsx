@@ -10,18 +10,23 @@ import { ExposureInfoDialog } from '@/components/dashboard/exposure/exposure-inf
 import { InfoIcon } from '@/components/dashboard/live-quotes/info-icon';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { buildExposureRows, limitTone } from '@/lib/exposure-service';
 
 type ExposureSectionProps = {
     inventory: InventorySnapshot[];
     quotes: QuoteSnapshot[];
     config: MMConfig | null;
+    loading: boolean;
+    stale: boolean;
 };
 
 export const ExposureSection: FC<ExposureSectionProps> = ({
     inventory,
     quotes,
     config,
+    loading,
+    stale,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
     const rows = buildExposureRows(inventory, quotes, config);
@@ -29,6 +34,9 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
         (sum, r) => sum + Math.abs(r.notional),
         0
     );
+
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
 
     return (
         <>
@@ -38,12 +46,22 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
                         <CardTitle>Inventory Exposure & Stress Test</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="Inventory exposure section information"
                         >
                             <InfoIcon />
                         </button>
+                        {stale && (
+                            <span
+                                className="text-amber-400"
+                                title="Stale data - showing last known values"
+                                role="status"
+                                aria-label="Stale data - reconnecting"
+                            >
+                                !
+                            </span>
+                        )}
                     </div>
                     <span className="text-xs text-slate-400">
                         Total notional:{' '}
@@ -66,6 +84,22 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
                             </tr>
                         </thead>
                         <tbody>
+                            {loading && rows.length === 0 && Array.from({ length: 3 }).map((_, i) => (
+                                <tr key={i} className="border-t border-slate-800">
+                                    {Array.from({ length: 7 }).map((__, j) => (
+                                        <td key={j} className="py-2 pr-4">
+                                            <Skeleton className="h-4 w-16" />
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                            {!loading && rows.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="py-4 text-center text-sm text-slate-400">
+                                        No exposure data available.
+                                    </td>
+                                </tr>
+                            )}
                             {rows.map((row) => {
                                 const concentration =
                                     totalNotional > 0
@@ -114,7 +148,7 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
             </Card>
             <ExposureInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
         </>
     );

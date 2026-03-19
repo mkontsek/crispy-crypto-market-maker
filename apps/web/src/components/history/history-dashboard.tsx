@@ -15,17 +15,29 @@ import { useHistoryPnlQuery } from './use-history-pnl-query';
 
 export const HistoryDashboard: FC = () => {
     const [fillsPage, setFillsPage] = useState(1);
-    const PAGE_SIZE = 50;
+    const [pnlPage, setPnlPage] = useState(1);
+    const [inventoryPage, setInventoryPage] = useState(1);
+    const FILLS_PAGE_SIZE = 50;
+    const SNAPSHOTS_PAGE_SIZE = 200;
 
-    const fillsQuery = useHistoryFillsQuery(fillsPage, PAGE_SIZE);
-    const pnlQuery = useHistoryPnlQuery();
-    const inventoryQuery = useHistoryInventoryQuery();
-    const clearHistoryMutation = useClearHistoryMutation({ setFillsPage });
+    const fillsQuery = useHistoryFillsQuery(fillsPage, FILLS_PAGE_SIZE);
+    const pnlQuery = useHistoryPnlQuery(pnlPage, SNAPSHOTS_PAGE_SIZE);
+    const inventoryQuery = useHistoryInventoryQuery(
+        inventoryPage,
+        SNAPSHOTS_PAGE_SIZE
+    );
+    const clearHistoryMutation = useClearHistoryMutation({
+        setFillsPage,
+        setPnlPage,
+        setInventoryPage,
+    });
 
     const fills = fillsQuery.data?.items ?? [];
     const fillsTotal = fillsQuery.data?.total ?? 0;
     const pnlSnapshots = pnlQuery.data?.items ?? [];
+    const pnlTotal = pnlQuery.data?.total ?? 0;
     const inventoryRows = inventoryQuery.data?.items ?? [];
+    const inventoryTotal = inventoryQuery.data?.total ?? 0;
 
     const isLoading =
         fillsQuery.isLoading || pnlQuery.isLoading || inventoryQuery.isLoading;
@@ -50,7 +62,7 @@ export const HistoryDashboard: FC = () => {
                     fills={fills}
                     total={fillsTotal}
                     page={fillsPage}
-                    pageSize={PAGE_SIZE}
+                    pageSize={FILLS_PAGE_SIZE}
                     isLoading={isLoading}
                     deleteAllHistoryPending={clearHistoryMutation.isPending}
                     deleteAllHistoryError={clearHistoryMutation.isError}
@@ -67,9 +79,21 @@ export const HistoryDashboard: FC = () => {
                     onPageChange={setFillsPage}
                 />
 
-                <PnlHistorySection snapshots={pnlSnapshots} />
+                <PnlHistorySection
+                    snapshots={pnlSnapshots}
+                    total={pnlTotal}
+                    page={pnlPage}
+                    pageSize={SNAPSHOTS_PAGE_SIZE}
+                    onPageChange={setPnlPage}
+                />
 
-                <InventoryHistorySection rows={inventoryRows} />
+                <InventoryHistorySection
+                    rows={inventoryRows}
+                    total={inventoryTotal}
+                    page={inventoryPage}
+                    pageSize={SNAPSHOTS_PAGE_SIZE}
+                    onPageChange={setInventoryPage}
+                />
             </div>
         </main>
     );

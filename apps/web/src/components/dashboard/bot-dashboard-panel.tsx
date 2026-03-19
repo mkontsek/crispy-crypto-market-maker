@@ -2,9 +2,12 @@
 
 import type { FC } from 'react';
 import type { TopologyBot } from '@crispy/shared';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+
+import { motion } from 'framer-motion';
 
 import { AlertPanelSection } from '@/components/dashboard/alert-panel-section';
+import { RiskSection } from '@/components/dashboard/risk/risk-section';
 import { ConfigPanelSection } from '@/components/dashboard/config-panel/config-panel-section';
 import { EventLogSection } from '@/components/dashboard/event-log-section';
 import { ExchangeHealthSection } from '@/components/dashboard/exchange-health-section';
@@ -20,6 +23,9 @@ import { StrategySection } from '@/components/dashboard/strategy-section';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { dedupeFills, dedupePnl } from '@/lib/bot-data-service';
+import { priceFromFp } from '@/lib/fixed-point';
+import { derivePnlBadge } from '@/lib/pnl-badge-service';
+import { resolveStickyBotSections } from '@/lib/sticky-bot-sections';
 import { cn } from '@/lib/utils';
 
 import { useBotFillsQuery } from './pnl/use-bot-fills-query';
@@ -45,24 +51,73 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
     const killSwitchMutation = useKillSwitchMutation(bot.id);
     const strategyMutation = useStrategyMutation(bot.id);
 
-    const quotes = quotesQuery.data?.quotes ?? [];
-    const fills = dedupeFills(fillsQuery.data?.items ?? []);
-    const pnl = dedupePnl(pnlQuery.data?.items ?? []);
-    const inventory = inventoryQuery.data?.current ?? [];
-    const health = quotesQuery.data?.exchangeHealth ?? [];
-    const config = quotesQuery.data?.config ?? null;
+    const quotesLoading = quotesQuery.isLoading;
+    const fillsLoading = fillsQuery.isLoading;
+    const pnlLoading = pnlQuery.isLoading;
+    const inventoryLoading = inventoryQuery.isLoading;
+
+    const rawQuotes = useMemo(
+        () => quotesQuery.data?.quotes ?? [],
+        [quotesQuery.data?.quotes]
+    );
+    const rawFills = useMemo(
+        () => dedupeFills(fillsQuery.data?.items ?? []),
+        [fillsQuery.data?.items]
+    );
+    const rawPnl = useMemo(
+        () => dedupePnl(pnlQuery.data?.items ?? []),
+        [pnlQuery.data?.items]
+    );
+    const rawInventory = inventoryQuery.data?.current ?? [];
+    const rawHealth = useMemo(
+        () => quotesQuery.data?.exchangeHealth ?? [],
+        [quotesQuery.data?.exchangeHealth]
+    );
+    const rawQuoteHistory = useMemo(
+        () => quotesQuery.data?.quoteHistory ?? [],
+        [quotesQuery.data?.quoteHistory]
+    );
+    const rawConfig = useMemo(
+        () => quotesQuery.data?.config ?? null,
+        [quotesQuery.data?.config]
+    );
     const connected = quotesQuery.data?.connected ?? false;
+    const updatedAt = quotesQuery.data?.updatedAt ?? null;
+    const streamStale = !connected && updatedAt !== null;
+    const sticky = resolveStickyBotSections({
+        botId: bot.id,
+        rawQuotes,
+        rawFills,
+        rawPnl,
+        rawInventory,
+        rawHealth,
+        rawQuoteHistory,
+        rawConfig,
+        streamStale,
+    });
+    const quotes = sticky.quotes;
+    const fills = sticky.fills;
+    const pnl = sticky.pnl;
+    const inventory = sticky.inventory;
+    const health = sticky.health;
+    const quoteHistoryEntries = sticky.quoteHistory;
+    const config = sticky.config;
+    const killSwitchStateKnown = quotesQuery.data !== undefined;
     const killSwitchEngaged = quotesQuery.data?.killSwitchEngaged ?? false;
     const serverStrategy = quotesQuery.data?.strategy ?? 'balanced';
     const strategy = serverStrategy;
     const pendingPair = pairActionMutation.variables?.pair ?? null;
-    const quoteHistoryEntries = quotesQuery.data?.quoteHistory ?? [];
     const latestPnl = pnl[0] ?? null;
+    const currentPnlValue = latestPnl ? priceFromFp(latestPnl.totalPnl) : null;
+    const pnlBadge = currentPnlValue !== null ? derivePnlBadge(currentPnlValue) : null;
 
     return (
-        <section
+        <motion.section
             id={`${bot.id}-section`}
             className="space-y-4 rounded-xl border border-slate-800 bg-slate-950/50 p-4"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
         >
             <header className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -75,6 +130,13 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     <Badge tone={connected ? 'success' : 'danger'}>
                         {connected ? 'connected' : 'disconnected'}
                     </Badge>
+                    {pnlBadge !== null && currentPnlValue !== null && (
+                        <Badge tone={pnlBadge.tone}>
+                            {pnlBadge.arrow}{' '}
+                            {pnlBadge.sign}
+                            {currentPnlValue.toFixed(2)}
+                        </Badge>
+                    )}
                     <button
                         type="button"
                         aria-controls={`${bot.id}-section-content`}
@@ -96,6 +158,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
             >
                 <KillSwitchSection
                     engaged={killSwitchEngaged}
+                    stateKnown={killSwitchStateKnown}
                     pending={killSwitchMutation.isPending}
                     onToggle={(engaged) => killSwitchMutation.mutate(engaged)}
                 />
@@ -113,12 +176,31 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     killSwitchEngaged={killSwitchEngaged}
                     quotes={quotes}
                 />
-                <LiveQuotesSection quotes={quotes} connected={connected} />
+                <RiskSection
+                    inventory={inventory}
+                    quotes={quotes}
+                    fills={fills}
+                    pnl={latestPnl}
+                    health={health}
+                    config={config}
+                    killSwitchEngaged={killSwitchEngaged}
+                    connected={connected}
+                    stale={sticky.stale.risk}
+                    loading={quotesLoading || inventoryLoading}
+                />
+                <LiveQuotesSection
+                    quotes={quotes}
+                    connected={connected}
+                    stale={sticky.stale.liveQuotes}
+                    loading={quotesLoading}
+                />
                 <div className="grid gap-4 xl:grid-cols-2">
                     <InventoryMonitorSection
                         inventory={inventory}
                         quotes={quotes}
                         pendingPair={pendingPair}
+                        loading={inventoryLoading}
+                        stale={sticky.stale.inventory}
                         onTogglePause={(pair, paused) =>
                             pairActionMutation.mutate({
                                 pair,
@@ -130,29 +212,52 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                             pairActionMutation.mutate({ pair, action: 'hedge' })
                         }
                     />
-                    <PnlPerformanceSection botId={bot.id} pnl={pnl} />
+                    <PnlPerformanceSection
+                        pnl={pnl}
+                        fills={fills}
+                        stale={sticky.stale.pnlPerformance}
+                        loading={pnlLoading || fillsLoading}
+                    />
                 </div>
                 <ExposureSection
                     inventory={inventory}
                     quotes={quotes}
                     config={config}
+                    stale={sticky.stale.exposure}
+                    loading={inventoryLoading}
                 />
                 <div className="grid gap-4 xl:grid-cols-2">
                     <FillMetricsSection
                         fills={fills}
                         quoteHistory={quoteHistoryEntries}
+                        stale={sticky.stale.fillMetrics}
+                        loading={fillsLoading}
                     />
-                    <PnlCurveSection pnl={pnl} />
+                    <PnlCurveSection
+                        pnl={pnl}
+                        stale={sticky.stale.pnlCurve}
+                        loading={pnlLoading}
+                    />
                 </div>
                 <div className="grid gap-4 xl:grid-cols-2">
-                    <QuoteHistorySection entries={quoteHistoryEntries} />
+                    <QuoteHistorySection
+                        entries={quoteHistoryEntries}
+                        loading={quotesLoading}
+                        stale={sticky.stale.quoteHistory}
+                    />
                     <ConfigPanelSection
                         config={config}
+                        stale={sticky.stale.config}
+                        loading={quotesLoading}
                         saving={configMutation.isPending}
                         onSubmit={(next) => configMutation.mutate(next)}
                     />
                 </div>
-                <ExchangeHealthSection health={health} />
+                <ExchangeHealthSection
+                    health={health}
+                    loading={quotesLoading}
+                    stale={sticky.stale.exchangeHealth}
+                />
                 <EventLogSection
                     connected={connected}
                     quotes={quotes}
@@ -166,6 +271,6 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     </Card>
                 )}
             </div>
-        </section>
+        </motion.section>
     );
 };

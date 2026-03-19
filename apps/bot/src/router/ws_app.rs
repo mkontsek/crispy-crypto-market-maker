@@ -18,10 +18,10 @@ async fn ws_stream_handler(
     ws: WebSocketUpgrade,
     State(app_state): State<AppState>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(|socket| handle_ws_socket(socket, app_state))
+    ws.on_upgrade(|socket| serve_ws_socket(socket, app_state))
 }
 
-async fn handle_ws_socket(mut socket: WebSocket, app_state: AppState) {
+async fn serve_ws_socket(mut socket: WebSocket, app_state: AppState) {
     let initial_payload = {
         let mut state = app_state.state.write().await;
         state.build_payload(vec![])
@@ -65,6 +65,7 @@ mod tests {
             state: Arc::new(RwLock::new(EngineState::new())),
             stream_tx,
             exchange_api_url: "http://127.0.0.1:3111".to_string(),
+            db_pool: None,
         }
     }
 

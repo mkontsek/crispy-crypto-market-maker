@@ -7,6 +7,7 @@ import type { QuoteSnapshot } from '@crispy/shared';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { priceFromFp } from '@/lib/fixed-point';
 import { InfoIcon } from './info-icon';
 import { LiveQuotesInfoDialog } from './live-quotes-info-dialog';
@@ -15,14 +16,23 @@ import { StateInfoDialog } from './state-info-dialog';
 type LiveQuotesSectionProps = {
     quotes: QuoteSnapshot[];
     connected: boolean;
+    stale: boolean;
+    loading: boolean;
 };
 
 export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
     quotes,
     connected,
+    stale,
+    loading,
 }) => {
     const [sectionInfoOpen, setSectionInfoOpen] = useState(false);
     const [stateInfoOpen, setStateInfoOpen] = useState(false);
+
+    const openSectionInfo = () => setSectionInfoOpen(true);
+    const closeSectionInfo = () => setSectionInfoOpen(false);
+    const openStateInfo = () => setStateInfoOpen(true);
+    const closeStateInfo = () => setStateInfoOpen(false);
 
     return (
         <>
@@ -32,18 +42,28 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                         <CardTitle>Live Quoting Dashboard</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setSectionInfoOpen(true)}
+                            onClick={openSectionInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="Live quoting section information"
                         >
                             <InfoIcon />
                         </button>
+                        {stale && (
+                            <span
+                                className="text-amber-400"
+                                title="Stale data - showing last known values"
+                                role="status"
+                                aria-label="Stale data - reconnecting"
+                            >
+                                !
+                            </span>
+                        )}
                     </div>
                     <Badge tone={connected ? 'success' : 'danger'}>
                         {connected ? 'stream connected' : 'stream disconnected'}
                     </Badge>
                 </CardHeader>
-                <CardContent className="overflow-x-auto">
+                <CardContent className="h-64 overflow-auto">
                     <table className="w-full min-w-[760px] text-sm">
                         <thead className="text-left text-slate-400">
                             <tr>
@@ -58,9 +78,7 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                                     <span className="inline-flex items-center gap-1">
                                         State
                                         <button
-                                            onClick={() =>
-                                                setStateInfoOpen(true)
-                                            }
+                                            onClick={openStateInfo}
                                             className="text-slate-500 hover:text-slate-300 transition"
                                             aria-label="State information"
                                         >
@@ -71,6 +89,22 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                             </tr>
                         </thead>
                         <tbody>
+                            {loading && quotes.length === 0 && Array.from({ length: 3 }).map((_, i) => (
+                                <tr key={i} className="border-t border-slate-800">
+                                    {Array.from({ length: 8 }).map((__, j) => (
+                                        <td key={j} className="py-2 pr-4">
+                                            <Skeleton className="h-4 w-16" />
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                            {!loading && quotes.length === 0 && (
+                                <tr>
+                                    <td colSpan={8} className="py-4 text-center text-sm text-slate-400">
+                                        No quotes available.
+                                    </td>
+                                </tr>
+                            )}
                             {quotes.map((quote) => {
                                 const skewVal = priceFromFp(
                                     quote.inventorySkew
@@ -135,11 +169,11 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
             </Card>
             <LiveQuotesInfoDialog
                 open={sectionInfoOpen}
-                onClose={() => setSectionInfoOpen(false)}
+                onClose={closeSectionInfo}
             />
             <StateInfoDialog
                 open={stateInfoOpen}
-                onClose={() => setStateInfoOpen(false)}
+                onClose={closeStateInfo}
             />
         </>
     );

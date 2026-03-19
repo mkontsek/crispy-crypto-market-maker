@@ -1,10 +1,20 @@
 import type { RuntimeTopology, TopologyBot } from '@crispy/shared';
 
 export function cloneTopology(topology: RuntimeTopology): RuntimeTopology {
+    const exchangeDomain = domainFromExchangeUrl(topology.exchangeWsUrl);
+    const exchangeUrls = exchangeDomain.startsWith('localhost') ? exchangeUrlsFromDomain(exchangeDomain) : { wsUrl: topology.exchangeWsUrl, httpUrl: topology.exchangeHttpUrl };
+
     return {
-        exchangeWsUrl: topology.exchangeWsUrl,
-        exchangeHttpUrl: topology.exchangeHttpUrl,
-        bots: topology.bots.map((bot) => ({ ...bot })),
+        exchangeWsUrl: exchangeUrls.wsUrl,
+        exchangeHttpUrl: exchangeUrls.httpUrl,
+        bots: topology.bots.map((bot) => {
+            const domain = domainFromBotUrl(bot.wsUrl);
+            if (domain.startsWith('localhost')) {
+                const { wsUrl, httpUrl } = botUrlsFromDomain(domain);
+                return { ...bot, wsUrl, httpUrl };
+            }
+            return { ...bot };
+        }),
     };
 }
 
@@ -35,9 +45,11 @@ export function botUrlsFromDomain(domain: string): {
     httpUrl: string;
 } {
     const trimmed = domain.trim().replace(/^(wss?|https?):\/\//i, '');
+    const isLocalhost = trimmed.startsWith('localhost');
+    const host = isLocalhost ? `localhost:3110` : trimmed;
     return {
-        wsUrl: `wss://${trimmed}/stream`,
-        httpUrl: `https://${trimmed}`,
+        wsUrl: `${isLocalhost ? 'ws' : 'wss'}://${host}/stream`,
+        httpUrl: `${isLocalhost ? 'http' : 'https'}://${host}`,
     };
 }
 
@@ -54,9 +66,11 @@ export function exchangeUrlsFromDomain(domain: string): {
     httpUrl: string;
 } {
     const trimmed = domain.trim().replace(/^(wss?|https?):\/\//i, '');
+    const isLocalhost = trimmed.startsWith('localhost');
+    const host = isLocalhost ? `localhost:3111` : trimmed;
     return {
-        wsUrl: `wss://${trimmed}/feed`,
-        httpUrl: `https://${trimmed}`,
+        wsUrl: `${isLocalhost ? 'ws' : 'wss'}://${host}/feed`,
+        httpUrl: `${isLocalhost ? 'http' : 'https'}://${host}`,
     };
 }
 

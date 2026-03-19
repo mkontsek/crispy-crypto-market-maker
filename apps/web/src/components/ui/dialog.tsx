@@ -24,12 +24,12 @@ export const Dialog: FC<DialogProps> = ({ open, onClose, children }) => {
         triggerRef.current = document.activeElement;
         panelRef.current?.focus();
 
-        const handleKey = (e: KeyboardEvent) => {
+        const closeOnPressEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
         };
-        document.addEventListener('keydown', handleKey);
+        document.addEventListener('keydown', closeOnPressEscape);
         return () => {
-            document.removeEventListener('keydown', handleKey);
+            document.removeEventListener('keydown', closeOnPressEscape);
             (triggerRef.current as HTMLElement | null)?.focus();
         };
     }, [open, onClose]);

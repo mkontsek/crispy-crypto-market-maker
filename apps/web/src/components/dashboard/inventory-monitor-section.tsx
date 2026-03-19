@@ -7,6 +7,7 @@ import type { InventorySnapshot, QuoteSnapshot } from '@crispy/shared';
 import { InfoIcon } from '@/components/dashboard/live-quotes/info-icon';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ratioFromDecimal, sizeFromFp } from '@/lib/fixed-point';
 import {
     inventorySkewColor,
@@ -18,6 +19,8 @@ type InventoryMonitorSectionProps = {
     inventory: InventorySnapshot[];
     quotes: QuoteSnapshot[];
     pendingPair: string | null;
+    loading: boolean;
+    stale: boolean;
     onTogglePause: (pair: string, paused: boolean) => void;
     onManualHedge: (pair: string) => void;
 };
@@ -26,11 +29,20 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
     inventory,
     quotes,
     pendingPair,
+    loading,
+    stale,
     onTogglePause,
     onManualHedge,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
     const quoteMap = new Map(quotes.map((quote) => [quote.pair, quote]));
+
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
+    const togglePauseForPair =
+        (pair: string, paused: boolean | undefined) => () =>
+            onTogglePause(pair, !paused);
+    const hedgePairManually = (pair: string) => () => onManualHedge(pair);
 
     return (
         <>
@@ -40,15 +52,41 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                         <CardTitle>Inventory Monitor</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="Inventory monitor section information"
                         >
                             <InfoIcon />
                         </button>
+                        {stale && (
+                            <span
+                                className="text-amber-400"
+                                title="Stale data - showing last known values"
+                                role="status"
+                                aria-label="Stale data - reconnecting"
+                            >
+                                !
+                            </span>
+                        )}
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent>
+                    <div className="h-[500px] space-y-4 overflow-y-auto">
+                    {loading && inventory.length === 0 && Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="rounded-lg border border-slate-800 p-3 space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-2 w-full" />
+                            <div className="flex gap-2 mt-3">
+                                <Skeleton className="h-8 w-24" />
+                                <Skeleton className="h-8 w-24" />
+                            </div>
+                        </div>
+                    ))}
+                    {!loading && inventory.length === 0 && (
+                        <p className="text-sm text-slate-400">
+                            No inventory data available.
+                        </p>
+                    )}
                     {inventory.map((item) => {
                         const quote = quoteMap.get(item.pair);
                         const normalizedSkew = ratioFromDecimal(
@@ -80,12 +118,10 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                                     <Button
                                         variant="outline"
                                         disabled={isBusy || !quote}
-                                        onClick={() =>
-                                            onTogglePause(
-                                                item.pair,
-                                                !quote?.paused
-                                            )
-                                        }
+                                        onClick={togglePauseForPair(
+                                            item.pair,
+                                            quote?.paused
+                                        )}
                                     >
                                         {quote?.paused
                                             ? 'Resume Pair'
@@ -94,7 +130,7 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                                     <Button
                                         variant="outline"
                                         disabled={isBusy}
-                                        onClick={() => onManualHedge(item.pair)}
+                                        onClick={hedgePairManually(item.pair)}
                                     >
                                         {isBusy
                                             ? 'Submitting...'
@@ -104,11 +140,12 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                             </div>
                         );
                     })}
+                    </div>
                 </CardContent>
             </Card>
             <InventoryMonitorInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
         </>
     );
