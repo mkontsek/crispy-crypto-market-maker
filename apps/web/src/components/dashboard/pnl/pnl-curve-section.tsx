@@ -44,7 +44,7 @@ export const PnlCurveSection: FC<PnlCurveSectionProps> = ({ pnl, loading }) => {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                    {loading && pnl.length === 0 ? (
+                    {loading && pnl.length === 0 && (
                         <div className="space-y-3">
                             <Skeleton className="h-[100px] w-full" />
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -53,11 +53,13 @@ export const PnlCurveSection: FC<PnlCurveSectionProps> = ({ pnl, loading }) => {
                                 ))}
                             </div>
                         </div>
-                    ) : !loading && pnl.length === 0 ? (
+                    )}
+                    {!loading && pnl.length === 0 && (
                         <p className="text-sm text-slate-400">
                             No P&L data available yet.
                         </p>
-                    ) : (
+                    )}
+                    {pnl.length > 0 && (
                         <>
                             <PnlChart values={values} />
                             <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">

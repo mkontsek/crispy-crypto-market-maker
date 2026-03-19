@@ -52,26 +52,22 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {loading && inventory.length === 0 ? (
-                        Array.from({ length: 3 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="rounded-lg border border-slate-800 p-3 space-y-2"
-                            >
-                                <Skeleton className="h-4 w-32" />
-                                <Skeleton className="h-2 w-full" />
-                                <div className="flex gap-2 mt-3">
-                                    <Skeleton className="h-8 w-24" />
-                                    <Skeleton className="h-8 w-24" />
-                                </div>
+                    {loading && inventory.length === 0 && Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="rounded-lg border border-slate-800 p-3 space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-2 w-full" />
+                            <div className="flex gap-2 mt-3">
+                                <Skeleton className="h-8 w-24" />
+                                <Skeleton className="h-8 w-24" />
                             </div>
-                        ))
-                    ) : !loading && inventory.length === 0 ? (
+                        </div>
+                    ))}
+                    {!loading && inventory.length === 0 && (
                         <p className="text-sm text-slate-400">
                             No inventory data available.
                         </p>
-                    ) : (
-                        inventory.map((item) => {
+                    )}
+                    {inventory.map((item) => {
                         const quote = quoteMap.get(item.pair);
                         const normalizedSkew = ratioFromDecimal(
                             item.normalizedSkew
@@ -125,8 +121,7 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                                 </div>
                             </div>
                         );
-                    })
-                    )}
+                    })}
                 </CardContent>
             </Card>
             <InventoryMonitorInfoDialog

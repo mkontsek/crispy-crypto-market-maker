@@ -74,35 +74,23 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {loading && quotes.length === 0 ? (
-                                Array.from({ length: 3 }).map((_, i) => (
-                                    <tr
-                                        key={i}
-                                        className="border-t border-slate-800"
-                                    >
-                                        {Array.from({ length: 8 }).map(
-                                            (__, j) => (
-                                                <td
-                                                    key={j}
-                                                    className="py-2 pr-4"
-                                                >
-                                                    <Skeleton className="h-4 w-16" />
-                                                </td>
-                                            )
-                                        )}
-                                    </tr>
-                                ))
-                            ) : !loading && quotes.length === 0 ? (
+                            {loading && quotes.length === 0 && Array.from({ length: 3 }).map((_, i) => (
+                                <tr key={i} className="border-t border-slate-800">
+                                    {Array.from({ length: 8 }).map((__, j) => (
+                                        <td key={j} className="py-2 pr-4">
+                                            <Skeleton className="h-4 w-16" />
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                            {!loading && quotes.length === 0 && (
                                 <tr>
-                                    <td
-                                        colSpan={8}
-                                        className="py-4 text-center text-sm text-slate-400"
-                                    >
+                                    <td colSpan={8} className="py-4 text-center text-sm text-slate-400">
                                         No quotes available.
                                     </td>
                                 </tr>
-                            ) : (
-                                quotes.map((quote) => {
+                            )}
+                            {quotes.map((quote) => {
                                 const skewVal = priceFromFp(
                                     quote.inventorySkew
                                 );
@@ -159,8 +147,7 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                                         </td>
                                     </tr>
                                 );
-                            })
-                            )}
+                            })}
                         </tbody>
                     </table>
                 </CardContent>

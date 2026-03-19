@@ -70,14 +70,15 @@ export const ConfigPanelSection: FC<ConfigPanelSectionProps> = ({
                         </div>
                     </CardHeader>
                     <CardContent>
-                        {loading ? (
+                        {loading && (
                             <div className="space-y-3">
                                 <Skeleton className="h-4 w-24" />
                                 <Skeleton className="h-20 w-full" />
                                 <Skeleton className="h-20 w-full" />
                                 <Skeleton className="h-20 w-full" />
                             </div>
-                        ) : (
+                        )}
+                        {!loading && (
                             <p className="text-sm text-slate-400">
                                 No config data available.
                             </p>

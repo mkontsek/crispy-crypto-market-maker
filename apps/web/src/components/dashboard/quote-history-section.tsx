@@ -69,35 +69,23 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {loading && entries.length === 0 ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <tr
-                                        key={i}
-                                        className="border-t border-slate-800"
-                                    >
-                                        {Array.from({ length: 6 }).map(
-                                            (__, j) => (
-                                                <td
-                                                    key={j}
-                                                    className="py-2 pr-4"
-                                                >
-                                                    <Skeleton className="h-4 w-14" />
-                                                </td>
-                                            )
-                                        )}
-                                    </tr>
-                                ))
-                            ) : !loading && entries.length === 0 ? (
+                            {loading && entries.length === 0 && Array.from({ length: 5 }).map((_, i) => (
+                                <tr key={i} className="border-t border-slate-800">
+                                    {Array.from({ length: 6 }).map((__, j) => (
+                                        <td key={j} className="py-2 pr-4">
+                                            <Skeleton className="h-4 w-14" />
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                            {!loading && entries.length === 0 && (
                                 <tr>
-                                    <td
-                                        colSpan={6}
-                                        className="py-4 text-center text-sm text-slate-400"
-                                    >
+                                    <td colSpan={6} className="py-4 text-center text-sm text-slate-400">
                                         No quote history yet.
                                     </td>
                                 </tr>
-                            ) : (
-                                entries.slice(0, 40).map((entry, index) => (
+                            )}
+                            {entries.slice(0, 40).map((entry, index) => (
                                 <tr
                                     key={`${entry.pair}-${entry.timestamp}-${index}`}
                                     className="border-t border-slate-800"
@@ -131,8 +119,7 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                                         </Badge>
                                     </td>
                                 </tr>
-                            ))
-                            )}
+                            ))}
                         </tbody>
                     </table>
                 </CardContent>

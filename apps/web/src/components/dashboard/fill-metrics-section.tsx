@@ -74,7 +74,7 @@ export const FillMetricsSection: FC<FillMetricsSectionProps> = ({
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {loading && fills.length === 0 ? (
+                    {loading && fills.length === 0 && (
                         <div className="space-y-3">
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                                 {Array.from({ length: 4 }).map((_, i) => (
@@ -87,11 +87,13 @@ export const FillMetricsSection: FC<FillMetricsSectionProps> = ({
                                 ))}
                             </div>
                         </div>
-                    ) : !loading && fills.length === 0 ? (
+                    )}
+                    {!loading && fills.length === 0 && (
                         <p className="text-sm text-slate-400">
                             No fill data available yet.
                         </p>
-                    ) : (
+                    )}
+                    {fills.length > 0 && (
                         <>
                             <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                                 <MetricCard
