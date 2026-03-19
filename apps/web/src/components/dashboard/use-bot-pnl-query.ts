@@ -1,6 +1,7 @@
 import type { BotId, PnLSnapshot } from '@crispy/shared';
 import { useQuery } from '@tanstack/react-query';
 
+import { BOT_REFETCH_INTERVAL_MS } from '@/lib/bot-data-service';
 import { fetchJson } from '@/lib/fetch-json';
 
 type PnlResponse = {
@@ -14,6 +15,6 @@ export function useBotPnlQuery(botId: BotId) {
     return useQuery({
         queryKey: ['pnl', botId],
         queryFn: () => fetchJson<PnlResponse>(`/api/pnl?botId=${botQuery}`),
-        refetchInterval: 1_500,
+        refetchInterval: BOT_REFETCH_INTERVAL_MS,
     });
 }

@@ -119,18 +119,49 @@ describe('buildMarkers', () => {
         const dashboardGeo = { lat: 1.0, lng: 2.0, label: 'Other' };
         const markers = buildMarkers(topology, new Map(), dashboardGeo);
         const dash = markers.find((m) => m.kind === 'dashboard');
-        expect(dash).toMatchObject({ lat: 40.7, lng: -74.0, label: 'New York, US' });
+        expect(dash).toMatchObject({
+            lat: 40.7,
+            lng: -74.0,
+            label: 'Dashboard - New York, US',
+        });
     });
 
     it('falls back to dashboardGeo param when topology has no dashboardLocation', () => {
         const dashboardGeo = { lat: 1.0, lng: 2.0, label: 'Somewhere' };
         const markers = buildMarkers(BASE_TOPOLOGY, new Map(), dashboardGeo);
         const dash = markers.find((m) => m.kind === 'dashboard');
-        expect(dash).toMatchObject({ lat: 1.0, lng: 2.0, label: 'Somewhere' });
+        expect(dash).toMatchObject({
+            lat: 1.0,
+            lng: 2.0,
+            label: 'Dashboard - Somewhere',
+        });
     });
 
-    it('omits dashboard marker when no location is configured', () => {
-        const markers = buildMarkers(BASE_TOPOLOGY, new Map(), null);
-        expect(markers.find((m) => m.kind === 'dashboard')).toBeUndefined();
+    it('falls back to exchange geo when no dashboard location is configured', () => {
+        const markers = buildMarkers(
+            BASE_TOPOLOGY,
+            new Map([['exchange', { lat: 10, lng: 20, label: 'Auto' }]]),
+            null
+        );
+        const dash = markers.find((m) => m.kind === 'dashboard');
+        expect(dash).toMatchObject({
+            lat: 10,
+            lng: 20,
+            label: 'Dashboard - Auto (inferred)',
+        });
+    });
+
+    it('falls back to first detected bot geo when exchange geo is unavailable', () => {
+        const markers = buildMarkers(
+            BASE_TOPOLOGY,
+            new Map([['bot-1', { lat: 48.8, lng: 2.35, label: 'Paris, FR' }]]),
+            null
+        );
+        const dash = markers.find((m) => m.kind === 'dashboard');
+        expect(dash).toMatchObject({
+            lat: 48.8,
+            lng: 2.35,
+            label: 'Dashboard - Paris, FR (inferred)',
+        });
     });
 });

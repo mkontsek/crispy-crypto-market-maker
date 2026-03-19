@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# Provision crispy-bot or crispy-exchange on Ubuntu.
-# Usage: sudo ./scripts/setup-ubuntu.sh --service <bot|exchange> [OPTIONS]
-# Supports idempotent re-runs: unchanged files/configs are skipped.
-# Optional TLS proxy setup: --caddy-domain <domain>
+# Provision crispy-bot or crispy-exchange on Ubuntu (idempotent).
 set -euo pipefail
-
 SERVICE=""
 EXCHANGE_WS_URL=""
 EXCHANGE_API_URL=""
+EXCHANGE_DOMAIN=""
+BOT_NAME=""
 CADDY_DOMAIN=""
 GEO_LAT=""
 GEO_LNG=""
@@ -59,6 +57,8 @@ write_file_if_changed() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --service)           SERVICE="$2";            shift 2 ;;
+    --bot-name)          BOT_NAME="$2";           shift 2 ;;
+    --exchange-domain)   EXCHANGE_DOMAIN="$2";    shift 2 ;;
     --exchange-ws-url)   EXCHANGE_WS_URL="$2";    shift 2 ;;
     --exchange-api-url)  EXCHANGE_API_URL="$2";   shift 2 ;;
     --caddy-domain)      CADDY_DOMAIN="$2";       shift 2 ;;
@@ -76,11 +76,38 @@ done
 [[ -z "$SERVICE" ]] && error "--service <bot|exchange> is required"
 [[ "$SERVICE" != "bot" && "$SERVICE" != "exchange" ]] && \
   error "--service must be 'bot' or 'exchange', got: '$SERVICE'"
+if [[ "$SERVICE" == "bot" && -z "$BOT_NAME" ]]; then
+  error "--bot-name is required for --service bot (example: --bot-name bot1)"
+fi
+if [[ -n "$BOT_NAME" && ! "$BOT_NAME" =~ ^[a-z0-9-]+$ ]]; then
+  error "--bot-name must contain only lowercase letters, digits, and hyphens"
+fi
+if [[ -z "$CADDY_DOMAIN" ]]; then
+  error "--caddy-domain is required (example: bot1.your-domain.com)"
+fi
+if [[ ! "$CADDY_DOMAIN" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
+  error "--caddy-domain must be a full domain name (example: bot1.your-domain.com)"
+fi
 BINARY_NAME="crispy-${SERVICE}"
-SERVICE_NAME="crispy-${SERVICE}"
 APP_DIR="${REPO_DIR}/apps/${SERVICE}"
 BINARY_SRC="${APP_DIR}/target/release/${BINARY_NAME}"
-BINARY_DEST="${INSTALL_DIR}/${BINARY_NAME}"
+if [[ "$SERVICE" == "bot" ]]; then
+  SERVICE_NAME="crispy-bot-${BOT_NAME}"
+  BINARY_DEST="${INSTALL_DIR}/${BINARY_NAME}-${BOT_NAME}"
+  if [[ -z "$EXCHANGE_WS_URL" || -z "$EXCHANGE_API_URL" ]]; then
+    if [[ -z "$EXCHANGE_DOMAIN" ]]; then
+      error "--exchange-domain is required for bot unless both --exchange-ws-url and --exchange-api-url are provided"
+    fi
+    if [[ ! "$EXCHANGE_DOMAIN" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
+      error "--exchange-domain must be a full domain name (example: exchange.your-domain.com)"
+    fi
+    [[ -z "$EXCHANGE_WS_URL" ]] && EXCHANGE_WS_URL="wss://${EXCHANGE_DOMAIN}/feed"
+    [[ -z "$EXCHANGE_API_URL" ]] && EXCHANGE_API_URL="https://${EXCHANGE_DOMAIN}"
+  fi
+else
+  SERVICE_NAME="crispy-exchange"
+  BINARY_DEST="${INSTALL_DIR}/${BINARY_NAME}"
+fi
 ENV_DIR="/etc/crispy"
 ENV_FILE="${ENV_DIR}/${SERVICE_NAME}.env"
 UNIT_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
@@ -140,7 +167,6 @@ if [[ "$SKIP_RUST_INSTALL" == false ]]; then
     info "Installing rustup (non-interactive)"
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
       | sh -s -- -y --no-modify-path --default-toolchain stable
-    # Make cargo available for the rest of this script
     export PATH="${HOME}/.cargo/bin:${PATH}"
   fi
 fi
@@ -174,8 +200,7 @@ if [[ "$SERVICE" == "bot" ]]; then
 # crispy-bot environment configuration
 # Edit this file, then run: systemctl restart ${SERVICE_NAME}
 
-# Exchange endpoints (optional).
-# Leave empty to let the bot use its built-in local defaults.
+# Exchange endpoints for this bot.
 EXCHANGE_WS_URL=${EXCHANGE_WS_URL}
 EXCHANGE_API_URL=${EXCHANGE_API_URL}
 

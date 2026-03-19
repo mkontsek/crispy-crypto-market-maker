@@ -218,14 +218,16 @@ vercel
 ### 2) Exchange on an Ubuntu server
 
 `scripts/setup-ubuntu.sh` builds the exchange from source, installs it as a
-systemd service, and writes a `/etc/crispy/crispy-exchange.env` config file.
+systemd service, writes `/etc/crispy/crispy-exchange.env`, and configures Caddy.
 The script is idempotent: you can safely run it again and unchanged steps/files
 are skipped.
 
 ```bash
 git clone https://github.com/mkontsek/crispy-crypto-market-maker.git
 cd crispy-crypto-market-maker
-sudo ./scripts/setup-ubuntu.sh --service exchange
+sudo ./scripts/setup-ubuntu.sh \
+  --service exchange \
+  --caddy-domain exchange.your-domain.com
 ```
 
 Optional: pin the exchange location on the infrastructure map (skips IP geolocation):
@@ -235,18 +237,50 @@ sudo ./scripts/setup-ubuntu.sh --service exchange \
   --geo-lat 51.5074 --geo-lng -0.1278 --geo-label "London, UK"
 ```
 
-Optional: configure public TLS (`https://` + `wss://`) with Caddy in the same run:
+You must pass a full domain name via `--caddy-domain`.
+
+### 3) Bot on an Ubuntu server
+
+Bot setup requires:
 
 ```bash
-sudo ./scripts/setup-ubuntu.sh --service exchange --caddy-domain exchange.your-server.com
+sudo ./scripts/setup-ubuntu.sh \
+  --service bot \
+  --bot-name bot1 \
+  --caddy-domain bot1.your-domain.com \
+  --exchange-domain exchange.your-domain.com
 ```
 
-The service starts automatically and restarts on failure. Ports exposed:
+This sets:
 
-- `3111` WebSocket feed (`/feed`)
-- `3111` HTTP API (`/orders`, `/health`)
+- Caddy domain for the bot service (`bot1.your-domain.com`)
+- Exchange endpoints in bot env (`wss://exchange.your-domain.com/feed`, `https://exchange.your-domain.com`)
 
-Manage the service with standard systemd commands:
+> **Note:** The Rust services are plain HTTP servers. Use `ws://` / `http://` on
+> private/internal networks and `wss://` / `https://` for any publicly reachable
+> endpoint (place the service behind a TLS-terminating reverse proxy such as
+> nginx or Caddy — see [HTTP vs HTTPS](#http-vs-https) below).
+
+Or provide explicit exchange URLs:
+
+```bash
+sudo ./scripts/setup-ubuntu.sh \
+  --service bot \
+  --bot-name bot2 \
+  --caddy-domain bot2.your-domain.com \
+  --exchange-ws-url wss://exchange-alt.your-domain.com/feed \
+  --exchange-api-url https://exchange-alt.your-domain.com
+```
+
+The service is installed under systemd and the config lives in
+`/etc/crispy/crispy-bot-bot1.env`. Edit it to change endpoints, then restart:
+
+```bash
+sudo systemctl restart crispy-bot-bot1
+journalctl -fu         crispy-bot-bot1
+```
+
+Exchange management example:
 
 ```bash
 sudo systemctl status  crispy-exchange
@@ -254,64 +288,25 @@ sudo systemctl restart crispy-exchange
 journalctl -fu         crispy-exchange
 ```
 
-### 3) Bot on an Ubuntu server
-
-Point the bot at your exchange with explicit URLs:
-
-```bash
-# (use wss:// / https:// when the exchange is behind a TLS-terminating proxy)
-sudo ./scripts/setup-ubuntu.sh \
-  --service bot \
-  --exchange-ws-url  ws://exchange.your-server.com/feed \
-  --exchange-api-url http://exchange.your-server.com
-```
-
-Pin the bot's location on the infrastructure map (skips IP geolocation):
-
-```bash
-sudo ./scripts/setup-ubuntu.sh \
-  --service bot \
-  --exchange-ws-url  ws://exchange.your-server.com/feed \
-  --exchange-api-url http://exchange.your-server.com \
-  --geo-lat 40.7128 --geo-lng -74.0060 --geo-label "New York, US"
-```
-
-If `EXCHANGE_WS_URL` / `EXCHANGE_API_URL` are left unset in
-`/etc/crispy/crispy-bot.env`, the bot falls back to local defaults
-(`ws://127.0.0.1:3111/feed`, `http://127.0.0.1:3111`).
-
-> **Note:** The Rust services are plain HTTP servers. Use `ws://` / `http://` on
-> private/internal networks and `wss://` / `https://` for any publicly reachable
-> endpoint (place the service behind a TLS-terminating reverse proxy such as
-> nginx or Caddy — see [HTTP vs HTTPS](#http-vs-https) below).
-
-You can also let `setup-ubuntu.sh` configure Caddy for the selected service:
-
-```bash
-sudo ./scripts/setup-ubuntu.sh --service bot --caddy-domain bot.your-server.com
-```
-
-The service is installed under systemd and the config lives in
-`/etc/crispy/crispy-bot.env`. Edit it to change endpoints, then restart:
-
-```bash
-sudo systemctl restart crispy-bot
-journalctl -fu         crispy-bot
-```
-
 Ports exposed:
 
 - `3110` WebSocket stream (`/stream`)
 - `3110` HTTP API (`/config`, `/pairs/:id/pause`, `/hedge`, `/health`)
 
-To add a second bot instance on the same machine, re-run the script with
-`--user crispy2` (or any unique service user). The script will create the user,
-install a separate binary, and register an independent systemd unit.
+To add a second bot instance on the same machine, re-run with another bot name
+(for example `--bot-name bot2`). This creates an independent unit/binary/env
+per bot.
 
 #### Uninstalling a service
 
 ```bash
 sudo ./scripts/setup-ubuntu.sh --service <bot|exchange> --uninstall
+```
+
+For bot uninstall, pass the bot name:
+
+```bash
+sudo ./scripts/setup-ubuntu.sh --service bot --bot-name bot1 --uninstall
 ```
 
 ### 4) PostgreSQL (managed DB recommended)

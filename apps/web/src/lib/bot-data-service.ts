@@ -1,5 +1,7 @@
 import type { Fill, PnLSnapshot } from '@crispy/shared';
 
+export const BOT_REFETCH_INTERVAL_MS = 1_500;
+
 export function dedupeFills(fills: Fill[]): Fill[] {
     const seen = new Set<string>();
     const output: Fill[] = [];

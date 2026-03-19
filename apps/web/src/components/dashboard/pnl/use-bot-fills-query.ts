@@ -1,6 +1,7 @@
 import type { BotId, Fill } from '@crispy/shared';
 import { useQuery } from '@tanstack/react-query';
 
+import { BOT_REFETCH_INTERVAL_MS } from '@/lib/bot-data-service';
 import { fetchJson } from '@/lib/fetch-json';
 
 type FillsResponse = {
@@ -17,6 +18,6 @@ export function useBotFillsQuery(botId: BotId) {
             fetchJson<FillsResponse>(
                 `/api/fills?botId=${botQuery}&page=1&pageSize=100`
             ),
-        refetchInterval: 1_500,
+        refetchInterval: BOT_REFETCH_INTERVAL_MS,
     });
 }

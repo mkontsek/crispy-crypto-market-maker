@@ -117,14 +117,16 @@ async fn health(State(app_state): State<AppState>) -> Json<serde_json::Value> {
     }))
 }
 
-const GEO_API_URL: &str = "https://ipapi.co/json/";
+const GEO_API_URL: &str = "https://ipwho.is/";
 
 #[derive(Deserialize)]
-struct IpGeoResponse {
-    latitude: f64,
-    longitude: f64,
+struct IpWhoIsResponse {
+    success: Option<bool>,
+    message: Option<String>,
+    latitude: Option<f64>,
+    longitude: Option<f64>,
     city: Option<String>,
-    country_name: Option<String>,
+    country: Option<String>,
 }
 
 async fn geo() -> (StatusCode, Json<serde_json::Value>) {
@@ -138,31 +140,63 @@ async fn geo() -> (StatusCode, Json<serde_json::Value>) {
         }
     }
     match reqwest::get(GEO_API_URL).await {
-        Ok(resp) => match resp.json::<IpGeoResponse>().await {
-            Ok(data) => {
-                let label = match (data.city, data.country_name) {
-                    (Some(city), Some(country)) => format!("{city}, {country}"),
-                    (Some(city), None) => city,
-                    (None, Some(country)) => country,
-                    (None, None) => "Unknown".to_string(),
-                };
-                (
-                    StatusCode::OK,
-                    Json(serde_json::json!({
-                        "lat": data.latitude,
-                        "lng": data.longitude,
-                        "label": label,
-                    })),
-                )
+        Ok(resp) => {
+            if !resp.status().is_success() {
+                tracing::warn!("geo lookup failed with status {}", resp.status());
+                return (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    Json(serde_json::json!({ "error": "geo lookup unavailable" })),
+                );
             }
-            Err(err) => {
-                tracing::warn!("failed to parse geo response: {err}");
-                (
-                    StatusCode::BAD_GATEWAY,
-                    Json(serde_json::json!({ "error": "failed to parse geo response" })),
-                )
+            match resp.json::<IpWhoIsResponse>().await {
+                Ok(data) => {
+                    if data.success == Some(false) {
+                        let details = data
+                            .message
+                            .unwrap_or_else(|| "unknown provider error".to_string());
+                        tracing::warn!("geo provider error: {details}");
+                        return (
+                            StatusCode::BAD_GATEWAY,
+                            Json(serde_json::json!({ "error": "geo provider error" })),
+                        );
+                    }
+
+                    let (lat, lng) = match (data.latitude, data.longitude) {
+                        (Some(lat), Some(lng)) => (lat, lng),
+                        _ => {
+                            tracing::warn!("geo response missing coordinates");
+                            return (
+                                StatusCode::BAD_GATEWAY,
+                                Json(
+                                    serde_json::json!({ "error": "failed to parse geo response" }),
+                                ),
+                            );
+                        }
+                    };
+                    let label = match (data.city, data.country) {
+                        (Some(city), Some(country)) => format!("{city}, {country}"),
+                        (Some(city), None) => city,
+                        (None, Some(country)) => country,
+                        (None, None) => "Unknown".to_string(),
+                    };
+                    (
+                        StatusCode::OK,
+                        Json(serde_json::json!({
+                            "lat": lat,
+                            "lng": lng,
+                            "label": label,
+                        })),
+                    )
+                }
+                Err(err) => {
+                    tracing::warn!("failed to parse geo response: {err}");
+                    (
+                        StatusCode::BAD_GATEWAY,
+                        Json(serde_json::json!({ "error": "failed to parse geo response" })),
+                    )
+                }
             }
-        },
+        }
         Err(err) => {
             tracing::warn!("geo lookup failed: {err}");
             (
