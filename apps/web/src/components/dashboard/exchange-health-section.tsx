@@ -7,13 +7,15 @@ import type { ExchangeHealth } from '@crispy/shared';
 import { InfoIcon } from '@/components/dashboard/live-quotes/info-icon';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { priceFromFp } from '@/lib/fixed-point';
 import { ExchangeHealthInfoDialog } from './exchange-health-info-dialog';
 
-type ExchangeHealthSectionProps = { health: ExchangeHealth[] };
+type ExchangeHealthSectionProps = { health: ExchangeHealth[]; loading: boolean };
 
 export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
     health,
+    loading,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
 
@@ -45,7 +47,35 @@ export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {health.map((entry) => (
+                            {loading && health.length === 0 ? (
+                                Array.from({ length: 3 }).map((_, i) => (
+                                    <tr
+                                        key={i}
+                                        className="border-t border-slate-800"
+                                    >
+                                        {Array.from({ length: 5 }).map(
+                                            (__, j) => (
+                                                <td
+                                                    key={j}
+                                                    className="py-2 pr-4"
+                                                >
+                                                    <Skeleton className="h-4 w-16" />
+                                                </td>
+                                            )
+                                        )}
+                                    </tr>
+                                ))
+                            ) : !loading && health.length === 0 ? (
+                                <tr>
+                                    <td
+                                        colSpan={5}
+                                        className="py-4 text-center text-sm text-slate-400"
+                                    >
+                                        No exchange health data available.
+                                    </td>
+                                </tr>
+                            ) : (
+                                health.map((entry) => (
                                 <tr
                                     key={`${entry.pair}-${entry.exchange}`}
                                     className="border-t border-slate-800"
@@ -76,7 +106,8 @@ export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
                                         </Badge>
                                     </td>
                                 </tr>
-                            ))}
+                            ))
+                            )}
                         </tbody>
                     </table>
                 </CardContent>

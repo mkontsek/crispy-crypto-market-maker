@@ -7,6 +7,7 @@ import type { QuoteSnapshot } from '@crispy/shared';
 import { InfoIcon } from '@/components/dashboard/live-quotes/info-icon';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { priceFromFp } from '@/lib/fixed-point';
 import { QuoteHistoryInfoDialog } from './quote-history-info-dialog';
 import { QuoteHistoryStatusInfoDialog } from './quote-history-status-info-dialog';
@@ -16,10 +17,11 @@ export type QuoteHistoryEntry = QuoteSnapshot & {
     timestamp: string;
 };
 
-type QuoteHistorySectionProps = { entries: QuoteHistoryEntry[] };
+type QuoteHistorySectionProps = { entries: QuoteHistoryEntry[]; loading: boolean };
 
 export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
     entries,
+    loading,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
     const [statusInfoOpen, setStatusInfoOpen] = useState(false);
@@ -67,7 +69,35 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {entries.slice(0, 40).map((entry, index) => (
+                            {loading && entries.length === 0 ? (
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <tr
+                                        key={i}
+                                        className="border-t border-slate-800"
+                                    >
+                                        {Array.from({ length: 6 }).map(
+                                            (__, j) => (
+                                                <td
+                                                    key={j}
+                                                    className="py-2 pr-4"
+                                                >
+                                                    <Skeleton className="h-4 w-14" />
+                                                </td>
+                                            )
+                                        )}
+                                    </tr>
+                                ))
+                            ) : !loading && entries.length === 0 ? (
+                                <tr>
+                                    <td
+                                        colSpan={6}
+                                        className="py-4 text-center text-sm text-slate-400"
+                                    >
+                                        No quote history yet.
+                                    </td>
+                                </tr>
+                            ) : (
+                                entries.slice(0, 40).map((entry, index) => (
                                 <tr
                                     key={`${entry.pair}-${entry.timestamp}-${index}`}
                                     className="border-t border-slate-800"
@@ -101,7 +131,8 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                                         </Badge>
                                     </td>
                                 </tr>
-                            ))}
+                            ))
+                            )}
                         </tbody>
                     </table>
                 </CardContent>

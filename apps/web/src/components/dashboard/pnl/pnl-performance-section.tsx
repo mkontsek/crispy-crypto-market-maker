@@ -7,6 +7,7 @@ import type { BotId, PnLSnapshot } from '@crispy/shared';
 import { InfoIcon } from '@/components/dashboard/live-quotes/info-icon';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { dedupeFills } from '@/lib/bot-data-service';
 import { priceFromFp, ratioFromDecimal, sizeFromFp } from '@/lib/fixed-point';
 import { nanosToTime } from '@/lib/timestamp';
@@ -17,15 +18,18 @@ import { useBotFillsQuery } from './use-bot-fills-query';
 type PnlPerformanceSectionProps = {
     botId: BotId;
     pnl: PnLSnapshot[];
+    loading: boolean;
 };
 
 export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
     botId,
     pnl,
+    loading,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
     const fillsQuery = useBotFillsQuery(botId);
     const fills = dedupeFills(fillsQuery.data?.items ?? []);
+    const isLoading = loading || fillsQuery.isLoading;
     const latest = pnl[0];
     const totalFills = fills.length;
     const adverseFills = fills.filter((f) => f.adverseSelection).length;
@@ -47,6 +51,30 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {isLoading && pnl.length === 0 && fills.length === 0 ? (
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <Skeleton key={i} className="h-14 w-full" />
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-3 gap-3">
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <Skeleton key={i} className="h-14 w-full" />
+                                ))}
+                            </div>
+                            <div className="space-y-1">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <Skeleton key={i} className="h-10 w-full" />
+                                ))}
+                            </div>
+                        </div>
+                    ) : !isLoading && pnl.length === 0 && fills.length === 0 ? (
+                        <p className="text-sm text-slate-400">
+                            No performance data available yet.
+                        </p>
+                    ) : (
+                        <>
                     {latest && (
                         <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-5">
                             <MetricCard
@@ -128,6 +156,8 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                             ))}
                         </div>
                     </div>
+                        </>
+                    )}
                 </CardContent>
             </Card>
             <PnlPerformanceInfoDialog

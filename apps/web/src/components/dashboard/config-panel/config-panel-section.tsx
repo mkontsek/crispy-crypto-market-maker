@@ -7,18 +7,21 @@ import { useState } from 'react';
 import { InfoIcon } from '@/components/dashboard/live-quotes/info-icon';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ConfigPanelInfoDialog } from './config-panel-info-dialog';
 import { ConfigNumberField } from './config-number-field';
 import { DecimalField } from './decimal-field';
 
 type ConfigPanelSectionProps = {
     config: MMConfig | null;
+    loading: boolean;
     saving: boolean;
     onSubmit: (next: MMConfig) => void;
 };
 
 export const ConfigPanelSection: FC<ConfigPanelSectionProps> = ({
     config,
+    loading,
     saving,
     onSubmit,
 }) => {
@@ -67,7 +70,18 @@ export const ConfigPanelSection: FC<ConfigPanelSectionProps> = ({
                         </div>
                     </CardHeader>
                     <CardContent>
-                        Waiting for first config payload from engine...
+                        {loading ? (
+                            <div className="space-y-3">
+                                <Skeleton className="h-4 w-24" />
+                                <Skeleton className="h-20 w-full" />
+                                <Skeleton className="h-20 w-full" />
+                                <Skeleton className="h-20 w-full" />
+                            </div>
+                        ) : (
+                            <p className="text-sm text-slate-400">
+                                No config data available.
+                            </p>
+                        )}
                     </CardContent>
                 </Card>
                 <ConfigPanelInfoDialog

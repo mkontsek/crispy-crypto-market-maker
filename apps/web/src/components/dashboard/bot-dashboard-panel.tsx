@@ -45,6 +45,11 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
     const killSwitchMutation = useKillSwitchMutation(bot.id);
     const strategyMutation = useStrategyMutation(bot.id);
 
+    const quotesLoading = quotesQuery.isLoading;
+    const fillsLoading = fillsQuery.isLoading;
+    const pnlLoading = pnlQuery.isLoading;
+    const inventoryLoading = inventoryQuery.isLoading;
+
     const quotes = quotesQuery.data?.quotes ?? [];
     const fills = dedupeFills(fillsQuery.data?.items ?? []);
     const pnl = dedupePnl(pnlQuery.data?.items ?? []);
@@ -113,12 +118,17 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     killSwitchEngaged={killSwitchEngaged}
                     quotes={quotes}
                 />
-                <LiveQuotesSection quotes={quotes} connected={connected} />
+                <LiveQuotesSection
+                    quotes={quotes}
+                    connected={connected}
+                    loading={quotesLoading}
+                />
                 <div className="grid gap-4 xl:grid-cols-2">
                     <InventoryMonitorSection
                         inventory={inventory}
                         quotes={quotes}
                         pendingPair={pendingPair}
+                        loading={inventoryLoading}
                         onTogglePause={(pair, paused) =>
                             pairActionMutation.mutate({
                                 pair,
@@ -130,29 +140,39 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                             pairActionMutation.mutate({ pair, action: 'hedge' })
                         }
                     />
-                    <PnlPerformanceSection botId={bot.id} pnl={pnl} />
+                    <PnlPerformanceSection
+                        botId={bot.id}
+                        pnl={pnl}
+                        loading={pnlLoading}
+                    />
                 </div>
                 <ExposureSection
                     inventory={inventory}
                     quotes={quotes}
                     config={config}
+                    loading={inventoryLoading}
                 />
                 <div className="grid gap-4 xl:grid-cols-2">
                     <FillMetricsSection
                         fills={fills}
                         quoteHistory={quoteHistoryEntries}
+                        loading={fillsLoading}
                     />
-                    <PnlCurveSection pnl={pnl} />
+                    <PnlCurveSection pnl={pnl} loading={pnlLoading} />
                 </div>
                 <div className="grid gap-4 xl:grid-cols-2">
-                    <QuoteHistorySection entries={quoteHistoryEntries} />
+                    <QuoteHistorySection
+                        entries={quoteHistoryEntries}
+                        loading={quotesLoading}
+                    />
                     <ConfigPanelSection
                         config={config}
+                        loading={quotesLoading}
                         saving={configMutation.isPending}
                         onSubmit={(next) => configMutation.mutate(next)}
                     />
                 </div>
-                <ExchangeHealthSection health={health} />
+                <ExchangeHealthSection health={health} loading={quotesLoading} />
                 <EventLogSection
                     connected={connected}
                     quotes={quotes}
