@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import type { Metadata } from 'next';
 
 import './globals.css';
+import { AppFooter } from '@/components/ui/app-footer';
 import { Providers } from './providers';
 
 const metadataBase = process.env.NEXT_PUBLIC_APP_URL
@@ -32,6 +33,7 @@ const RootLayout: FC<RootLayoutProps> = ({ children }) => {
         <html lang="en">
             <body>
                 <Providers>{children}</Providers>
+                <AppFooter />
             </body>
         </html>
     );
