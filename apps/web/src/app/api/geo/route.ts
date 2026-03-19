@@ -15,6 +15,13 @@ interface IpWhoIsResponse {
     country?: string;
 }
 
+interface BigDataCloudReverseGeocodeResponse {
+    city?: string;
+    locality?: string;
+    principalSubdivision?: string;
+    countryName?: string;
+}
+
 function isLocalhost(hostname: string): boolean {
     const h = hostname.toLowerCase();
     return (
@@ -66,9 +73,63 @@ async function geoFromIpwhois(): Promise<Response> {
     }
 }
 
+async function reverseGeocode(lat: number, lng: number): Promise<Response> {
+    const url = new URL(
+        'https://api.bigdatacloud.net/data/reverse-geocode-client'
+    );
+    url.searchParams.set('latitude', lat.toString());
+    url.searchParams.set('longitude', lng.toString());
+    url.searchParams.set('localityLanguage', 'en');
+
+    try {
+        const resp = await fetch(url.toString(), { cache: 'no-store' });
+        if (!resp.ok) {
+            return NextResponse.json(
+                { error: 'geo reverse lookup failed' },
+                { status: 502 }
+            );
+        }
+
+        const raw =
+            (await resp.json()) as BigDataCloudReverseGeocodeResponse;
+        const cityLike = raw.city || raw.locality || raw.principalSubdivision;
+        const parts = [cityLike, raw.countryName].filter(Boolean);
+        const label = parts.length > 0 ? parts.join(', ') : 'Unknown';
+        const result = geoLocationSchema.safeParse({ lat, lng, label });
+        if (!result.success) {
+            return NextResponse.json(
+                { error: 'invalid reverse geo response' },
+                { status: 502 }
+            );
+        }
+
+        return NextResponse.json(result.data);
+    } catch {
+        return NextResponse.json(
+            { error: 'failed to reach reverse geo provider' },
+            { status: 502 }
+        );
+    }
+}
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
+    const rawLat = searchParams.get('lat');
+    const rawLng = searchParams.get('lng');
     const serviceUrl = searchParams.get('url');
+
+    if (rawLat !== null || rawLng !== null) {
+        const lat = Number.parseFloat(rawLat ?? '');
+        const lng = Number.parseFloat(rawLng ?? '');
+        const parsed = geoLocationSchema.safeParse({ lat, lng, label: 'x' });
+        if (!parsed.success) {
+            return NextResponse.json(
+                { error: 'invalid lat/lng query params' },
+                { status: 400 }
+            );
+        }
+        return reverseGeocode(lat, lng);
+    }
 
     // When called without a URL, return the dashboard server's own location.
     if (!serviceUrl) {

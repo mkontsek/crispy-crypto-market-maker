@@ -54,10 +54,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
     const connected = quotesQuery.data?.connected ?? false;
     const killSwitchEngaged = quotesQuery.data?.killSwitchEngaged ?? false;
     const serverStrategy = quotesQuery.data?.strategy ?? 'balanced';
-    const strategy =
-        strategyMutation.isPending && strategyMutation.variables
-            ? strategyMutation.variables
-            : serverStrategy;
+    const strategy = serverStrategy;
     const pendingPair = pairActionMutation.variables?.pair ?? null;
     const quoteHistoryEntries = quotesQuery.data?.quoteHistory ?? [];
     const latestPnl = pnl[0] ?? null;

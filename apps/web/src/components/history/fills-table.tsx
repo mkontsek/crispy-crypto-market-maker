@@ -64,7 +64,7 @@ export const FillsTable: FC<FillsTableProps> = ({
                     ) : (
                         <Badge tone="success">Loaded</Badge>
                     )}
-                    <Badge tone="default">Auto-refreshes every 10s</Badge>
+                    <Badge tone="default">Auto-refreshes every 5s</Badge>
                     <Button
                         className="h-5"
                         variant="danger"

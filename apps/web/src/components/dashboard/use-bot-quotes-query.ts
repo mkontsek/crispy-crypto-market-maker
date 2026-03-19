@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { QuoteHistoryEntry } from '@/components/dashboard/quote-history-section';
 import { BOT_REFETCH_INTERVAL_MS } from '@/lib/bot-data-service';
 import { fetchJson } from '@/lib/fetch-json';
+import { applyOptimisticStrategy } from './use-strategy-mutation';
 
 type QuotesResponse = {
     botId: BotId;
@@ -30,6 +31,7 @@ export function useBotQuotesQuery(botId: BotId) {
         queryKey: ['quotes', botId],
         queryFn: () =>
             fetchJson<QuotesResponse>(`/api/quotes?botId=${botQuery}`),
+        select: (data) => applyOptimisticStrategy(botId, data),
         refetchInterval: BOT_REFETCH_INTERVAL_MS,
     });
 }

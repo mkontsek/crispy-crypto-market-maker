@@ -34,22 +34,22 @@ export function useTopologyMutation({
 
             queryClient.setQueryData(['topology'], updatedTopology);
 
-            if (
-                previousTopology &&
-                updatedTopology.bots.length > previousTopology.bots.length
-            ) {
-                setSelectedBotId(
-                    updatedTopology.bots[updatedTopology.bots.length - 1]?.id ??
-                        null
-                );
-            } else {
-                setSelectedBotId((current) =>
+            setSelectedBotId((current) => {
+                if (
                     current &&
+                    previousTopology &&
+                    updatedTopology.bots.length > previousTopology.bots.length
+                ) {
+                    return (
+                        updatedTopology.bots[updatedTopology.bots.length - 1]
+                            ?.id ?? current
+                    );
+                }
+                return current &&
                     updatedTopology.bots.some((bot) => bot.id === current)
-                        ? current
-                        : (updatedTopology.bots[0]?.id ?? null)
-                );
-            }
+                    ? current
+                    : (updatedTopology.bots[0]?.id ?? null);
+            });
 
             queryClient.invalidateQueries({ queryKey: ['quotes'] });
             queryClient.invalidateQueries({ queryKey: ['fills'] });

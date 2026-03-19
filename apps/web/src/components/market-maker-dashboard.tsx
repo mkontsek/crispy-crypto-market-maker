@@ -15,6 +15,10 @@ import { loadTopologyFromStorage } from '@/lib/topology-storage';
 import { useTopologyMutation } from './use-topology-mutation';
 import { useTopologyQuery } from './use-topology-query';
 
+function isDisconnectedExampleBot(name: string): boolean {
+    return name.toLowerCase().includes('disconnected');
+}
+
 export const MarketMakerDashboard: FC = () => {
     const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
 
@@ -32,7 +36,10 @@ export const MarketMakerDashboard: FC = () => {
     const topology = topologyQuery.data ?? null;
     const bots = topology?.bots ?? [];
     const activeBot =
-        bots.find((bot) => bot.id === selectedBotId) ?? bots[0] ?? null;
+        bots.find((bot) => bot.id === selectedBotId) ??
+        bots.find((bot) => !isDisconnectedExampleBot(bot.name)) ??
+        bots[0] ??
+        null;
     const topologyKey = topology
         ? JSON.stringify(topology)
         : 'topology-loading';
