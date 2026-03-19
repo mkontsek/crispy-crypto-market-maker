@@ -13,10 +13,11 @@ import {
     botUrlsFromDomain,
     cloneTopology,
     domainFromBotUrl,
+    domainFromExchangeUrl,
+    exchangeUrlsFromDomain,
 } from '@/lib/topology-service';
 
 import { TextField } from './text-field';
-import { UrlField } from './url-field';
 
 type TopologyConfigSectionProps = {
     topology: RuntimeTopology | null;
@@ -60,12 +61,12 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
         );
     }
 
-    const setExchangeField = (
-        key: 'exchangeWsUrl' | 'exchangeHttpUrl',
-        value: string
-    ) => {
+    const setExchangeDomain = (domain: string) => {
+        const { wsUrl, httpUrl } = exchangeUrlsFromDomain(domain);
         setDraft((current) =>
-            current ? { ...current, [key]: value } : current
+            current
+                ? { ...current, exchangeWsUrl: wsUrl, exchangeHttpUrl: httpUrl }
+                : current
         );
     };
 
@@ -177,22 +178,11 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                         <div className="mb-2 text-sm font-semibold">
                             Exchange
                         </div>
-                        <div className="grid gap-3 md:grid-cols-2">
-                            <UrlField
-                                label="Exchange WSS URL"
-                                value={draft.exchangeWsUrl}
-                                onChange={(value) =>
-                                    setExchangeField('exchangeWsUrl', value)
-                                }
-                            />
-                            <UrlField
-                                label="Exchange HTTPS API URL"
-                                value={draft.exchangeHttpUrl}
-                                onChange={(value) =>
-                                    setExchangeField('exchangeHttpUrl', value)
-                                }
-                            />
-                        </div>
+                        <TextField
+                            label="Exchange Domain"
+                            value={domainFromExchangeUrl(draft.exchangeWsUrl)}
+                            onChange={setExchangeDomain}
+                        />
                     </div>
 
                     <div className="space-y-3">
