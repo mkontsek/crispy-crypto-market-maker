@@ -18,12 +18,42 @@ describe('runtime-topology', () => {
         vi.restoreAllMocks();
     });
 
-    it('getRuntimeTopology returns a default topology with one bot', async () => {
+    it('getRuntimeTopology returns Joe/Bob and a disconnected example bot by default', async () => {
         const { getRuntimeTopology } = await import('../runtime-topology');
         const topology = getRuntimeTopology();
+        const isLocalEnv = process.env.NODE_ENV === 'development';
 
-        expect(topology.bots).toHaveLength(1);
-        expect(topology.bots[0]?.id).toBe(DEFAULT_BOT_ID);
+        expect(topology.bots).toHaveLength(3);
+        expect(topology.bots[0]).toMatchObject({
+            id: DEFAULT_BOT_ID,
+            name: 'Joe',
+            wsUrl: isLocalEnv
+                ? 'ws://127.0.0.1:3110/stream'
+                : 'wss://bot-joe.sabercrown.com/stream',
+            httpUrl: isLocalEnv
+                ? 'http://127.0.0.1:3110/'
+                : 'https://bot-joe.sabercrown.com/',
+        });
+        expect(topology.bots[1]).toMatchObject({
+            id: 'bot-2',
+            name: 'Bob',
+            wsUrl: isLocalEnv
+                ? 'ws://127.0.0.1:3112/stream'
+                : 'wss://bot-bob.sabercrown.com/stream',
+            httpUrl: isLocalEnv
+                ? 'http://127.0.0.1:3112/'
+                : 'https://bot-bob.sabercrown.com/',
+        });
+        expect(topology.bots[2]).toMatchObject({
+            id: 'bot-3',
+            name: 'Disconnected (example)',
+            wsUrl: isLocalEnv
+                ? 'ws://127.0.0.1:3999/stream'
+                : 'wss://disconnected.invalid/stream',
+            httpUrl: isLocalEnv
+                ? 'http://127.0.0.1:3999/'
+                : 'https://disconnected.invalid/',
+        });
     });
 
     it('getRuntimeTopology returns a clone (mutations do not affect state_engine)', async () => {

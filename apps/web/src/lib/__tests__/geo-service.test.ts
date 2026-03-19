@@ -54,7 +54,76 @@ describe('fetchDashboardGeo', () => {
         vi.restoreAllMocks();
     });
 
-    it('uses the server geo route for dashboard lookups', async () => {
+    it('uses browser geolocation when available', async () => {
+        const getCurrentPosition = vi.fn((success: PositionCallback) => {
+            success({
+                coords: {
+                    latitude: 37.98,
+                    longitude: 23.72,
+                },
+            } as GeolocationPosition);
+        });
+        vi.stubGlobal('window', {
+            navigator: {
+                geolocation: { getCurrentPosition },
+            },
+        });
+        vi.stubGlobal('navigator', {
+            geolocation: { getCurrentPosition },
+        });
+        const fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+
+        await expect(fetchDashboardGeo()).resolves.toEqual({
+            lat: 37.98,
+            lng: 23.72,
+        });
+        expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledWith('/api/geo?lat=37.98&lng=23.72');
+    });
+
+    it('keeps browser coordinates when dashboard label lookup fails', async () => {
+        const getCurrentPosition = vi.fn((success: PositionCallback) => {
+            success({
+                coords: {
+                    latitude: 37.98,
+                    longitude: 23.72,
+                },
+            } as GeolocationPosition);
+        });
+        vi.stubGlobal('window', {
+            navigator: {
+                geolocation: { getCurrentPosition },
+            },
+        });
+        vi.stubGlobal('navigator', {
+            geolocation: { getCurrentPosition },
+        });
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
+
+        await expect(fetchDashboardGeo()).resolves.toEqual({
+            lat: 37.98,
+            lng: 23.72,
+        });
+    });
+
+    it('falls back to server route when browser geolocation fails', async () => {
+        const getCurrentPosition = vi.fn(
+            (
+                _success: PositionCallback,
+                error?: PositionErrorCallback | null
+            ) => {
+                error?.({} as GeolocationPositionError);
+            }
+        );
+        vi.stubGlobal('window', {
+            navigator: {
+                geolocation: { getCurrentPosition },
+            },
+        });
+        vi.stubGlobal('navigator', {
+            geolocation: { getCurrentPosition },
+        });
         const payload = { lat: 37.98, lng: 23.72, label: 'Athens, Greece' };
         const fetchMock = vi.fn().mockResolvedValue({
             ok: true,
@@ -66,7 +135,23 @@ describe('fetchDashboardGeo', () => {
         expect(fetchMock).toHaveBeenCalledWith('/api/geo');
     });
 
+    it('uses the server geo route for dashboard lookups', async () => {
+        const payload = { lat: 37.98, lng: 23.72, label: 'Athens, Greece' };
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockResolvedValue(payload),
+        });
+        vi.stubGlobal('window', undefined);
+        vi.stubGlobal('navigator', {} as Navigator);
+        vi.stubGlobal('fetch', fetchMock);
+
+        await expect(fetchDashboardGeo()).resolves.toEqual(payload);
+        expect(fetchMock).toHaveBeenCalledWith('/api/geo');
+    });
+
     it('returns null when the server geo route returns an error status', async () => {
+        vi.stubGlobal('window', undefined);
+        vi.stubGlobal('navigator', {} as Navigator);
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
         await expect(fetchDashboardGeo()).resolves.toBeNull();
     });
@@ -83,7 +168,11 @@ describe('buildMarkers', () => {
         ]);
         const markers = buildMarkers(topology, autoGeo, null);
         const simEx = markers.find((m) => m.kind === 'simulated-exchange');
-        expect(simEx).toMatchObject({ lat: 51.5, lng: -0.1, label: 'London, UK' });
+        expect(simEx).toMatchObject({
+            lat: 51.5,
+            lng: -0.1,
+            label: 'Simulated Exchange - London, UK',
+        });
     });
 
     it('falls back to autoGeo for simulated exchange when topology has no location', () => {
@@ -92,7 +181,11 @@ describe('buildMarkers', () => {
         ]);
         const markers = buildMarkers(BASE_TOPOLOGY, autoGeo, null);
         const simEx = markers.find((m) => m.kind === 'simulated-exchange');
-        expect(simEx).toMatchObject({ lat: 10.0, lng: 20.0, label: 'Auto Exchange' });
+        expect(simEx).toMatchObject({
+            lat: 10.0,
+            lng: 20.0,
+            label: 'Simulated Exchange - Auto Exchange',
+        });
     });
 
     it('uses bot.location from topology over autoGeo', () => {
@@ -108,7 +201,25 @@ describe('buildMarkers', () => {
         const autoGeo = new Map([['bot-1', { lat: 10.0, lng: 20.0 }]]);
         const markers = buildMarkers(topology, autoGeo, null);
         const bot = markers.find((m) => m.kind === 'bot');
-        expect(bot).toMatchObject({ lat: 48.8, lng: 2.35, label: 'Paris, FR' });
+        expect(bot).toMatchObject({
+            lat: 48.8,
+            lng: 2.35,
+            label: 'Bot 1 - Paris, FR',
+        });
+    });
+
+    it('shows bot name when auto-detected bot location has no label', () => {
+        const markers = buildMarkers(
+            BASE_TOPOLOGY,
+            new Map([['bot-1', { lat: 10.0, lng: 20.0 }]]),
+            null
+        );
+        const bot = markers.find((m) => m.kind === 'bot');
+        expect(bot).toMatchObject({
+            lat: 10.0,
+            lng: 20.0,
+            label: 'Bot 1',
+        });
     });
 
     it('uses topology.dashboardLocation over dashboardGeo param', () => {
@@ -148,6 +259,39 @@ describe('buildMarkers', () => {
             lat: 10,
             lng: 20,
             label: 'Dashboard - Auto (inferred)',
+        });
+    });
+
+    it('falls back to topology exchange location when no dashboard geo is available', () => {
+        const topology: RuntimeTopology = {
+            ...BASE_TOPOLOGY,
+            exchangeLocation: { lat: 51.5, lng: -0.1, label: 'London, UK' },
+        };
+        const markers = buildMarkers(topology, new Map(), null);
+        const dash = markers.find((m) => m.kind === 'dashboard');
+        expect(dash).toMatchObject({
+            lat: 51.5,
+            lng: -0.1,
+            label: 'Dashboard - London, UK (inferred)',
+        });
+    });
+
+    it('falls back to topology bot location when exchange geo is unavailable', () => {
+        const topology: RuntimeTopology = {
+            ...BASE_TOPOLOGY,
+            bots: [
+                {
+                    ...BASE_TOPOLOGY.bots[0],
+                    location: { lat: 48.8, lng: 2.35, label: 'Paris, FR' },
+                },
+            ],
+        };
+        const markers = buildMarkers(topology, new Map(), null);
+        const dash = markers.find((m) => m.kind === 'dashboard');
+        expect(dash).toMatchObject({
+            lat: 48.8,
+            lng: 2.35,
+            label: 'Dashboard - Paris, FR (inferred)',
         });
     });
 

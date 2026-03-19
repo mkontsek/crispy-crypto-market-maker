@@ -24,6 +24,11 @@ export async function fetchGeoForUrl(
 }
 
 export async function fetchDashboardGeo(): Promise<DetectedGeo | null> {
+    const browserGeo = await fetchBrowserDashboardGeo();
+    if (browserGeo) {
+        return enrichDashboardGeoLabel(browserGeo);
+    }
+
     try {
         const resp = await fetch('/api/geo');
         if (!resp.ok) return null;
@@ -33,12 +38,59 @@ export async function fetchDashboardGeo(): Promise<DetectedGeo | null> {
     }
 }
 
-function firstDetectedBotGeo(
+async function fetchBrowserDashboardGeo(): Promise<DetectedGeo | null> {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+        return null;
+    }
+
+    return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                    resolve(null);
+                    return;
+                }
+                resolve({ lat, lng });
+            },
+            () => resolve(null),
+            {
+                enableHighAccuracy: false,
+                timeout: 5000,
+                maximumAge: 60_000,
+            }
+        );
+    });
+}
+
+async function enrichDashboardGeoLabel(geo: DetectedGeo): Promise<DetectedGeo> {
+    try {
+        const params = new URLSearchParams({
+            lat: geo.lat.toString(),
+            lng: geo.lng.toString(),
+        });
+        const resp = await fetch(`/api/geo?${params.toString()}`);
+        if (!resp.ok) {
+            return geo;
+        }
+        const enriched = (await resp.json()) as DetectedGeo;
+        return {
+            lat: geo.lat,
+            lng: geo.lng,
+            label: enriched.label ?? geo.label,
+        };
+    } catch {
+        return geo;
+    }
+}
+
+function firstKnownBotGeo(
     topology: RuntimeTopology,
     autoGeo: Map<string, DetectedGeo>
 ): DetectedGeo | null {
     for (const bot of topology.bots) {
-        const location = autoGeo.get(bot.id);
+        const location = bot.location ?? autoGeo.get(bot.id);
         if (location) {
             return location;
         }
@@ -50,15 +102,22 @@ function dashboardLabel(
     explicitDashboardGeo: DetectedGeo | undefined,
     resolvedDashboardGeo: DetectedGeo
 ): string {
+    const formatCoords = (geo: DetectedGeo) =>
+        `${geo.lat.toFixed(4)}, ${geo.lng.toFixed(4)}`;
+
     if (explicitDashboardGeo?.label) {
         return `Dashboard - ${explicitDashboardGeo.label}`;
     }
     if (explicitDashboardGeo) {
-        return 'Dashboard';
+        return `Dashboard - ${formatCoords(explicitDashboardGeo)}`;
     }
     return resolvedDashboardGeo.label
         ? `Dashboard - ${resolvedDashboardGeo.label} (inferred)`
-        : 'Dashboard (inferred)';
+        : `Dashboard - ${formatCoords(resolvedDashboardGeo)} (inferred)`;
+}
+
+function markerLabel(name: string, location: DetectedGeo): string {
+    return location.label ? `${name} - ${location.label}` : name;
 }
 
 export function buildMarkers(
@@ -83,7 +142,7 @@ export function buildMarkers(
         markers.push({
             lat: exchangeLocation.lat,
             lng: exchangeLocation.lng,
-            label: exchangeLocation.label ?? 'Simulated Exchange',
+            label: markerLabel('Simulated Exchange', exchangeLocation),
             kind: 'simulated-exchange',
         });
     }
@@ -94,7 +153,7 @@ export function buildMarkers(
             markers.push({
                 lat: location.lat,
                 lng: location.lng,
-                label: location.label ?? bot.name,
+                label: markerLabel(bot.name, location),
                 kind: 'bot',
             });
         }
@@ -103,7 +162,9 @@ export function buildMarkers(
     const explicitDashboardGeo =
         topology.dashboardLocation ?? dashboardGeo ?? undefined;
     const fallbackDashboardGeo =
-        autoGeo.get('exchange') ?? firstDetectedBotGeo(topology, autoGeo);
+        topology.exchangeLocation ??
+        autoGeo.get('exchange') ??
+        firstKnownBotGeo(topology, autoGeo);
     const resolvedDashboardGeo = explicitDashboardGeo ?? fallbackDashboardGeo;
     if (resolvedDashboardGeo) {
         markers.push({

@@ -18,6 +18,19 @@ import {
 } from '@crispy/shared';
 
 const isLocalEnv = process.env.NODE_ENV === 'development';
+const DEFAULT_BOT_2_ID = 'bot-2';
+const DEFAULT_BOT_3_ID = 'bot-3';
+const DEFAULT_BOT_1_NAME = 'Joe';
+const DEFAULT_BOT_2_NAME = 'Bob';
+const DEFAULT_BOT_3_NAME = 'Disconnected (example)';
+const DEV_BOT_2_WS_URL = 'ws://127.0.0.1:3112/stream';
+const DEV_BOT_2_HTTP_URL = 'http://127.0.0.1:3112';
+const DEV_BOT_3_WS_URL = 'ws://127.0.0.1:3999/stream';
+const DEV_BOT_3_HTTP_URL = 'http://127.0.0.1:3999';
+const PROD_BOT_2_WS_URL = 'wss://bot-bob.sabercrown.com/stream';
+const PROD_BOT_2_HTTP_URL = 'https://bot-bob.sabercrown.com';
+const PROD_BOT_3_WS_URL = 'wss://disconnected.invalid/stream';
+const PROD_BOT_3_HTTP_URL = 'https://disconnected.invalid';
 
 function canonicalUrl(url: string) {
     return new URL(url).toString();
@@ -71,7 +84,7 @@ function buildInitialTopology(): RuntimeTopology {
                 id: DEFAULT_BOT_ID,
                 name:
                     process.env.BOT_1_NAME?.trim() ||
-                    botNameFromId(DEFAULT_BOT_ID),
+                    DEFAULT_BOT_1_NAME,
                 wsUrl: canonicalUrl(
                     process.env.BOT_1_WS_URL ??
                         process.env.ENGINE_WS_URL ??
@@ -90,6 +103,40 @@ function buildInitialTopology(): RuntimeTopology {
                     process.env.BOT_1_GEO_LAT,
                     process.env.BOT_1_GEO_LNG,
                     process.env.BOT_1_GEO_LABEL
+                ),
+            },
+            {
+                id: DEFAULT_BOT_2_ID,
+                name: process.env.BOT_2_NAME?.trim() || DEFAULT_BOT_2_NAME,
+                wsUrl: canonicalUrl(
+                    process.env.BOT_2_WS_URL ??
+                        (isLocalEnv ? DEV_BOT_2_WS_URL : PROD_BOT_2_WS_URL)
+                ),
+                httpUrl: canonicalUrl(
+                    process.env.BOT_2_HTTP_URL ??
+                        (isLocalEnv ? DEV_BOT_2_HTTP_URL : PROD_BOT_2_HTTP_URL)
+                ),
+                location: parseOptionalGeo(
+                    process.env.BOT_2_GEO_LAT,
+                    process.env.BOT_2_GEO_LNG,
+                    process.env.BOT_2_GEO_LABEL
+                ),
+            },
+            {
+                id: DEFAULT_BOT_3_ID,
+                name: process.env.BOT_3_NAME?.trim() || DEFAULT_BOT_3_NAME,
+                wsUrl: canonicalUrl(
+                    process.env.BOT_3_WS_URL ??
+                        (isLocalEnv ? DEV_BOT_3_WS_URL : PROD_BOT_3_WS_URL)
+                ),
+                httpUrl: canonicalUrl(
+                    process.env.BOT_3_HTTP_URL ??
+                        (isLocalEnv ? DEV_BOT_3_HTTP_URL : PROD_BOT_3_HTTP_URL)
+                ),
+                location: parseOptionalGeo(
+                    process.env.BOT_3_GEO_LAT,
+                    process.env.BOT_3_GEO_LNG,
+                    process.env.BOT_3_GEO_LABEL
                 ),
             },
         ],
