@@ -52,7 +52,7 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="h-80 space-y-4 overflow-y-auto">
+                    <div className="h-[500px] space-y-4 overflow-y-auto">
                     {loading && inventory.length === 0 && Array.from({ length: 3 }).map((_, i) => (
                         <div key={i} className="rounded-lg border border-slate-800 p-3 space-y-2">
                             <Skeleton className="h-4 w-32" />

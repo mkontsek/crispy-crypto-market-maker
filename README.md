@@ -120,8 +120,8 @@ pnpm run db:up
 ```
 
 This starts Postgres on host port `55432` (mapped to container `5432`) with the default credentials
-(`postgres`/`postgres`/`postgres`) that match the fallback `DATABASE_URL` in
-`packages/db`.
+(`postgres`/`postgres`/`postgres`) that match the local development fallback in
+`packages/db` (`postgresql://postgres:postgres@localhost:55432/postgres`).
 
 If `55432` is busy on your machine, set `POSTGRES_HOST_PORT` when starting the DB:
 
@@ -214,7 +214,9 @@ pnpm hooks:install   # Configure Git hooks to use .githooks/
     - `BOT_3_NAME`, `BOT_3_HTTP_URL`, `BOT_3_WS_URL` (disconnected example bot defaults)
     - `EXCHANGE_HTTP_URL`, `EXCHANGE_WS_URL` (exchange endpoints)
     - `ENGINE_HTTP_URL`, `ENGINE_WS_URL` remain supported as bot-1 aliases
-    - `DATABASE_URL` (Postgres connection string)
+    - `DATABASE_URL` (recommended Postgres connection string)
+      - The app also accepts Vercel Postgres vars: `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, or `POSTGRES_URL`.
+      - In production, missing DB env vars now fail fast instead of falling back to localhost.
     - Optional static map locations (replaces geo API calls):
         - `BOT_1_GEO_LAT`, `BOT_1_GEO_LNG`, `BOT_1_GEO_LABEL` — bot-1 map pin
         - `BOT_2_GEO_LAT`, `BOT_2_GEO_LNG`, `BOT_2_GEO_LABEL` — bot-2 map pin

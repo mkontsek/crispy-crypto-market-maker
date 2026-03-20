@@ -39,7 +39,7 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
         return (
             <Card>
                 <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-center gap-2">
                         <CardTitle>Network Topology</CardTitle>
                         <Badge tone="default">
                             {topology?.bots.length ?? 0} bot(s) configured
@@ -129,17 +129,18 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
     return (
         <Card>
             <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2">
                     <CardTitle>Network Topology</CardTitle>
                     <Badge tone="default">
                         {draft.bots.length} bot(s) configured
                     </Badge>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-end gap-2">
                     {isOpen && (
                         <>
                             <Button
                                 variant="outline"
+                                className="h-6"
                                 onClick={() =>
                                     setDraft(cloneTopology(topology))
                                 }
@@ -147,6 +148,7 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                                 Reset
                             </Button>
                             <Button
+                                className="h-6"
                                 disabled={saving}
                                 onClick={() => onSubmit(draft)}
                             >

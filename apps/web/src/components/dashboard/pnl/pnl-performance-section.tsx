@@ -121,7 +121,7 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                         <div className="mb-2 text-xs uppercase tracking-wide text-slate-400">
                             Latest fills
                         </div>
-                        <div className="h-[260px] space-y-1 overflow-y-auto">
+                        <div className="h-[280px] space-y-1 overflow-y-auto">
                             {fills.slice(0, 10).map((fill) => (
                                 <div
                                     key={fill.id}

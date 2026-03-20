@@ -48,7 +48,12 @@ const GeoMapLeaflet: FC<GeoMapLeafletProps> = ({ markers }) => {
                         <Popup>{marker.label}</Popup>
                     </Marker>
                 ))}
-                {markers.length > 0 && <BoundsController markers={markers} />}
+                {markers.length > 0 && (
+                    <BoundsController
+                        markers={markers}
+                        markerOffsets={markerOffsets}
+                    />
+                )}
             </MapContainer>
 
             <div className="flex flex-wrap gap-4 text-xs text-slate-400">

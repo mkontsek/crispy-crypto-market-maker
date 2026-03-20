@@ -42,7 +42,7 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                         </button>
                     </div>
                 </CardHeader>
-                <CardContent className="h-80 overflow-y-auto">
+                <CardContent className="h-[800px] overflow-y-auto">
                     <table className="w-full text-sm">
                         <thead className="text-left text-slate-400">
                             <tr>
