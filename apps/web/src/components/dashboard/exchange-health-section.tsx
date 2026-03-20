@@ -35,7 +35,7 @@ export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
                         </button>
                     </div>
                 </CardHeader>
-                <CardContent className="overflow-x-auto">
+                <CardContent className="h-64 overflow-auto">
                     <table className="w-full min-w-[620px] text-sm">
                         <thead className="text-left text-slate-400">
                             <tr>
