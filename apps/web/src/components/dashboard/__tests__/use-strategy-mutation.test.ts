@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { useOptimisticStrategyStore } from '@/stores/optimistic-strategy-store';
 import {
     applyOptimisticStrategy,
     useStrategyMutation,
@@ -49,6 +50,7 @@ type DeferredFetchResponse = {
 
 afterEach(() => {
     vi.restoreAllMocks();
+    useOptimisticStrategyStore.getState().clearAllOptimisticStrategies();
 });
 
 describe('useStrategyMutation', () => {

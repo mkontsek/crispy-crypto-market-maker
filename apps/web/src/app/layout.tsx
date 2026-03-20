@@ -31,9 +31,13 @@ type RootLayoutProps = Readonly<{ children: React.ReactNode }>;
 const RootLayout: FC<RootLayoutProps> = ({ children }) => {
     return (
         <html lang="en">
-            <body>
-                <Providers>{children}</Providers>
-                <AppFooter />
+            <body className="min-h-dvh">
+                <Providers>
+                    <div className="flex min-h-dvh flex-col">
+                        <div className="flex-1">{children}</div>
+                        <AppFooter />
+                    </div>
+                </Providers>
             </body>
         </html>
     );

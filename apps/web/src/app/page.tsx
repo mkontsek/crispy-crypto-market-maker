@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 
 const HomePage: FC = () => {
     return (
-        <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center gap-8 p-6">
+        <main className="mx-auto flex min-h-full w-full max-w-5xl flex-col justify-center gap-8 p-6">
             <motion.section
                 className="space-y-3"
                 initial={{ opacity: 0, y: 16 }}

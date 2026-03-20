@@ -15,7 +15,7 @@ type GeoMapLeafletProps = { markers: GeoMapMarker[] };
 
 const GeoMapLeaflet: FC<GeoMapLeafletProps> = ({ markers }) => {
     const defaultCenter: [number, number] = [20, 10];
-    const defaultZoom = 2;
+    const defaultZoom = 7;
     const markerOffsets = buildMarkerPixelOffsets(markers);
 
     return (
@@ -52,6 +52,7 @@ const GeoMapLeaflet: FC<GeoMapLeafletProps> = ({ markers }) => {
                     <BoundsController
                         markers={markers}
                         markerOffsets={markerOffsets}
+                        maxZoom={defaultZoom}
                     />
                 )}
             </MapContainer>

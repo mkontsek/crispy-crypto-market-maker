@@ -18,14 +18,14 @@ const STRATEGY_DESCRIPTIONS: Record<Strategy, string> = {
     aggressive: 'Tight spreads · High inventory · No hedging',
 };
 
-type StrategySectionProps = {
+type Props = {
     strategy: Strategy;
     pending: boolean;
     connected: boolean;
     onSelect: (strategy: Strategy) => void;
 };
 
-export const StrategySection: FC<StrategySectionProps> = ({
+export const StrategySection: FC<Props> = ({
     strategy,
     pending,
     connected,
