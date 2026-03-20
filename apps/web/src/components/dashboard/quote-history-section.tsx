@@ -28,7 +28,7 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
 
     return (
         <>
-            <Card className="flex h-full flex-col">
+            <Card>
                 <CardHeader>
                     <div className="inline-flex items-center gap-2">
                         <CardTitle>Quote History</CardTitle>
@@ -42,7 +42,7 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                         </button>
                     </div>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto">
+                <CardContent className="h-80 overflow-y-auto">
                     <table className="w-full text-sm">
                         <thead className="text-left text-slate-400">
                             <tr>

@@ -46,7 +46,7 @@ export const AlertPanelSection: FC<AlertPanelSectionProps> = (props) => {
                     <p className="text-sm text-slate-400">No active alerts.</p>
                 )}
                 {alerts.length > 0 && (
-                    <ul className="space-y-2">
+                    <ul className="h-40 space-y-2 overflow-y-auto">
                         {alerts.map((alert) => (
                             <li
                                 key={alert.id}

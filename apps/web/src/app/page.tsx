@@ -1,10 +1,18 @@
+'use client';
+
 import type { FC } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 const HomePage: FC = () => {
     return (
         <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center gap-8 p-6">
-            <section className="space-y-3">
+            <motion.section
+                className="space-y-3"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+            >
                 <p className="text-sm font-medium uppercase tracking-[0.2em] text-cyan-300">
                     Crispy
                 </p>
@@ -16,16 +24,21 @@ const HomePage: FC = () => {
                     through a Next.js dashboard backed by the Rust engine
                     stream.
                 </p>
-            </section>
+            </motion.section>
 
-            <section className="flex flex-wrap gap-3">
+            <motion.section
+                className="flex flex-wrap gap-3"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+            >
                 <Link
                     href="/login"
                     className="inline-flex h-10 items-center justify-center rounded-md bg-cyan-400 px-4 text-sm font-medium text-slate-950 transition hover:bg-cyan-300"
                 >
                     Sign in to demo
                 </Link>
-            </section>
+            </motion.section>
         </main>
     );
 };

@@ -2,6 +2,7 @@
 
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 
 import { BotDashboardPanel } from '@/components/dashboard/bot-dashboard-panel';
 import { DashboardHeaderNavLinks } from '@/components/dashboard/dashboard-header-nav-links';
@@ -46,7 +47,12 @@ export const MarketMakerDashboard: FC = () => {
 
     return (
         <main className="w-full px-4 py-4">
-            <header className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-950 p-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
+            <motion.header
+                className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-950 p-4 mb-4 sm:flex-row sm:items-center sm:justify-between"
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+            >
                 <div>
                     <h1 className="text-xl font-semibold">
                         Crispy Crypto Market Maker
@@ -62,8 +68,13 @@ export const MarketMakerDashboard: FC = () => {
                         <Badge tone="warning">Applying topology...</Badge>
                     )}
                 </div>
-            </header>
-            <div className="mx-auto max-w-7xl space-y-4">
+            </motion.header>
+            <motion.div
+                className="mx-auto max-w-7xl space-y-4"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+            >
                 <TopologyConfigSection
                     key={topologyKey}
                     topology={topology}
@@ -102,7 +113,7 @@ export const MarketMakerDashboard: FC = () => {
                     </Card>
                 )}
                 {topology && <GeoMapSection topology={topology} />}
-            </div>
+            </motion.div>
         </main>
     );
 };

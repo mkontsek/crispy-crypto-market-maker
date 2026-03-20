@@ -95,7 +95,7 @@ export const EventLogSection: FC<EventLogSectionProps> = ({
                     </p>
                 )}
                 {log.length > 0 && (
-                    <div className="max-h-48 space-y-1 overflow-y-auto">
+                    <div className="h-48 space-y-1 overflow-y-auto">
                         {log.slice(0, 100).map((entry) => (
                             <div
                                 key={entry.id}

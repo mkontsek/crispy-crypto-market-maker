@@ -46,7 +46,7 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                         {connected ? 'stream connected' : 'stream disconnected'}
                     </Badge>
                 </CardHeader>
-                <CardContent className="overflow-x-auto">
+                <CardContent className="h-64 overflow-auto">
                     <table className="w-full min-w-[760px] text-sm">
                         <thead className="text-left text-slate-400">
                             <tr>

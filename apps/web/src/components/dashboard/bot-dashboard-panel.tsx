@@ -4,6 +4,8 @@ import type { FC } from 'react';
 import type { TopologyBot } from '@crispy/shared';
 import { useState } from 'react';
 
+import { motion } from 'framer-motion';
+
 import { AlertPanelSection } from '@/components/dashboard/alert-panel-section';
 import { ConfigPanelSection } from '@/components/dashboard/config-panel/config-panel-section';
 import { EventLogSection } from '@/components/dashboard/event-log-section';
@@ -65,9 +67,12 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
     const latestPnl = pnl[0] ?? null;
 
     return (
-        <section
+        <motion.section
             id={`${bot.id}-section`}
             className="space-y-4 rounded-xl border border-slate-800 bg-slate-950/50 p-4"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
         >
             <header className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -186,6 +191,6 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     </Card>
                 )}
             </div>
-        </section>
+        </motion.section>
     );
 };
