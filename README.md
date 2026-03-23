@@ -30,7 +30,10 @@ Web/Dashboard  ──────────►  Bot 1..N (market maker)  ─�
 │   ├── db        # Prisma schema + Prisma client export
 │   └── shared    # shared TS types + Zod schemas/constants
 ├── scripts
-│   ├── setup-ubuntu.sh   # Ubuntu server provisioning script (bot / exchange)
+│   ├── run-exchange.sh   # Provision and start the exchange on Ubuntu
+│   ├── run-bot.sh        # Provision and start a bot on Ubuntu
+│   ├── stop-exchange.sh  # Stop the exchange systemd service
+│   ├── stop-bot.sh       # Stop a named bot systemd service
 │   └── run-services.sh   # Local background-process launcher
 ├── turbo.json
 └── pnpm-workspace.yaml
@@ -233,7 +236,7 @@ vercel
 
 ### 2) Exchange on an Ubuntu server
 
-`scripts/setup-ubuntu.sh` builds the exchange from source, installs it as a
+`scripts/run-exchange.sh` builds the exchange from source, installs it as a
 systemd service, writes `/etc/crispy/crispy-exchange.env`, and configures Caddy.
 The script is idempotent: you can safely run it again and unchanged steps/files
 are skipped.
@@ -241,15 +244,15 @@ are skipped.
 ```bash
 git clone https://github.com/mkontsek/crispy-crypto-market-maker.git
 cd crispy-crypto-market-maker
-sudo ./scripts/setup-ubuntu.sh \
-  --service exchange \
+sudo ./scripts/run-exchange.sh \
   --caddy-domain exchange.your-domain.com
 ```
 
 Optional: pin the exchange location on the infrastructure map (skips IP geolocation):
 
 ```bash
-sudo ./scripts/setup-ubuntu.sh --service exchange \
+sudo ./scripts/run-exchange.sh \
+  --caddy-domain exchange.your-domain.com \
   --geo-lat 51.5074 --geo-lng -0.1278 --geo-label "London, UK"
 ```
 
@@ -260,8 +263,7 @@ You must pass a full domain name via `--caddy-domain`.
 Bot setup requires:
 
 ```bash
-sudo ./scripts/setup-ubuntu.sh \
-  --service bot \
+sudo ./scripts/run-bot.sh \
   --bot-name bot1 \
   --caddy-domain bot1.your-domain.com \
   --exchange-domain exchange.your-domain.com
@@ -280,8 +282,7 @@ This sets:
 Or provide explicit exchange URLs:
 
 ```bash
-sudo ./scripts/setup-ubuntu.sh \
-  --service bot \
+sudo ./scripts/run-bot.sh \
   --bot-name bot2 \
   --caddy-domain bot2.your-domain.com \
   --exchange-ws-url wss://exchange-alt.your-domain.com/feed \
@@ -289,19 +290,38 @@ sudo ./scripts/setup-ubuntu.sh \
 ```
 
 The service is installed under systemd and the config lives in
-`/etc/crispy/crispy-bot-bot1.env`. Edit it to change endpoints, then restart:
+`/etc/crispy/crispy-bot-bot1.env`. To apply config-only changes, edit the file
+and restart the service directly:
 
 ```bash
 sudo systemctl restart crispy-bot-bot1
 journalctl -fu         crispy-bot-bot1
 ```
 
+Re-running `run-bot.sh` (idempotent) rebuilds and redeploys when source or
+config changes:
+
+```bash
+sudo ./scripts/run-bot.sh --bot-name bot1 --caddy-domain bot1.your-domain.com \
+  --exchange-domain exchange.your-domain.com
+```
+
 Exchange management example:
 
 ```bash
-sudo systemctl status  crispy-exchange
+# Config-only change: edit /etc/crispy/crispy-exchange.env, then:
 sudo systemctl restart crispy-exchange
 journalctl -fu         crispy-exchange
+
+# Rebuild and redeploy (idempotent):
+sudo ./scripts/run-exchange.sh --caddy-domain exchange.your-domain.com
+```
+
+To stop a service:
+
+```bash
+sudo ./scripts/stop-exchange.sh
+sudo ./scripts/stop-bot.sh --bot-name bot1
 ```
 
 Ports exposed:
@@ -309,20 +329,26 @@ Ports exposed:
 - `3110` WebSocket stream (`/stream`)
 - `3110` HTTP API (`/config`, `/pairs/:id/pause`, `/hedge`, `/health`)
 
-To add a second bot instance on the same machine, re-run with another bot name
+To add a second bot instance on the same machine, re-run `run-bot.sh` with another bot name
 (for example `--bot-name bot2`). This creates an independent unit/binary/env
 per bot.
 
 #### Uninstalling a service
 
 ```bash
-sudo ./scripts/setup-ubuntu.sh --service <bot|exchange> --uninstall
+sudo systemctl stop crispy-exchange
+sudo systemctl disable crispy-exchange
+sudo rm /etc/systemd/system/crispy-exchange.service
+sudo systemctl daemon-reload
 ```
 
-For bot uninstall, pass the bot name:
+For a bot, substitute `crispy-exchange` with `crispy-bot-<bot-name>`:
 
 ```bash
-sudo ./scripts/setup-ubuntu.sh --service bot --bot-name bot1 --uninstall
+sudo systemctl stop crispy-bot-bot1
+sudo systemctl disable crispy-bot-bot1
+sudo rm /etc/systemd/system/crispy-bot-bot1.service
+sudo systemctl daemon-reload
 ```
 
 ### 4) PostgreSQL (managed DB recommended)
@@ -348,7 +374,7 @@ postgresql://crispy:change-me@localhost:5432/crispy
 Best results come from:
 
 - **Vercel** for `apps/web`
-- **Ubuntu VMs or bare-metal** for `apps/exchange` and `apps/bot` (provisioned with `setup-ubuntu.sh`)
+- **Ubuntu VMs or bare-metal** for `apps/exchange` and `apps/bot` (provisioned with `run-exchange.sh` / `run-bot.sh`)
 - **Managed Postgres** for persistence
 
 Then set Vercel env vars to the bot and database endpoints.
