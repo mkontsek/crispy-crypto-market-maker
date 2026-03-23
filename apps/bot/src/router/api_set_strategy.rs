@@ -31,6 +31,7 @@ mod tests {
             state: Arc::new(RwLock::new(EngineState::new())),
             stream_tx,
             exchange_api_url: "http://127.0.0.1:3111".to_string(),
+            db_pool: None,
         }
     }
 

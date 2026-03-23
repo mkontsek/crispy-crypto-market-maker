@@ -1,0 +1,187 @@
+use sqlx::PgPool;
+use tracing::{error, warn};
+
+use crate::models::EngineStreamPayload;
+
+/// Convert a `rust_decimal::Decimal` to `f64`, logging a warning on failure.
+fn dec_to_f64(value: rust_decimal::Decimal, field: &str) -> f64 {
+    match f64::try_from(value) {
+        Ok(v) => v,
+        Err(err) => {
+            warn!("[db] decimal conversion failed for field '{field}': {err} — storing 0.0");
+            0.0
+        }
+    }
+}
+
+/// Connect to Postgres using the `DATABASE_URL` environment variable.
+/// Returns `None` if the variable is unset or empty, or if the connection fails.
+pub async fn connect_from_env() -> Option<PgPool> {
+    let url = std::env::var("DATABASE_URL")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())?;
+
+    match PgPool::connect(&url).await {
+        Ok(pool) => {
+            tracing::info!("db: connected to postgres");
+            Some(pool)
+        }
+        Err(err) => {
+            warn!("db: failed to connect to postgres — DB writes disabled: {err}");
+            None
+        }
+    }
+}
+
+/// Write fills, quotes, inventory, and PnL for a single tick to the database.
+/// Errors are logged but never propagate — DB failures must not crash the bot.
+pub async fn persist_payload(pool: &PgPool, bot_id: &str, payload: &EngineStreamPayload) {
+    let mut tasks: Vec<tokio::task::JoinHandle<()>> = Vec::new();
+
+    if !payload.fills.is_empty() {
+        let pool = pool.clone();
+        let bot_id = bot_id.to_string();
+        let fills = payload.fills.clone();
+        tasks.push(tokio::spawn(async move {
+            if let Err(err) = write_fills(&pool, &bot_id, &fills).await {
+                error!("[db] write_fills error: {err}");
+            }
+        }));
+    }
+
+    if !payload.quotes.is_empty() {
+        let pool = pool.clone();
+        let bot_id = bot_id.to_string();
+        let quotes = payload.quotes.clone();
+        tasks.push(tokio::spawn(async move {
+            if let Err(err) = write_quotes(&pool, &bot_id, &quotes).await {
+                error!("[db] write_quotes error: {err}");
+            }
+        }));
+    }
+
+    if !payload.inventory.is_empty() {
+        let pool = pool.clone();
+        let bot_id = bot_id.to_string();
+        let inventory = payload.inventory.clone();
+        tasks.push(tokio::spawn(async move {
+            if let Err(err) = write_inventory(&pool, &bot_id, &inventory).await {
+                error!("[db] write_inventory error: {err}");
+            }
+        }));
+    }
+
+    {
+        let pool = pool.clone();
+        let bot_id = bot_id.to_string();
+        let pnl = payload.pnl.clone();
+        tasks.push(tokio::spawn(async move {
+            if let Err(err) = write_pnl(&pool, &bot_id, &pnl).await {
+                error!("[db] write_pnl error: {err}");
+            }
+        }));
+    }
+
+    for task in tasks {
+        let _ = task.await;
+    }
+}
+
+async fn write_fills(
+    pool: &PgPool,
+    bot_id: &str,
+    fills: &[crate::models::Fill],
+) -> Result<(), sqlx::Error> {
+    for fill in fills {
+        sqlx::query(
+            r#"
+            INSERT INTO "Fill" (id, "botId", pair, side, price, size, "midAtFill", "realizedSpread", "adverseSelection")
+            VALUES ($1, $2, $3, $4::"Side", $5, $6, $7, $8, $9)
+            ON CONFLICT (id) DO NOTHING
+            "#,
+        )
+        .bind(&fill.id)
+        .bind(bot_id)
+        .bind(&fill.pair)
+        .bind(fill.side.as_str())
+        .bind(dec_to_f64(fill.price, "fill.price"))
+        .bind(dec_to_f64(fill.size, "fill.size"))
+        .bind(dec_to_f64(fill.mid, "fill.mid"))
+        .bind(dec_to_f64(fill.realized_spread, "fill.realized_spread"))
+        .bind(fill.adverse_selection)
+        .execute(pool)
+        .await?;
+    }
+    Ok(())
+}
+
+async fn write_quotes(
+    pool: &PgPool,
+    bot_id: &str,
+    quotes: &[crate::models::QuoteSnapshot],
+) -> Result<(), sqlx::Error> {
+    for quote in quotes {
+        sqlx::query(
+            r#"
+            INSERT INTO "Quote" ("botId", pair, bid, ask, mid, "spreadBps", "inventorySkew", "quoteRefreshRate")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            "#,
+        )
+        .bind(bot_id)
+        .bind(&quote.pair)
+        .bind(dec_to_f64(quote.bid, "quote.bid"))
+        .bind(dec_to_f64(quote.ask, "quote.ask"))
+        .bind(dec_to_f64(quote.mid, "quote.mid"))
+        .bind(dec_to_f64(quote.spread_bps, "quote.spread_bps"))
+        .bind(dec_to_f64(quote.inventory_skew, "quote.inventory_skew"))
+        .bind(dec_to_f64(quote.quote_refresh_rate, "quote.quote_refresh_rate"))
+        .execute(pool)
+        .await?;
+    }
+    Ok(())
+}
+
+async fn write_inventory(
+    pool: &PgPool,
+    bot_id: &str,
+    inventory: &[crate::models::InventorySnapshot],
+) -> Result<(), sqlx::Error> {
+    for snap in inventory {
+        sqlx::query(
+            r#"
+            INSERT INTO "Inventory" ("botId", pair, inventory, "normalizedSkew")
+            VALUES ($1, $2, $3, $4)
+            "#,
+        )
+        .bind(bot_id)
+        .bind(&snap.pair)
+        .bind(dec_to_f64(snap.inventory, "inventory.inventory"))
+        .bind(dec_to_f64(snap.normalized_skew, "inventory.normalized_skew"))
+        .execute(pool)
+        .await?;
+    }
+    Ok(())
+}
+
+async fn write_pnl(
+    pool: &PgPool,
+    bot_id: &str,
+    pnl: &crate::models::PnLSnapshot,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        r#"
+        INSERT INTO "PnLSnapshot" ("botId", "totalPnl", "realizedSpread", "hedgingCosts", "adverseSelectionRate", "fillRate")
+        VALUES ($1, $2, $3, $4, $5, $6)
+        "#,
+    )
+    .bind(bot_id)
+    .bind(dec_to_f64(pnl.total_pnl, "pnl.total_pnl"))
+    .bind(dec_to_f64(pnl.realized_spread, "pnl.realized_spread"))
+    .bind(dec_to_f64(pnl.hedging_costs, "pnl.hedging_costs"))
+    .bind(dec_to_f64(pnl.adverse_selection_rate, "pnl.adverse_selection_rate"))
+    .bind(dec_to_f64(pnl.fill_rate, "pnl.fill_rate"))
+    .execute(pool)
+    .await?;
+    Ok(())
+}

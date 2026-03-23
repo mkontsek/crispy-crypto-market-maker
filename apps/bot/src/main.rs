@@ -5,6 +5,7 @@ use tokio::{
 };
 use tracing::{error, info};
 
+mod db;
 mod exchange;
 mod init;
 mod models;
@@ -20,6 +21,7 @@ use utils::spawn_bot_tick_loop;
 
 #[tokio::main]
 async fn main() {
+    dotenvy::dotenv().ok();
     tracing_subscriber::fmt::init();
 
     // Init urls
@@ -27,11 +29,14 @@ async fn main() {
     info!("exchange ws url: {exchange_ws_url}");
     info!("exchange api url: {exchange_api_url}");
 
+    let db_pool = db::connect_from_env().await;
+
     let (stream_tx, _) = broadcast::channel(128);
     let app_state = AppState {
         state: Arc::new(RwLock::new(EngineState::new())),
         stream_tx,
         exchange_api_url,
+        db_pool,
     };
 
     // Exchange WebSocket listener: subscribes to the exchange feed and updates
@@ -47,6 +52,7 @@ async fn main() {
         app_state.state.clone(),
         app_state.stream_tx.clone(),
         app_state.exchange_api_url.clone(),
+        app_state.db_pool.clone(),
     );
 
     let app = build_ws_app(app_state.clone()).merge(build_api_app(app_state));

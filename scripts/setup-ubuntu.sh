@@ -204,6 +204,13 @@ if [[ "$SERVICE" == "bot" ]]; then
 EXCHANGE_WS_URL=${EXCHANGE_WS_URL}
 EXCHANGE_API_URL=${EXCHANGE_API_URL}
 
+# Postgres connection string for persisting fills, quotes, inventory and PnL.
+# Leave empty to disable DB writes.
+DATABASE_URL=
+
+# Bot identity used when writing data to the database.
+BOT_ID=
+
 # Static location for the infrastructure map (optional).
 # Leave empty to auto-detect via IP geolocation on GET /geo.
 GEO_LAT=${GEO_LAT}

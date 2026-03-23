@@ -59,6 +59,7 @@ mod tests {
             state: Arc::new(RwLock::new(EngineState::new())),
             stream_tx,
             exchange_api_url,
+            db_pool: None,
         }
     }
 

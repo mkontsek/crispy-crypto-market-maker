@@ -214,7 +214,8 @@ pnpm hooks:install   # Configure Git hooks to use .githooks/
     - `BOT_3_NAME`, `BOT_3_HTTP_URL`, `BOT_3_WS_URL` (disconnected example bot defaults)
     - `EXCHANGE_HTTP_URL`, `EXCHANGE_WS_URL` (exchange endpoints)
     - `ENGINE_HTTP_URL`, `ENGINE_WS_URL` remain supported as bot-1 aliases
-    - `DATABASE_URL` (recommended Postgres connection string)
+    - `DATABASE_URL` (optional — only needed if you want the web app to serve
+      history / analytics data; DB writes are performed by the bot, not the web app)
       - The app also accepts Vercel Postgres vars: `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, or `POSTGRES_URL`.
       - In production, missing DB env vars now fail fast instead of falling back to localhost.
     - Optional static map locations (replaces geo API calls):
@@ -296,6 +297,16 @@ sudo systemctl restart crispy-bot-bot1
 journalctl -fu         crispy-bot-bot1
 ```
 
+To enable database persistence, add `DATABASE_URL` and `BOT_ID` to the env file:
+
+```ini
+DATABASE_URL=postgresql://crispy:change-me@localhost:5432/crispy
+BOT_ID=bot1
+```
+
+The bot writes fills, quotes, inventory snapshots and PnL directly to Postgres
+on every tick. `DATABASE_URL` is optional — the bot runs normally without it.
+
 Exchange management example:
 
 ```bash
@@ -342,6 +353,12 @@ Use the resulting connection string as `DATABASE_URL`:
 ```
 postgresql://crispy:change-me@localhost:5432/crispy
 ```
+
+**Important**: Set `DATABASE_URL` (and `BOT_ID`) in the bot's env file
+(`/etc/crispy/crispy-bot-<name>.env`). The bot writes fills, quotes, inventory,
+and PnL snapshots directly to Postgres on every tick. The web app uses the same
+database only for reading history — set `DATABASE_URL` in Vercel only if you
+want the history and analytics endpoints.
 
 ### Production topology
 

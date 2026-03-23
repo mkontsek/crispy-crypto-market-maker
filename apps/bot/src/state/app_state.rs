@@ -8,4 +8,5 @@ pub struct AppState {
     pub state: Arc<RwLock<EngineState>>,
     pub stream_tx: broadcast::Sender<String>,
     pub exchange_api_url: String,
+    pub db_pool: Option<sqlx::PgPool>,
 }
