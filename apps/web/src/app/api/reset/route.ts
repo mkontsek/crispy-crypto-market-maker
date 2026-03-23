@@ -13,10 +13,7 @@ export async function DELETE() {
     const topology = getRuntimeTopology();
 
     const botResets = await Promise.allSettled(
-        topology.bots.flatMap((bot) => [
-            forwardEnginePost(bot.id, '/strategy', { strategy: 'balanced' }),
-            forwardEnginePost(bot.id, '/kill-switch', { engaged: false }),
-        ])
+        topology.bots.map((bot) => forwardEnginePost(bot.id, '/reset', {}))
     );
 
     for (const result of botResets) {
