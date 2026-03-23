@@ -2,10 +2,10 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use crispy_geo::geo;
 
 use crate::{
     router::{
-        api_geo::geo,
         api_health::health,
         api_kill_switch::kill_switch,
         api_manual_hedge::manual_hedge,

@@ -1,16 +1,11 @@
-use rand::{rng, RngExt};
+use rand::rng;
 use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
-use tracing::error;
 
 use super::EngineState;
 use crate::models::{
-    EngineStreamPayload, ExchangeHealth, ExchangeOrderResponse, Fill, InventorySnapshot,
-    PnLSnapshot, QuoteSnapshot, EXCHANGES,
+    EngineStreamPayload, ExchangeOrderResponse, PnLSnapshot,
 };
-use crate::utils::{
-    apply_ratio, chrono_string, normalize_inventory, quote_notional, quote_notional_rate,
-};
+use crate::utils::chrono_string;
 
 impl EngineState {
     /// Process fill responses from the exchange and build the stream payload.
@@ -19,141 +14,20 @@ impl EngineState {
         exchange_fills: Vec<ExchangeOrderResponse>,
     ) -> EngineStreamPayload {
         let mut rng = rng();
-        let mut quotes = Vec::new();
-        let mut fills = Vec::new();
-        let mut inventory = Vec::new();
-        let mut exchange_health = Vec::new();
         let now = chrono_string();
 
-        // Process fills received from the exchange.
-        for fill_resp in exchange_fills {
-            if !fill_resp.filled {
-                continue;
-            }
-            let Some(pair) = self.pairs.get_mut(&fill_resp.pair) else {
-                continue;
-            };
+        let fills = self.process_exchange_fills(exchange_fills, &now);
 
-            let taker_buy = fill_resp.side == "sell";
-            let fill_price = fill_resp.fill_price;
-            let fill_size = fill_resp.fill_size;
-            let realized_spread = if taker_buy {
-                fill_price - pair.mid
-            } else {
-                pair.mid - fill_price
-            };
-
-            if taker_buy {
-                pair.inventory -= fill_size;
-            } else {
-                pair.inventory += fill_size;
-            }
-
-            if fill_resp.adverse_selection {
-                self.adverse_fills = self.adverse_fills.saturating_add(1);
-            }
-
-            self.fill_seq = self.fill_seq.saturating_add(1);
-            self.total_fills = self.total_fills.saturating_add(1);
-            self.total_realized_spread += quote_notional(realized_spread, fill_size);
-
-            fills.push(Fill {
-                id: format!("fill-{}", self.fill_seq),
-                pair: fill_resp.pair.clone(),
-                side: if taker_buy { "sell" } else { "buy" }.to_string(),
-                price: fill_price,
-                size: fill_size,
-                mid: pair.mid,
-                realized_spread,
-                adverse_selection: fill_resp.adverse_selection,
-                timestamp: now.clone(),
-            });
-        }
-
-        for cfg in &self.config.pairs {
-            let Some(pair) = self.pairs.get_mut(&cfg.pair) else {
-                continue;
-            };
-
-            if !cfg.enabled {
-                pair.paused = true;
-            }
-
-            if pair.paused {
-                quotes.push(QuoteSnapshot {
-                    pair: cfg.pair.clone(),
-                    bid: pair.bid,
-                    ask: pair.ask,
-                    mid: pair.mid,
-                    spread_bps: pair.spread_bps,
-                    inventory_skew: pair.inventory_skew,
-                    quote_refresh_rate: pair.quote_refresh_rate,
-                    volatility: pair.volatility,
-                    paused: true,
-                    updated_at: now.clone(),
-                });
-                inventory.push(InventorySnapshot {
-                    pair: cfg.pair.clone(),
-                    inventory: pair.inventory,
-                    normalized_skew: normalize_inventory(pair.inventory, cfg.max_inventory),
-                    timestamp: now.clone(),
-                });
-                continue;
-            }
-
-            if pair.inventory.abs() > cfg.max_inventory {
-                pair.paused = true;
-                error!("inventory limit breached for {}", cfg.pair);
-            }
-
-            if cfg.hedging_enabled && pair.inventory.abs() > cfg.hedge_threshold {
-                let hedging_cost = quote_notional_rate(pair.mid, pair.inventory.abs(), 1, 10_000);
-                self.hedging_costs += hedging_cost;
-                pair.inventory = apply_ratio(pair.inventory, 55, 100);
-            }
-
-            quotes.push(QuoteSnapshot {
-                pair: cfg.pair.clone(),
-                bid: pair.bid,
-                ask: pair.ask,
-                mid: pair.mid,
-                spread_bps: pair.spread_bps,
-                inventory_skew: pair.inventory_skew,
-                quote_refresh_rate: pair.quote_refresh_rate,
-                volatility: pair.volatility,
-                paused: pair.paused,
-                updated_at: now.clone(),
-            });
-
-            inventory.push(InventorySnapshot {
-                pair: cfg.pair.clone(),
-                inventory: pair.inventory,
-                normalized_skew: normalize_inventory(pair.inventory, cfg.max_inventory),
-                timestamp: now.clone(),
-            });
-
-            // Simulate exchange connectivity metrics (bot's perspective of the exchange).
-            for exchange in EXCHANGES {
-                let feed_staleness_ms = if self.exchange_connected {
-                    Decimal::from(rng.random_range(50..1200)) / dec!(10)
-                } else {
-                    Decimal::from(rng.random_range(1800..5000)) / dec!(10)
-                };
-                exchange_health.push(ExchangeHealth {
-                    pair: cfg.pair.clone(),
-                    exchange: exchange.to_string(),
-                    tick_latency_ms: Decimal::from(rng.random_range(40..260)) / dec!(10),
-                    feed_staleness_ms,
-                    connected: feed_staleness_ms < dec!(180),
-                });
-            }
-        }
+        let pair_configs = self.config.pairs.clone();
+        let (quotes, inventory, exchange_health) =
+            self.update_quotes_and_inventory(&pair_configs, &now, &mut rng);
 
         let fill_rate = if self.total_quotes == 0 {
             Decimal::ZERO
         } else {
             Decimal::from(self.total_fills) / Decimal::from(self.total_quotes)
         };
+
         let adverse_selection_rate = if self.total_fills == 0 {
             Decimal::ZERO
         } else {
@@ -180,5 +54,145 @@ impl EngineState {
             kill_switch_engaged: self.kill_switch_engaged,
             strategy: self.active_strategy.as_str().to_string(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use rust_decimal::Decimal;
+    use rust_decimal_macros::dec;
+
+    use crate::models::{ExchangeOrderResponse, MMConfig, PairConfig, StrategyPreset};
+    use crate::state::{EngineState, PairState};
+
+    /// Build a minimal `EngineState` with a single pair for testing.
+    fn test_engine_state(pair: &str, mid: Decimal) -> EngineState {
+        let mut pairs = HashMap::new();
+        pairs.insert(pair.to_string(), PairState::new(mid));
+
+        let config = MMConfig {
+            pairs: vec![PairConfig {
+                pair: pair.to_string(),
+                base_spread_bps: dec!(10),
+                volatility_multiplier: dec!(1.15),
+                max_inventory: dec!(6),
+                inventory_skew_sensitivity: dec!(0.35),
+                quote_refresh_interval_ms: 250,
+                enabled: true,
+                hedging_enabled: false,
+                hedge_threshold: dec!(4.5),
+                hedge_exchange: "Bybit".to_string(),
+            }],
+        };
+
+        EngineState {
+            config,
+            pairs,
+            exchange_connected: true,
+            total_realized_spread: Decimal::ZERO,
+            hedging_costs: Decimal::ZERO,
+            total_quotes: 0,
+            total_fills: 0,
+            adverse_fills: 0,
+            fill_seq: 0,
+            kill_switch_engaged: false,
+            active_strategy: StrategyPreset::Balanced,
+        }
+    }
+
+    fn make_fill_response(pair: &str, side: &str, price: Decimal, size: Decimal) -> ExchangeOrderResponse {
+        ExchangeOrderResponse {
+            pair: pair.to_string(),
+            side: side.to_string(),
+            filled: true,
+            fill_price: price,
+            fill_size: size,
+            adverse_selection: false,
+        }
+    }
+
+    // ── build_payload (integration) ─────────────────────────────────────
+
+    #[test]
+    fn build_payload_no_fills_returns_empty_fills() {
+        let mut state = test_engine_state("BTC/USDT", dec!(62000));
+        let payload = state.build_payload(vec![]);
+
+        assert!(payload.fills.is_empty());
+        assert_eq!(payload.quotes.len(), 1);
+        assert_eq!(payload.inventory.len(), 1);
+        assert!(!payload.kill_switch_engaged);
+        assert_eq!(payload.strategy, "balanced");
+    }
+
+    #[test]
+    fn build_payload_with_fills_populates_pnl() {
+        let mut state = test_engine_state("BTC/USDT", dec!(100));
+        state.total_quotes = 10;
+        let resp = make_fill_response("BTC/USDT", "sell", dec!(105), dec!(2));
+
+        let payload = state.build_payload(vec![resp]);
+
+        assert_eq!(payload.fills.len(), 1);
+        // realized_spread = (105 - 100) * 2 = 10
+        assert_eq!(payload.pnl.realized_spread, dec!(10));
+        assert_eq!(payload.pnl.total_pnl, dec!(10));
+        // fill_rate = 1 fill / 10 quotes = 0.1
+        assert_eq!(payload.pnl.fill_rate, dec!(0.1));
+        // no adverse fills
+        assert_eq!(payload.pnl.adverse_selection_rate, dec!(0));
+    }
+
+    #[test]
+    fn build_payload_adverse_fills_tracked_in_pnl() {
+        let mut state = test_engine_state("BTC/USDT", dec!(100));
+        state.total_quotes = 4;
+
+        let mut r1 = make_fill_response("BTC/USDT", "sell", dec!(101), dec!(1));
+        r1.adverse_selection = true;
+        let r2 = make_fill_response("BTC/USDT", "sell", dec!(102), dec!(1));
+
+        let payload = state.build_payload(vec![r1, r2]);
+
+        assert_eq!(payload.fills.len(), 2);
+        // 1 adverse out of 2 total fills = 0.5
+        assert_eq!(payload.pnl.adverse_selection_rate, dec!(0.5));
+        // fill_rate = 2/4 = 0.5
+        assert_eq!(payload.pnl.fill_rate, dec!(0.5));
+    }
+
+    #[test]
+    fn build_payload_includes_config_and_strategy() {
+        let mut state = test_engine_state("BTC/USDT", dec!(62000));
+        state.active_strategy = StrategyPreset::Aggressive;
+
+        let payload = state.build_payload(vec![]);
+
+        assert_eq!(payload.strategy, "aggressive");
+        assert_eq!(payload.config.pairs.len(), 1);
+        assert_eq!(payload.config.pairs[0].pair, "BTC/USDT");
+    }
+
+    #[test]
+    fn build_payload_kill_switch_propagated() {
+        let mut state = test_engine_state("BTC/USDT", dec!(62000));
+        state.kill_switch_engaged = true;
+
+        let payload = state.build_payload(vec![]);
+        assert!(payload.kill_switch_engaged);
+    }
+
+    #[test]
+    fn build_payload_zero_quotes_yields_zero_fill_rate() {
+        let mut state = test_engine_state("BTC/USDT", dec!(100));
+        assert_eq!(state.total_quotes, 0);
+
+        let resp = make_fill_response("BTC/USDT", "sell", dec!(101), dec!(1));
+        let payload = state.build_payload(vec![resp]);
+
+        // Avoid division by zero: fill_rate should be 0
+        assert_eq!(payload.pnl.fill_rate, dec!(0));
     }
 }

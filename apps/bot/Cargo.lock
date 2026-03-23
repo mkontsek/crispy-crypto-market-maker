@@ -334,6 +334,7 @@ name = "crispy-bot"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "crispy-geo",
  "futures-util",
  "rand 0.10.0",
  "reqwest",
@@ -345,6 +346,17 @@ dependencies = [
  "tokio-tungstenite",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "crispy-geo"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tracing",
 ]
 
 [[package]]

@@ -24,6 +24,7 @@
 **/dist
 **/.turbo
 apps/engine/target
+packages/rust-geo/target
 
 # misc
 .DS_Store

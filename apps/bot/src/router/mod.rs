@@ -1,5 +1,4 @@
 mod api_app;
-mod api_geo;
 mod api_health;
 mod api_kill_switch;
 mod api_manual_hedge;
