@@ -137,24 +137,13 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                 </div>
                 <div className="flex items-center justify-end gap-2">
                     {isOpen && (
-                        <>
-                            <Button
-                                variant="outline"
-                                className="h-6"
-                                onClick={() =>
-                                    setDraft(cloneTopology(topology))
-                                }
-                            >
-                                Reset
-                            </Button>
-                            <Button
-                                className="h-6"
-                                disabled={saving}
-                                onClick={() => onSubmit(draft)}
-                            >
-                                {saving ? 'Saving...' : 'Save Topology'}
-                            </Button>
-                        </>
+                        <Button
+                            className="h-6"
+                            disabled={saving}
+                            onClick={() => onSubmit(draft)}
+                        >
+                            {saving ? 'Saving...' : 'Save Topology'}
+                        </Button>
                     )}
                     <button
                         type="button"
