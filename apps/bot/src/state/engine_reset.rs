@@ -20,6 +20,7 @@ impl EngineState {
         self.adverse_fills = 0;
         self.fill_seq = 0;
         self.kill_switch_engaged = false;
+        // apply_strategy_preset also restores each pair's paused state based on the config.
         self.apply_strategy_preset(StrategyPreset::Balanced);
     }
 }
