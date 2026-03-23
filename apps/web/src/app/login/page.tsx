@@ -24,7 +24,7 @@ const LoginPage: FC = () => {
     };
 
     return (
-        <main className="mx-auto flex min-h-full w-full max-w-md items-center p-6">
+        <main className="mx-auto flex flex-1 w-full max-w-md items-center justify-center p-6">
             <motion.div
                 className="w-full"
                 initial={{ opacity: 0, y: 24 }}
