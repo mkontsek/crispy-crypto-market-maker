@@ -262,6 +262,12 @@ export function subscribeToEngineStream(
     };
 }
 
+export function resetAllRelays() {
+    for (const relay of relays.values()) {
+        relay.state = createRelayState();
+    }
+}
+
 export function getRelaySnapshot(botId: BotId): RelayState {
     pruneInactiveRelays();
     syncBotRelay(botId);

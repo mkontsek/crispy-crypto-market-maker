@@ -10,9 +10,11 @@ import { BotTabButton } from '@/components/dashboard/bot-tab-button';
 import { GeoMapSection } from '@/components/dashboard/geo-map/geo-map-section';
 import { TopologyConfigSection } from '@/components/dashboard/topology-config/topology-config-section';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { loadTopologyFromStorage } from '@/lib/topology-storage';
 
+import { useResetAllMutation } from './dashboard/use-reset-all-mutation';
 import { useTopologyMutation } from './use-topology-mutation';
 import { useTopologyQuery } from './use-topology-query';
 
@@ -26,6 +28,7 @@ export const MarketMakerDashboard: FC = () => {
     const topologyQuery = useTopologyQuery();
     const topologyMutation = useTopologyMutation({ setSelectedBotId });
     const { mutate: restoreTopology } = topologyMutation;
+    const resetAllMutation = useResetAllMutation();
 
     useEffect(() => {
         const saved = loadTopologyFromStorage();
@@ -63,6 +66,13 @@ export const MarketMakerDashboard: FC = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        disabled={resetAllMutation.isPending}
+                        onClick={() => resetAllMutation.mutate()}
+                    >
+                        {resetAllMutation.isPending ? 'Resetting...' : 'Reset all test data'}
+                    </Button>
                     <DashboardHeaderNavLinks activePage="dashboard" />
                     {topologyMutation.isPending && (
                         <Badge tone="warning">Applying topology...</Badge>
