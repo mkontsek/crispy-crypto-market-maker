@@ -334,7 +334,7 @@ name = "crispy-bot"
 version = "0.1.0"
 dependencies = [
  "axum",
- "crispy-geo",
+ "crispy-shared",
  "futures-util",
  "rand 0.10.0",
  "reqwest",
@@ -349,7 +349,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "crispy-geo"
+name = "crispy-shared"
 version = "0.1.0"
 dependencies = [
  "axum",

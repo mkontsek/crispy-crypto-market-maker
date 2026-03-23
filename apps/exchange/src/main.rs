@@ -17,7 +17,7 @@ mod models;
 mod state;
 mod utils;
 
-use crispy_geo::geo;
+use crispy_shared::geo;
 use models::OrderRequest;
 use state::ExchangeState;
 

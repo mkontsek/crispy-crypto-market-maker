@@ -334,7 +334,7 @@ name = "crispy-exchange"
 version = "0.1.0"
 dependencies = [
  "axum",
- "crispy-geo",
+ "crispy-shared",
  "rand 0.10.0",
  "reqwest",
  "rust_decimal",
@@ -347,7 +347,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "crispy-geo"
+name = "crispy-shared"
 version = "0.1.0"
 dependencies = [
  "axum",

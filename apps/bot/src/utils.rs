@@ -31,15 +31,6 @@ pub fn normalize_inventory(inventory: Decimal, max_inventory: Decimal) -> Decima
     }
 }
 
-pub fn chrono_string() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    now.to_string()
-}
-
 pub async fn bot_tick_once(
     state: Arc<RwLock<EngineState>>,
     stream_tx: broadcast::Sender<String>,
@@ -133,13 +124,6 @@ mod tests {
     #[test]
     fn normalize_inventory_zero_max_returns_zero() {
         assert_eq!(normalize_inventory(dec!(5), dec!(0)), dec!(0));
-    }
-
-    #[test]
-    fn chrono_string_is_non_empty_and_numeric() {
-        let ts = chrono_string();
-        assert!(!ts.is_empty());
-        assert!(ts.parse::<u128>().is_ok(), "timestamp is not numeric: {ts}");
     }
 
     #[tokio::test]

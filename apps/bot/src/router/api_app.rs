@@ -2,7 +2,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use crispy_geo::geo;
+use crispy_shared::geo;
 
 use crate::{
     router::{

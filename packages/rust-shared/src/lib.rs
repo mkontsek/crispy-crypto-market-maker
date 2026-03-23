@@ -6,6 +6,15 @@ use tracing::warn;
 
 const GEO_API_URL: &str = "https://ipwho.is/";
 
+pub fn chrono_string() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    now.to_string()
+}
+
 #[derive(Deserialize)]
 struct IpWhoIsResponse {
     success: Option<bool>,
@@ -193,5 +202,12 @@ mod tests {
             payload,
             serde_json::json!({ "error": "failed to parse geo response" })
         );
+    }
+
+    #[test]
+    fn chrono_string_is_non_empty_and_numeric() {
+        let ts = chrono_string();
+        assert!(!ts.is_empty());
+        assert!(ts.parse::<u128>().is_ok(), "timestamp is not numeric: {ts}");
     }
 }

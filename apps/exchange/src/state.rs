@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crispy_shared::chrono_string;
 use rand::{rng, RngExt};
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
@@ -8,7 +9,7 @@ use rust_decimal_macros::dec;
 use crate::models::{
     default_pairs, MarketDataPayload, OrderRequest, OrderResponse, PairMarketData,
 };
-use crate::utils::{apply_bps, chrono_string};
+use crate::utils::apply_bps;
 
 pub struct PairMarket {
     pub mid: Decimal,
