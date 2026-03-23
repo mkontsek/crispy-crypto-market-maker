@@ -10,6 +10,7 @@ use crate::{
         api_kill_switch::kill_switch,
         api_manual_hedge::manual_hedge,
         api_pause_pair::pause_pair,
+        api_reset_state::reset_state,
         api_set_strategy::set_strategy,
         api_update_config::update_config,
     },
@@ -22,6 +23,7 @@ pub fn build_api_app(app_state: AppState) -> Router {
         .route("/pairs/{id}/pause", post(pause_pair))
         .route("/hedge", post(manual_hedge))
         .route("/kill-switch", post(kill_switch))
+        .route("/reset", post(reset_state))
         .route("/strategy", post(set_strategy))
         .route("/health", get(health))
         .route("/geo", get(geo))
