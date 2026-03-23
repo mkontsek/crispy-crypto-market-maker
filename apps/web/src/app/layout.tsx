@@ -34,7 +34,7 @@ const RootLayout: FC<RootLayoutProps> = ({ children }) => {
             <body className="min-h-dvh">
                 <Providers>
                     <div className="flex min-h-dvh flex-col">
-                        <div className="flex-1">{children}</div>
+                        <div className="flex flex-1 flex-col">{children}</div>
                         <AppFooter />
                     </div>
                 </Providers>
