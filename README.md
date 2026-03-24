@@ -290,6 +290,16 @@ sudo ./scripts/run-bot.sh \
   --exchange-api-url https://exchange-alt.your-domain.com
 ```
 
+To set DB persistence at install time, pass the DB URL on the command line:
+
+```bash
+sudo ./scripts/run-bot.sh \
+  --bot-name bot1 \
+  --caddy-domain bot1.your-domain.com \
+  --exchange-domain exchange.your-domain.com \
+  --database-url 'postgresql://crispy:change-me@localhost:5432/crispy'
+```
+
 The service is installed under systemd and the config lives in
 `/etc/crispy/crispy-bot-bot1.env`. To apply config-only changes, edit the file
 and restart the service directly:
@@ -299,7 +309,7 @@ sudo systemctl restart crispy-bot-bot1
 journalctl -fu         crispy-bot-bot1
 ```
 
-To enable database persistence, add `DATABASE_URL` and `BOT_ID` to the env file:
+To enable database persistence, set `DATABASE_URL` (via `--database-url` or by editing the env file) and set `BOT_ID`:
 
 ```ini
 DATABASE_URL=postgresql://crispy:change-me@localhost:5432/crispy

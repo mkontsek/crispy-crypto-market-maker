@@ -8,6 +8,7 @@ EXCHANGE_WS_URL=""
 EXCHANGE_API_URL=""
 EXCHANGE_DOMAIN=""
 CADDY_DOMAIN=""
+DATABASE_URL="${DATABASE_URL:-}"
 GEO_LAT=""
 GEO_LNG=""
 GEO_LABEL=""
@@ -25,6 +26,9 @@ while [[ $# -gt 0 ]]; do
     --exchange-domain)   EXCHANGE_DOMAIN="$2";    shift 2 ;;
     --exchange-ws-url)   EXCHANGE_WS_URL="$2";    shift 2 ;;
     --exchange-api-url)  EXCHANGE_API_URL="$2";   shift 2 ;;
+    --database-url)      DATABASE_URL="$2";       shift 2 ;;
+    --database-url=*)    DATABASE_URL="${1#*=}";  shift   ;;
+    DATABASE_URL=*)      DATABASE_URL="${1#*=}";  shift   ;;
     --caddy-domain)      CADDY_DOMAIN="$2";       shift 2 ;;
     --geo-lat)           GEO_LAT="$2";            shift 2 ;;
     --geo-lng)           GEO_LNG="$2";            shift 2 ;;
@@ -101,8 +105,9 @@ EXCHANGE_WS_URL=${EXCHANGE_WS_URL}
 EXCHANGE_API_URL=${EXCHANGE_API_URL}
 
 # Postgres connection string for persisting fills, quotes, inventory and PnL.
+# Provide via --database-url, --database-url=<url>, or DATABASE_URL=<url>.
 # Leave empty to disable DB writes.
-DATABASE_URL=
+DATABASE_URL=${DATABASE_URL}
 
 # Bot identity used when writing data to the database.
 BOT_ID=
