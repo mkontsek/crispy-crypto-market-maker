@@ -29,6 +29,9 @@ export const FillMetricsSection: FC<FillMetricsSectionProps> = ({
     const taker = fills.filter((f) => f.adverseSelection).length;
     const maker = total - taker;
 
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
+
     const pct = (n: number) =>
         total > 0 ? ((n / total) * 100).toFixed(1) : '0.0';
 
@@ -65,7 +68,7 @@ export const FillMetricsSection: FC<FillMetricsSectionProps> = ({
                         <CardTitle>Fill Metrics & Execution Quality</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="Fill metrics section information"
                         >
@@ -177,7 +180,7 @@ export const FillMetricsSection: FC<FillMetricsSectionProps> = ({
             </Card>
             <FillMetricsInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
         </>
     );

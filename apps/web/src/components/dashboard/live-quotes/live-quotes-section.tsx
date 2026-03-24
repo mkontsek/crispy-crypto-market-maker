@@ -27,6 +27,11 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
     const [sectionInfoOpen, setSectionInfoOpen] = useState(false);
     const [stateInfoOpen, setStateInfoOpen] = useState(false);
 
+    const openSectionInfo = () => setSectionInfoOpen(true);
+    const closeSectionInfo = () => setSectionInfoOpen(false);
+    const openStateInfo = () => setStateInfoOpen(true);
+    const closeStateInfo = () => setStateInfoOpen(false);
+
     return (
         <>
             <Card>
@@ -35,7 +40,7 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                         <CardTitle>Live Quoting Dashboard</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setSectionInfoOpen(true)}
+                            onClick={openSectionInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="Live quoting section information"
                         >
@@ -61,9 +66,7 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                                     <span className="inline-flex items-center gap-1">
                                         State
                                         <button
-                                            onClick={() =>
-                                                setStateInfoOpen(true)
-                                            }
+                                            onClick={openStateInfo}
                                             className="text-slate-500 hover:text-slate-300 transition"
                                             aria-label="State information"
                                         >
@@ -154,11 +157,11 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
             </Card>
             <LiveQuotesInfoDialog
                 open={sectionInfoOpen}
-                onClose={() => setSectionInfoOpen(false)}
+                onClose={closeSectionInfo}
             />
             <StateInfoDialog
                 open={stateInfoOpen}
-                onClose={() => setStateInfoOpen(false)}
+                onClose={closeStateInfo}
             />
         </>
     );

@@ -33,6 +33,9 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
         0
     );
 
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
+
     return (
         <>
             <Card>
@@ -41,7 +44,7 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
                         <CardTitle>Inventory Exposure & Stress Test</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="Inventory exposure section information"
                         >
@@ -133,7 +136,7 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
             </Card>
             <ExposureInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
         </>
     );

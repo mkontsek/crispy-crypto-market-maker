@@ -22,10 +22,11 @@ export const SortTh: FC<SortThProps> = ({
     className,
 }) => {
     const isActive = col === activeCol;
+    const sortByCol = () => onSort(col);
     return (
         <th
             className={`cursor-pointer select-none ${className ?? ''}`}
-            onClick={() => onSort(col)}
+            onClick={sortByCol}
             aria-sort={
                 isActive
                     ? dir === 'asc'

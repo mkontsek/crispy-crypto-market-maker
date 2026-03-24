@@ -4,6 +4,7 @@ import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
+import type { RuntimeTopology } from '@crispy/shared';
 import { BotDashboardPanel } from '@/components/dashboard/bot-dashboard-panel';
 import { DashboardHeaderNavLinks } from '@/components/dashboard/dashboard-header-nav-links';
 import { BotTabButton } from '@/components/dashboard/bot-tab-button';
@@ -48,6 +49,10 @@ export const MarketMakerDashboard: FC = () => {
         ? JSON.stringify(topology)
         : 'topology-loading';
 
+    const resetAllData = () => resetAllMutation.mutate();
+    const saveTopology = (next: RuntimeTopology) => topologyMutation.mutate(next);
+    const selectBotTab = (id: string) => () => setSelectedBotId(id);
+
     return (
         <main className="w-full px-4 py-4">
             <motion.header
@@ -69,7 +74,7 @@ export const MarketMakerDashboard: FC = () => {
                     <Button
                         variant="outline"
                         disabled={resetAllMutation.isPending}
-                        onClick={() => resetAllMutation.mutate()}
+                        onClick={resetAllData}
                     >
                         {resetAllMutation.isPending ? 'Resetting...' : 'Reset all test data'}
                     </Button>
@@ -89,7 +94,7 @@ export const MarketMakerDashboard: FC = () => {
                     key={topologyKey}
                     topology={topology}
                     saving={topologyMutation.isPending}
-                    onSubmit={(next) => topologyMutation.mutate(next)}
+                    onSubmit={saveTopology}
                 />
                 {topologyQuery.isError && (
                     <Card>
@@ -108,7 +113,7 @@ export const MarketMakerDashboard: FC = () => {
                                 key={bot.id}
                                 bot={bot}
                                 active={activeBot?.id === bot.id}
-                                onClick={() => setSelectedBotId(bot.id)}
+                                onClick={selectBotTab(bot.id)}
                             />
                         ))}
                     </CardContent>

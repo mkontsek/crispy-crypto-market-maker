@@ -35,6 +35,8 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
     );
     const [isOpen, setIsOpen] = useState(false);
 
+    const toggleSection = () => setIsOpen((v) => !v);
+
     if (!topology || !draft) {
         return (
             <Card>
@@ -48,7 +50,7 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                     <button
                         type="button"
                         aria-expanded={isOpen}
-                        onClick={() => setIsOpen((v) => !v)}
+                        onClick={toggleSection}
                         className="text-xs text-slate-400 hover:text-slate-200"
                     >
                         {isOpen ? '▲ Collapse' : '▼ Expand'}
@@ -126,6 +128,13 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
         onSubmit(nextDraft);
     };
 
+    const saveTopology = () => onSubmit(draft);
+    const removeBotById = (id: string) => () => removeBot(id);
+    const setBotNameById = (id: string) => (value: string) =>
+        setBotField(id, 'name', value);
+    const setBotDomainById = (id: string) => (value: string) =>
+        setBotDomain(id, value);
+
     return (
         <Card>
             <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -140,7 +149,7 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                         <Button
                             className="h-6"
                             disabled={saving}
-                            onClick={() => onSubmit(draft)}
+                            onClick={saveTopology}
                         >
                             {saving ? 'Saving...' : 'Save Topology'}
                         </Button>
@@ -148,7 +157,7 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                     <button
                         type="button"
                         aria-expanded={isOpen}
-                        onClick={() => setIsOpen((v) => !v)}
+                        onClick={toggleSection}
                         className={cn(
                             'text-xs text-slate-400 hover:text-slate-200'
                         )}
@@ -189,7 +198,7 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                                     <Button
                                         variant="danger"
                                         disabled={draft.bots.length <= 1}
-                                        onClick={() => removeBot(bot.id)}
+                                        onClick={removeBotById(bot.id)}
                                     >
                                         Remove Bot
                                     </Button>
@@ -198,16 +207,12 @@ export const TopologyConfigSection: FC<TopologyConfigSectionProps> = ({
                                     <TextField
                                         label="Bot Name"
                                         value={bot.name}
-                                        onChange={(value) =>
-                                            setBotField(bot.id, 'name', value)
-                                        }
+                                        onChange={setBotNameById(bot.id)}
                                     />
                                     <TextField
                                         label="Bot Domain"
                                         value={domainFromBotUrl(bot.wsUrl)}
-                                        onChange={(value) =>
-                                            setBotDomain(bot.id, value)
-                                        }
+                                        onChange={setBotDomainById(bot.id)}
                                     />
                                 </div>
                             </div>

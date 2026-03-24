@@ -1,7 +1,7 @@
 'use client';
 
 import type { FC } from 'react';
-import { EXCHANGES, type MMConfig } from '@crispy/shared';
+import type { MMConfig } from '@crispy/shared';
 import { useState } from 'react';
 
 import { InfoIcon } from '@/components/dashboard/live-quotes/info-icon';
@@ -9,8 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConfigPanelInfoDialog } from './config-panel-info-dialog';
-import { ConfigNumberField } from './config-number-field';
-import { DecimalField } from './decimal-field';
+import { PairConfigRow } from './pair-config-row';
 
 type ConfigPanelSectionProps = {
     config: MMConfig | null;
@@ -29,6 +28,9 @@ export const ConfigPanelSection: FC<ConfigPanelSectionProps> = ({
     const [pairOverrides, setPairOverrides] = useState<
         Record<string, Partial<MMConfig['pairs'][number]>>
     >({});
+
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
 
     const draft = config
         ? {
@@ -61,7 +63,7 @@ export const ConfigPanelSection: FC<ConfigPanelSectionProps> = ({
                             <CardTitle>MM Config Panel</CardTitle>
                             <button
                                 type="button"
-                                onClick={() => setInfoOpen(true)}
+                                onClick={openInfo}
                                 className="text-slate-500 transition hover:text-slate-300"
                                 aria-label="MM config section information"
                             >
@@ -87,11 +89,13 @@ export const ConfigPanelSection: FC<ConfigPanelSectionProps> = ({
                 </Card>
                 <ConfigPanelInfoDialog
                     open={infoOpen}
-                    onClose={() => setInfoOpen(false)}
+                    onClose={closeInfo}
                 />
             </>
         );
     }
+
+    const saveConfig = () => onSubmit(draft);
 
     return (
         <>
@@ -101,142 +105,30 @@ export const ConfigPanelSection: FC<ConfigPanelSectionProps> = ({
                         <CardTitle>MM Config Panel</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="MM config section information"
                         >
                             <InfoIcon />
                         </button>
                     </div>
-                    <Button disabled={saving} onClick={() => onSubmit(draft)}>
+                    <Button disabled={saving} onClick={saveConfig}>
                         {saving ? 'Saving...' : 'Save Config'}
                     </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {draft.pairs.map((pairConfig) => (
-                        <div
+                        <PairConfigRow
                             key={pairConfig.pair}
-                            className="rounded border border-slate-800 p-3 text-sm"
-                        >
-                            <div className="mb-2 font-semibold">
-                                {pairConfig.pair}
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                                <DecimalField
-                                    label="Base spread bps"
-                                    value={pairConfig.baseSpreadBps}
-                                    onChange={(value) =>
-                                        updatePair(pairConfig.pair, {
-                                            baseSpreadBps: value,
-                                        })
-                                    }
-                                />
-                                <DecimalField
-                                    label="Vol multiplier"
-                                    value={pairConfig.volatilityMultiplier}
-                                    onChange={(value) =>
-                                        updatePair(pairConfig.pair, {
-                                            volatilityMultiplier: value,
-                                        })
-                                    }
-                                />
-                                <DecimalField
-                                    label="Max inventory"
-                                    value={pairConfig.maxInventory}
-                                    onChange={(value) =>
-                                        updatePair(pairConfig.pair, {
-                                            maxInventory: value,
-                                        })
-                                    }
-                                />
-                                <DecimalField
-                                    label="Skew sensitivity"
-                                    value={pairConfig.inventorySkewSensitivity}
-                                    onChange={(value) =>
-                                        updatePair(pairConfig.pair, {
-                                            inventorySkewSensitivity: value,
-                                        })
-                                    }
-                                />
-                                <ConfigNumberField
-                                    label="Refresh (ms)"
-                                    value={pairConfig.quoteRefreshIntervalMs}
-                                    onChange={(value) =>
-                                        updatePair(pairConfig.pair, {
-                                            quoteRefreshIntervalMs: Math.max(
-                                                Math.floor(value),
-                                                50
-                                            ),
-                                        })
-                                    }
-                                />
-                                <DecimalField
-                                    label="Hedge threshold"
-                                    value={pairConfig.hedgeThreshold}
-                                    onChange={(value) =>
-                                        updatePair(pairConfig.pair, {
-                                            hedgeThreshold: value,
-                                        })
-                                    }
-                                />
-                                <label className="flex items-center gap-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={pairConfig.enabled}
-                                        onChange={(event) =>
-                                            updatePair(pairConfig.pair, {
-                                                enabled: event.target.checked,
-                                            })
-                                        }
-                                    />
-                                    Enabled
-                                </label>
-                                <label className="flex items-center gap-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={pairConfig.hedgingEnabled}
-                                        onChange={(event) =>
-                                            updatePair(pairConfig.pair, {
-                                                hedgingEnabled:
-                                                    event.target.checked,
-                                            })
-                                        }
-                                    />
-                                    Hedging enabled
-                                </label>
-                                <label className="space-y-1">
-                                    <span className="block text-xs text-slate-400">
-                                        Hedge exchange
-                                    </span>
-                                    <select
-                                        className="h-9 w-full rounded border border-slate-700 bg-slate-900 px-2"
-                                        value={pairConfig.hedgeExchange}
-                                        onChange={(event) => {
-                                            const selected = event.target
-                                                .value as (typeof EXCHANGES)[number];
-                                            updatePair(pairConfig.pair, {
-                                                hedgeExchange: selected,
-                                            });
-                                        }}
-                                    >
-                                        {EXCHANGES.map((exchange) => (
-                                            <option
-                                                key={exchange}
-                                                value={exchange}
-                                            >
-                                                {exchange}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                            </div>
-                        </div>
+                            pairConfig={pairConfig}
+                            onUpdate={updatePair}
+                        />
                     ))}
                 </CardContent>
             </Card>
             <ConfigPanelInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
         </>
     );
