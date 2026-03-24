@@ -13,15 +13,17 @@ export function applyOptimisticStrategy<T extends { strategy: Strategy }>(
     botId: BotId,
     data: T
 ): T {
-    const optimistic =
-        useOptimisticStrategyStore.getState().getOptimisticStrategy(botId);
+    const store = useOptimisticStrategyStore.getState();
+    const optimistic = store.getOptimisticStrategy(botId);
 
     if (!optimistic) {
         return data;
     }
 
-    if (data.strategy === optimistic) {
-        useOptimisticStrategyStore.getState().clearOptimisticStrategy(botId);
+    // Hold the optimistic value for the full lock window so the bot has time
+    // to propagate the new strategy before we let server data take over.
+    if (!store.isStrategyLocked(botId) && data.strategy === optimistic) {
+        store.clearOptimisticStrategy(botId);
         return data;
     }
 
