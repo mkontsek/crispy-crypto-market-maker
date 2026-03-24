@@ -6,7 +6,8 @@ These instructions apply to all Rust crates in this repo (backend services, CLI 
 
 ## Locked Versions
 
-Use these exact versions — do not upgrade unless explicitly requested:
+Use exact latest supported versions — do not upgrade unless explicitly requested. 
+Example:
 
 | Crate | Version |
 |---|---|
