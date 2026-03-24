@@ -16,7 +16,6 @@ During execution, if you hit ambiguity or a design choice that affects DX, perfo
 ## Project Context & Identity
 
 - **Monorepo**: Turborepo with Next.js apps and Rust crates (workspaces).
-- **Primary product**: Custom React component libraries / client workspaces.
 - **Package management**: Use **pnpm** workspaces. Never use `npm` or `yarn`.
 
 ## Stack Overview
