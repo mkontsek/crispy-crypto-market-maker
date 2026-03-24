@@ -1,6 +1,7 @@
 use super::EngineState;
 use crate::models::{ExchangeOrderResponse, Fill};
 use crate::utils::quote_notional;
+use uuid::Uuid;
 
 impl EngineState {
     pub(super) fn process_exchange_fills(
@@ -42,7 +43,7 @@ impl EngineState {
             self.total_realized_spread += quote_notional(realized_spread, fill_size);
 
             fills.push(Fill {
-                id: format!("fill-{}", self.fill_seq),
+                id: Uuid::new_v4().to_string(),
                 pair: fill_resp.pair.clone(),
                 side: if taker_buy { "sell" } else { "buy" }.to_string(),
                 price: fill_price,
@@ -159,7 +160,7 @@ mod tests {
         assert_eq!(state.pairs["BTC/USDT"].inventory, dec!(-0.5));
         assert_eq!(state.total_fills, 1);
         assert_eq!(state.fill_seq, 1);
-        assert_eq!(fills[0].id, "fill-1");
+        assert!(!fills[0].id.is_empty());
     }
 
     #[test]
@@ -220,7 +221,8 @@ mod tests {
         let r2 = make_fill_response("BTC/USDT", "buy", dec!(99), dec!(1));
 
         let fills = state.process_exchange_fills(vec![r1, r2], "t7");
-        assert_eq!(fills[0].id, "fill-1");
-        assert_eq!(fills[1].id, "fill-2");
+        assert_ne!(fills[0].id, fills[1].id);
+        assert!(!fills[0].id.is_empty());
+        assert!(!fills[1].id.is_empty());
     }
 }
