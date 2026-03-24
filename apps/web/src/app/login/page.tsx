@@ -14,7 +14,7 @@ const DEMO_AUTH_COOKIE = 'crispy_demo_auth';
 const LoginPage: FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const submitLogin = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setIsSubmitting(true);
         const rawNext = new URLSearchParams(window.location.search).get('next');
@@ -36,7 +36,7 @@ const LoginPage: FC = () => {
                         <CardTitle>Demo login</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <form className="space-y-4" onSubmit={handleSubmit}>
+                        <form className="space-y-4" onSubmit={submitLogin}>
                             <div className="space-y-2">
                                 <label
                                     className="text-sm text-slate-300"

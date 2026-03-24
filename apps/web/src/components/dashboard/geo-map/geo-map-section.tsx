@@ -18,7 +18,7 @@ export interface GeoMapMarker {
     kind: 'bot' | 'exchange' | 'simulated-exchange' | 'dashboard';
 }
 
-const LeafletMap = dynamic(() => import('./geo-map-leaflet'), { ssr: false });
+const LeafletMap = dynamic(() => import('./geo-map-leaflet').then((m) => m.GeoMapLeaflet), { ssr: false });
 
 type GeoMapSectionProps = { topology: RuntimeTopology };
 
