@@ -32,6 +32,7 @@ export const StrategySection: FC<Props> = ({
     onSelect,
 }) => {
     const isDisabled = !connected || pending;
+    const selectPreset = (preset: Strategy) => () => onSelect(preset);
 
     return (
         <Card className={!connected ? 'opacity-50' : ''}>
@@ -52,7 +53,7 @@ export const StrategySection: FC<Props> = ({
                             key={preset}
                             type="button"
                             disabled={isDisabled}
-                            onClick={() => onSelect(preset)}
+                            onClick={selectPreset(preset)}
                             className={[
                                 'rounded border p-3 text-left transition',
                                 strategy === preset

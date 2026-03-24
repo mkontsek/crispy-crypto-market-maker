@@ -35,6 +35,13 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
     const [infoOpen, setInfoOpen] = useState(false);
     const quoteMap = new Map(quotes.map((quote) => [quote.pair, quote]));
 
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
+    const togglePauseForPair =
+        (pair: string, paused: boolean | undefined) => () =>
+            onTogglePause(pair, !paused);
+    const hedgePairManually = (pair: string) => () => onManualHedge(pair);
+
     return (
         <>
             <Card>
@@ -43,7 +50,7 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                         <CardTitle>Inventory Monitor</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="Inventory monitor section information"
                         >
@@ -99,12 +106,10 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                                     <Button
                                         variant="outline"
                                         disabled={isBusy || !quote}
-                                        onClick={() =>
-                                            onTogglePause(
-                                                item.pair,
-                                                !quote?.paused
-                                            )
-                                        }
+                                        onClick={togglePauseForPair(
+                                            item.pair,
+                                            quote?.paused
+                                        )}
                                     >
                                         {quote?.paused
                                             ? 'Resume Pair'
@@ -113,7 +118,7 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                                     <Button
                                         variant="outline"
                                         disabled={isBusy}
-                                        onClick={() => onManualHedge(item.pair)}
+                                        onClick={hedgePairManually(item.pair)}
                                     >
                                         {isBusy
                                             ? 'Submitting...'
@@ -128,7 +133,7 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
             </Card>
             <InventoryMonitorInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
         </>
     );

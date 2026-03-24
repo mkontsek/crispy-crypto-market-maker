@@ -27,6 +27,9 @@ export const PnlCurveSection: FC<PnlCurveSectionProps> = ({ pnl, loading }) => {
     const realizedLatest = pnl[0] ? priceFromFp(pnl[0].realizedSpread) : 0;
     const hedgingLatest = pnl[0] ? priceFromFp(pnl[0].hedgingCosts) : 0;
 
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
+
     return (
         <>
             <Card>
@@ -35,7 +38,7 @@ export const PnlCurveSection: FC<PnlCurveSectionProps> = ({ pnl, loading }) => {
                         <CardTitle>Intraday P&L Curve</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="P&L curve section information"
                         >
@@ -102,7 +105,7 @@ export const PnlCurveSection: FC<PnlCurveSectionProps> = ({ pnl, loading }) => {
             </Card>
             <PnlCurveInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
         </>
     );

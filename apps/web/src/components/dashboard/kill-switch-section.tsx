@@ -26,6 +26,15 @@ export const KillSwitchSection: FC<KillSwitchSectionProps> = ({
 }) => {
     const [confirmOpen, setConfirmOpen] = useState(false);
 
+    const openConfirm = () => setConfirmOpen(true);
+    const closeConfirm = () => setConfirmOpen(false);
+    const toggleKillSwitch = () =>
+        engaged ? onToggle(false) : setConfirmOpen(true);
+    const engageKillSwitch = () => {
+        setConfirmOpen(false);
+        onToggle(true);
+    };
+
     return (
         <>
             <Card className={engaged ? 'border-red-600' : ''}>
@@ -43,9 +52,7 @@ export const KillSwitchSection: FC<KillSwitchSectionProps> = ({
                     <Button
                         variant={engaged ? 'outline' : 'danger'}
                         disabled={pending}
-                        onClick={() =>
-                            engaged ? onToggle(false) : setConfirmOpen(true)
-                        }
+                        onClick={toggleKillSwitch}
                     >
                         {pending
                             ? 'Applying…'
@@ -56,11 +63,11 @@ export const KillSwitchSection: FC<KillSwitchSectionProps> = ({
                 </CardContent>
             </Card>
 
-            <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+            <Dialog open={confirmOpen} onClose={closeConfirm}>
                 <DialogHeader>
                     <DialogTitle>Confirm Kill Switch</DialogTitle>
                     <button
-                        onClick={() => setConfirmOpen(false)}
+                        onClick={closeConfirm}
                         className="text-slate-400 transition hover:text-slate-200"
                         aria-label="Close"
                     >
@@ -79,16 +86,13 @@ export const KillSwitchSection: FC<KillSwitchSectionProps> = ({
                     <div className="flex justify-end gap-2 pt-2">
                         <Button
                             variant="outline"
-                            onClick={() => setConfirmOpen(false)}
+                            onClick={closeConfirm}
                         >
                             Cancel
                         </Button>
                         <Button
                             variant="danger"
-                            onClick={() => {
-                                setConfirmOpen(false);
-                                onToggle(true);
-                            }}
+                            onClick={engageKillSwitch}
                         >
                             Engage Kill Switch
                         </Button>

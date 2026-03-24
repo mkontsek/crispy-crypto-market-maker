@@ -19,6 +19,9 @@ export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
 
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
+
     return (
         <>
             <Card>
@@ -27,7 +30,7 @@ export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
                         <CardTitle>Exchange Connectivity (via Bot)</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="Exchange connectivity section information"
                         >
@@ -101,7 +104,7 @@ export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
             </Card>
             <ExchangeHealthInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
         </>
     );

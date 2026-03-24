@@ -44,6 +44,7 @@ Example:
 - Place hooks that belong to a component in the same directory as that component; place reusable standalone hooks (e.g., `use-table-sort.ts`) in `lib/`.
 - **Do not use a `handle*` prefix for functions.** Name functions after the action they perform: `killSwitch`, `setStrategy`, `pausePair`, `updateConfig`, `resetState`.
 - **Reserve the `on*` prefix exclusively for props** (e.g. `onClose`, `onChange`). Internal event listeners or callbacks should be named after what they do, not how they are triggered (e.g. `closeOnPressEscape`, `submitLogin`, not `onKeydown` or `onSubmit`).
+- **Never pass anonymous arrow functions as event listeners** (e.g. `onClick={() => doThing()}`). Always define a named function inside the component scope (or at module level if it needs no closure) and reference it: `onClick={doThing}`. This prevents memory reallocation on every render. For handlers that must close over a loop variable (e.g. inside `.map()`), define a named curried factory: `const selectItem = (id: string) => () => doThing(id)` and use `onClick={selectItem(item.id)}`. If a mapped element needs multiple named handlers, extract a dedicated child component so each handler can be defined once in that component scope.
 
 ## Data Fetching
 

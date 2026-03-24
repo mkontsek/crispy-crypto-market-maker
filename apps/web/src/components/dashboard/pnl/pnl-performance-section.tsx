@@ -34,6 +34,9 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
     const totalFills = fills.length;
     const adverseFills = fills.filter((f) => f.adverseSelection).length;
 
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
+
     return (
         <>
             <Card>
@@ -42,7 +45,7 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                         <CardTitle>PnL & Performance Analytics</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="P&L performance section information"
                         >
@@ -162,7 +165,7 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
             </Card>
             <PnlPerformanceInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
         </>
     );

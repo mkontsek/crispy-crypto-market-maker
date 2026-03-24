@@ -26,6 +26,11 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
     const [infoOpen, setInfoOpen] = useState(false);
     const [statusInfoOpen, setStatusInfoOpen] = useState(false);
 
+    const openInfo = () => setInfoOpen(true);
+    const closeInfo = () => setInfoOpen(false);
+    const openStatusInfo = () => setStatusInfoOpen(true);
+    const closeStatusInfo = () => setStatusInfoOpen(false);
+
     return (
         <>
             <Card>
@@ -34,7 +39,7 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                         <CardTitle>Quote History</CardTitle>
                         <button
                             type="button"
-                            onClick={() => setInfoOpen(true)}
+                            onClick={openInfo}
                             className="text-slate-500 transition hover:text-slate-300"
                             aria-label="Quote history section information"
                         >
@@ -56,9 +61,7 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                                         Status
                                         <button
                                             type="button"
-                                            onClick={() =>
-                                                setStatusInfoOpen(true)
-                                            }
+                                            onClick={openStatusInfo}
                                             className="text-slate-500 transition hover:text-slate-300"
                                             aria-label="Quote history status information"
                                         >
@@ -126,11 +129,11 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
             </Card>
             <QuoteHistoryInfoDialog
                 open={infoOpen}
-                onClose={() => setInfoOpen(false)}
+                onClose={closeInfo}
             />
             <QuoteHistoryStatusInfoDialog
                 open={statusInfoOpen}
-                onClose={() => setStatusInfoOpen(false)}
+                onClose={closeStatusInfo}
             />
         </>
     );
