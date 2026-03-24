@@ -6,7 +6,8 @@ These instructions apply to all Next.js / React / TypeScript packages in this mo
 
 ## Locked Versions
 
-Use these exact versions — do not upgrade unless explicitly requested:
+Use exact latest supported versions — do not upgrade unless explicitly requested. 
+Example:
 
 | Package | Version |
 |---|---|
