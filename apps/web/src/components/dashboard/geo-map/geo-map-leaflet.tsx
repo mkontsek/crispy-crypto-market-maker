@@ -13,7 +13,7 @@ import { BoundsController } from './use-bounds-controller';
 
 type GeoMapLeafletProps = { markers: GeoMapMarker[] };
 
-const GeoMapLeaflet: FC<GeoMapLeafletProps> = ({ markers }) => {
+export const GeoMapLeaflet: FC<GeoMapLeafletProps> = ({ markers }) => {
     const defaultCenter: [number, number] = [20, 10];
     const defaultZoom = 7;
     const markerOffsets = buildMarkerPixelOffsets(markers);
@@ -66,5 +66,3 @@ const GeoMapLeaflet: FC<GeoMapLeafletProps> = ({ markers }) => {
         </div>
     );
 };
-
-export default GeoMapLeaflet;
