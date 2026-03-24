@@ -1,5 +1,6 @@
 use sqlx::PgPool;
 use tracing::{error, warn};
+use uuid::Uuid;
 
 use crate::models::EngineStreamPayload;
 
@@ -124,10 +125,11 @@ async fn write_quotes(
     for quote in quotes {
         sqlx::query(
             r#"
-            INSERT INTO "Quote" ("botId", pair, bid, ask, mid, "spreadBps", "inventorySkew", "quoteRefreshRate")
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO "Quote" (id, "botId", pair, bid, ask, mid, "spreadBps", "inventorySkew", "quoteRefreshRate")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             "#,
         )
+        .bind(Uuid::new_v4().to_string())
         .bind(bot_id)
         .bind(&quote.pair)
         .bind(dec_to_f64(quote.bid, "quote.bid"))
@@ -150,10 +152,11 @@ async fn write_inventory(
     for snap in inventory {
         sqlx::query(
             r#"
-            INSERT INTO "Inventory" ("botId", pair, inventory, "normalizedSkew")
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO "Inventory" (id, "botId", pair, inventory, "normalizedSkew")
+            VALUES ($1, $2, $3, $4, $5)
             "#,
         )
+        .bind(Uuid::new_v4().to_string())
         .bind(bot_id)
         .bind(&snap.pair)
         .bind(dec_to_f64(snap.inventory, "inventory.inventory"))
@@ -171,10 +174,11 @@ async fn write_pnl(
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         r#"
-        INSERT INTO "PnLSnapshot" ("botId", "totalPnl", "realizedSpread", "hedgingCosts", "adverseSelectionRate", "fillRate")
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO "PnLSnapshot" (id, "botId", "totalPnl", "realizedSpread", "hedgingCosts", "adverseSelectionRate", "fillRate")
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         "#,
     )
+    .bind(Uuid::new_v4().to_string())
     .bind(bot_id)
     .bind(dec_to_f64(pnl.total_pnl, "pnl.total_pnl"))
     .bind(dec_to_f64(pnl.realized_spread, "pnl.realized_spread"))

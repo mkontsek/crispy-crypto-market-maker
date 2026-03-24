@@ -19,3 +19,4 @@ rust_decimal_macros = "1.40.0"
 crispy-shared = { path = "../../packages/rust-shared" }
 sqlx = { version = "0.8.3", features = ["postgres", "runtime-tokio", "tls-rustls"] }
 dotenvy = "0.15.7"
+uuid = { version = "1.18.1", features = ["v4"] }
