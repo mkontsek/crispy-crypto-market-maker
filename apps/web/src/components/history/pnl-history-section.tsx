@@ -18,12 +18,23 @@ export type DbPnLSnapshot = {
     createdAt: string;
 };
 
-type PnlHistorySectionProps = { snapshots: DbPnLSnapshot[] };
+type PnlHistorySectionProps = {
+    snapshots: DbPnLSnapshot[];
+    total: number;
+    page: number;
+    pageSize: number;
+    onPageChange: (page: number) => void;
+};
 
 export const PnlHistorySection: FC<PnlHistorySectionProps> = ({
     snapshots,
+    total,
+    page,
+    pageSize,
+    onPageChange,
 }) => {
     const latest = snapshots[0];
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const { sort, toggle, sorted } = useTableSort(
         snapshots,
         'createdAt',
@@ -41,7 +52,7 @@ export const PnlHistorySection: FC<PnlHistorySectionProps> = ({
         <Card>
             <CardHeader>
                 <CardTitle>
-                    PnL History ({snapshots.length} snapshots stored)
+                    PnL History ({total} snapshots stored)
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -130,6 +141,31 @@ export const PnlHistorySection: FC<PnlHistorySectionProps> = ({
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                )}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-slate-800 pt-3">
+                        <span className="text-xs text-slate-400">
+                            Page {page} of {totalPages}
+                        </span>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                disabled={page <= 1}
+                                onClick={() => onPageChange(page - 1)}
+                                className="rounded border border-slate-700 px-3 py-1 text-xs disabled:opacity-40 hover:bg-slate-800"
+                            >
+                                Prev
+                            </button>
+                            <button
+                                type="button"
+                                disabled={page >= totalPages}
+                                onClick={() => onPageChange(page + 1)}
+                                className="rounded border border-slate-700 px-3 py-1 text-xs disabled:opacity-40 hover:bg-slate-800"
+                            >
+                                Next
+                            </button>
                         </div>
                     </div>
                 )}

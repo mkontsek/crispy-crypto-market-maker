@@ -82,8 +82,8 @@ Each bot HTTP API exposes:
 - `GET /api/topology` / `POST /api/topology` (runtime bot + exchange URLs)
 - `GET /api/topology/exchange` (exchange URLs for bot bootstrap)
 - `GET /api/history/fills?pair=<pair>&botId=<id>&page=<n>&pageSize=<n>` (DB-backed fill history)
-- `GET /api/history/pnl?botId=<id>&limit=<n>` (DB-backed PnL snapshot history)
-- `GET /api/history/inventory?pair=<pair>&botId=<id>&limit=<n>` (DB-backed inventory history)
+- `GET /api/history/pnl?botId=<id>&page=<n>&pageSize=<n>` (DB-backed PnL snapshot history; `limit` still accepted as alias for `pageSize`)
+- `GET /api/history/inventory?pair=<pair>&botId=<id>&page=<n>&pageSize=<n>` (DB-backed inventory history; `limit` still accepted as alias for `pageSize`)
 
 ## Getting started
 
