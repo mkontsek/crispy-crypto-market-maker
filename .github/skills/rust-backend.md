@@ -26,31 +26,29 @@ These instructions apply to Rust HTTP/WebSocket backends that serve APIs for the
 ## HTTP Layer (Axum 0.8.8)
 
 - Use composable `Router::new().route(…).with_state(app_state)` to build routers.
-- Use typed Axum extractors: `State<AppState>`, `Json<T>`, `Path<T>`, `Query<T>`.
-- Centralize error handling via an `AppError` type implementing `IntoResponse`.
+- Use typed Axum extractors: `State<T>`, `Json<T>`, `Path<T>`, `Query<T>`.
+- Centralize error handling via an error type implementing `IntoResponse` (e.g., `AppError`).
 - Keep handlers thin: extract inputs, call state methods, return `Json(serde_json::json!({…}))`.
-- No business logic in handlers — delegate to `EngineState` methods or helper modules.
+- No business logic in handlers — delegate to state or helper modules.
 
 ## State Layout
 
-- `AppState` (cheap to clone via `Arc<RwLock<EngineState>>`) holds:
-    - `state: Arc<RwLock<EngineState>>` — the mutable engine state.
+- Keep app state cheap to clone (e.g., wrap mutable state in `Arc<RwLock<…>>`). Typical fields:
+    - `state: Arc<RwLock<…>>` — the mutable engine/domain state.
     - `stream_tx: broadcast::Sender<…>` — channel to push SSE/WS updates.
     - Additional fields for runtime config (e.g., external service URLs) and optional resources (e.g., DB pool).
-- Split `EngineState` across multiple focused files under `src/state/`, e.g.:
+- Split large state structs across multiple focused files under `src/state/`, e.g.:
     - `engine_state.rs` — struct definition + `new()` + high-level methods.
     - `engine_payload.rs` — logic for building the broadcast payload.
     - `engine_process_exchange.rs` — processing incoming exchange data.
-    - `engine_update_quotes.rs` — quote refresh logic.
     - `engine_reset.rs` — state reset logic.
     - `pair_state.rs` — per-pair state struct.
-    - `strategy.rs` — strategy preset definitions and config builders.
     - `mod.rs` — declares all sub-modules and re-exports the public types.
 
 ## Persistence
 
 - DB writes are the backend service's responsibility, not the web app's.
-- Use `sqlx` with a `PgPool` injected into `AppState`.
+- Use `sqlx` with a `PgPool` injected into the app state.
 - The web app only reads from the DB (via Prisma).
 - Configure via env vars (e.g., `DATABASE_URL`, `BOT_ID`).
 
@@ -65,7 +63,7 @@ These instructions apply to Rust HTTP/WebSocket backends that serve APIs for the
 - Unit tests colocated inside each handler file with `#[cfg(test)] mod tests { ... }`.
 - Integration tests (spinning up an in-memory Axum server) live in the router assembly file (e.g., `api_app.rs`) inside `#[cfg(test)]`.
 - Helper pattern for integration tests:
-    - `fn test_app_state(…) -> AppState` builds a minimal state.
+    - `fn test_app_state(…) -> <YourAppState>` builds a minimal state.
     - `async fn spawn_api_server(…) -> (String, JoinHandle<()>)` binds to port 0 and returns the base URL.
     - Use `reqwest` to drive HTTP assertions.
     - Always `server.abort()` in cleanup.
