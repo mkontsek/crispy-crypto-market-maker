@@ -2,56 +2,69 @@
 
 ## Scope
 
-These instructions apply to Rust HTTP/web backends (e.g., Axum, Actix Web, etc.) that serve APIs for Next.js or other clients.
+These instructions apply to Rust HTTP/WebSocket backends that serve APIs for the Next.js dashboard or other clients.
 
 ## Architecture
 
-- Follow a layered / clean architecture: [web:18][web:20]
-    - **Domain**: entities, value objects, business rules, repository traits.
-    - **Application**: use-cases/services orchestrating domain logic.
-    - **Infrastructure**: DB adapters, HTTP clients, messaging, persistence.
-    - **Presentation**: HTTP routing, handlers, middleware, request/response mappers.
-- Dependencies flow inwards only:
-    - Presentation → Application → Domain.
-    - Infrastructure implements traits defined in Domain/Application, not the other way around.
+- Each backend app crate is structured as:
+    - `src/main.rs` — thin entry point: env/config loading, tracing init, server start.
+    - `src/models.rs` — all request/response types, shared data structs.
+    - `src/utils.rs` — pure helper functions (math, formatting).
+    - `src/router/` — HTTP and WebSocket routers (see below).
+    - `src/state/` — in-memory engine state (see below).
+    - `src/db.rs` — database writes via `sqlx` (when applicable).
+    - `src/init.rs` — startup configuration resolution.
 
-## Crate Layout
+## Router Layout
 
-- Suggestion:
-    - `crates/core` or `crates/domain`: shared domain logic and traits.
-    - `crates/api`: concrete HTTP server:
-        - `src/main.rs`: bootstrap (config, observability, server start).
-        - `src/lib.rs`: exposes `build_router`, `AppState`, etc.
-        - `src/routes/`: route definitions/composition.
-        - `src/handlers/`: HTTP handlers, thin adapters over application services. [web:17][web:18]
-        - `src/middleware/`: auth, logging, tracing, rate limiting.
-        - `src/config.rs`: configuration loading/validation.
-        - `src/telemetry.rs`: logging, tracing, metrics.
+- One file per API endpoint inside `src/router/`:
+    - Name each file after the endpoint, e.g. `api_set_strategy.rs`, `api_kill_switch.rs`, `api_update_config.rs`.
+    - For endpoints that require internal helpers, use a sub-directory (e.g., `router/api_manual_hedge/`) with its own `mod.rs`.
+    - `router/mod.rs` declares all sub-modules and re-exports only the public builder functions (e.g., `build_api_app`, `build_ws_app`).
+- Each handler file exports exactly one `pub async fn` handler. **Do not use a `handle*` prefix.** Name the function after the action it performs, e.g. `kill_switch`, `set_strategy`, `pause_pair`.
 
-## HTTP Layer
+## HTTP Layer (Axum 0.8.8)
 
-- Prefer **Axum**-style composable routers when framework choice is open:
-    - Use extractors (`Path`, `Query`, `Json`, `State`) for typed handlers. [web:18]
-    - Centralize error handling via an `AppError` implementing `IntoResponse`.
-- Keep handlers small:
-    - Parse input, call application service, map result to HTTP response.
-    - No business logic in handlers.
+- Use composable `Router::new().route(…).with_state(app_state)` to build routers.
+- Use typed Axum extractors: `State<T>`, `Json<T>`, `Path<T>`, `Query<T>`.
+- Centralize error handling via an error type implementing `IntoResponse` (e.g., `AppError`).
+- Keep handlers thin: extract inputs, call state methods, return `Json(serde_json::json!({…}))`.
+- No business logic in handlers — delegate to state or helper modules.
 
-## Persistence & External Services
+## State Layout
 
-- Define repository/service traits in domain/application crates.
-- Implement them in infrastructure modules that depend on concrete crates (SQL clients, HTTP clients, queues). [web:18][web:19]
-- Inject dependencies via constructors or builders at application startup.
+- Keep app state cheap to clone (e.g., wrap mutable state in `Arc<RwLock<…>>`). Typical fields:
+    - `state: Arc<RwLock<…>>` — the mutable engine/domain state.
+    - `stream_tx: broadcast::Sender<…>` — channel to push SSE/WS updates.
+    - Additional fields for runtime config (e.g., external service URLs) and optional resources (e.g., DB pool).
+- Split large state structs across multiple focused files under `src/state/`, e.g.:
+    - `engine_state.rs` — struct definition + `new()` + high-level methods.
+    - `engine_payload.rs` — logic for building the broadcast payload.
+    - `engine_process_exchange.rs` — processing incoming exchange data.
+    - `engine_reset.rs` — state reset logic.
+    - `pair_state.rs` — per-pair state struct.
+    - `mod.rs` — declares all sub-modules and re-exports the public types.
+
+## Persistence
+
+- DB writes are the backend service's responsibility, not the web app's.
+- Use `sqlx` with a `PgPool` injected into the app state.
+- The web app only reads from the DB (via Prisma).
+- Configure via env vars (e.g., `DATABASE_URL`, `BOT_ID`).
 
 ## Configuration & Observability
 
-- Load configuration from env variables + config files, validate early.
-- Use structured logging (e.g., `tracing`) with fields for request IDs, user IDs when available.
-- Provide metrics hooks for key operations (requests, DB queries, external calls).
+- Load all configuration from environment variables (use `dotenvy` for local dev, system env in production).
+- Use `tracing` for structured logging; initialize with `tracing-subscriber` in `main.rs`.
+- Log important lifecycle events (server start, external service connect/disconnect, data received).
 
 ## Testing Backend Code
 
-- Unit test domain/application layers without HTTP/framework dependencies.
-- Integration tests:
-    - Spin up an in-memory or ephemeral instance (e.g., test database) and run HTTP-level tests.
-    - Test error translation (e.g., domain error → HTTP 4xx/5xx) explicitly. [web:18]
+- Unit tests colocated inside each handler file with `#[cfg(test)] mod tests { ... }`.
+- Integration tests (spinning up an in-memory Axum server) live in the router assembly file (e.g., `api_app.rs`) inside `#[cfg(test)]`.
+- Helper pattern for integration tests:
+    - `fn test_app_state(…) -> <YourAppState>` builds a minimal state.
+    - `async fn spawn_api_server(…) -> (String, JoinHandle<()>)` binds to port 0 and returns the base URL.
+    - Use `reqwest` to drive HTTP assertions.
+    - Always `server.abort()` in cleanup.
+- Test domain/application layers independently of HTTP when possible.

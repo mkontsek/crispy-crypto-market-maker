@@ -2,64 +2,88 @@
 
 ## Scope
 
-These instructions apply to all Rust crates in this repo (backend services, CLI tools, libraries, and WASM crates).
+These instructions apply to all Rust crates in this repo (backend services, CLI tools, and libraries).
 
-## Workspace & Crate Layout
+## Locked Versions
 
-- Use a single top-level Cargo workspace, with crates under `crates/` (or `rust/crates/`) such as:
-    - `crates/core`: domain types, business rules, pure logic.
-    - `crates/api`: HTTP servers, routing, handlers (Axum/Actix/etc.). [web:18][web:19]
-    - `crates/cli`: CLI tools or dev utilities. [web:21][web:27]
-    - `crates/test-support`: shared test utilities (optional).
-    - `crates/wasm-*`: WASM-compiled crates for frontend integration. [web:9]
-- Each crate:
-    - Library: `src/lib.rs` exports a clear public API.
-    - Binary: `src/main.rs` is a thin entry that delegates to library code.
-    - Multiple binaries: `src/bin/<name>.rs`.
+Use exact latest supported versions — do not upgrade unless explicitly requested. 
+Example:
+
+| Crate | Version |
+|---|---|
+| `axum` | 0.8.8 (features: `ws`, `macros`, `json`) |
+| `tokio` | 1.50.0 (features: `full`) |
+| `serde` | 1.0.228 (features: `derive`) |
+| `serde_json` | 1.0.149 |
+| `rust_decimal` | 1.40.0 (features: `serde-with-str`) |
+| `rust_decimal_macros` | 1.40.0 |
+| `sqlx` | 0.8.3 (features: `postgres`, `runtime-tokio`, `tls-rustls`) |
+| `reqwest` | 0.13.2 (features: `json`) |
+| `tracing` | 0.1.44 |
+| `tracing-subscriber` | 0.3.22 (features: `fmt`, `env-filter`) |
+| `thiserror` | latest stable |
+
+## Crate Layout
+
+- Apps live under `apps/`; shared libraries under `packages/`.
+- Each app or library crate follows:
+    - `src/main.rs` — thin entry point: config loading, tracing setup, server start. Delegates everything to library code.
+    - `src/lib.rs` — not required for app crates, but use it for library crates to export a clean public API.
 
 ## Module Organization
 
-- Prefer explicit modules in `lib.rs`:
-    - `pub mod domain;`
-    - `pub mod application;`
-    - `pub mod infrastructure;`
-- Group modules by **domain/use-case**, not purely by layer:
-    - Example: `orders`, `billing`, `auth`, each internally split into `domain`, `handlers`, etc. if needed. [web:18][web:20]
-- Avoid deep, nested `mod.rs` trees for new code; use `mod foo;` with `foo.rs` or `foo/mod.rs` as needed.
+- **One Rust source file per logical unit.** Do not pile multiple concerns into a single file.
+- **Max 300 lines per `.rs` file** (enforced by `scripts/check-file-lines.sh`, excluding `tests/` and `*_test.rs` files). When a file approaches the limit, extract sub-logic into a sibling file.
+- Group related files under a named subdirectory with a `mod.rs` that only declares sub-modules and re-exports the public API:
+
+    ```
+    router/
+      mod.rs              ← declares sub-modules, re-exports `pub use ...`
+      api_<action>.rs     ← e.g. api_set_strategy.rs, contains the handler function
+      api_<action>.rs     ← e.g. api_kill_switch.rs, contains the handler function
+    ```
+
+- For a module that itself needs helpers, create a sub-subfolder with the same pattern:
+
+    ```
+    router/api_<action>/
+      mod.rs              ← declares sub-modules + re-exports the public entry point
+      api_<action>.rs     ← handler entry point (e.g. api_manual_hedge.rs)
+      <helper>.rs         ← internal helper, not re-exported
+    ```
+
+- Split large state or domain objects across multiple focused files inside a named directory (e.g., `engine_state.rs`, `engine_payload.rs`, `pair_state.rs`), each under 300 lines. The directory's `mod.rs` only declares modules and re-exports.
+- Name files after what they contain, using `snake_case`. Avoid generic names like `helpers.rs` — prefer a descriptive name that reflects the function (e.g., `apply_ratio.rs`).
+
+## Naming Conventions
+
+- **Do not use a `handle*` prefix for handler functions.** Name functions after the action they perform, e.g. `kill_switch`, `set_strategy`, `pause_pair`.
+- Builder functions for routers or services are named `build_<thing>`, e.g. `build_api_app`, `build_ws_app`.
 
 ## Error Handling
 
-- Use `Result<T, E>` with crate-specific error enums.
-- Use `thiserror` in libraries for concise error definitions. [web:24]
-- Use `anyhow` only at top-level binaries or CLI tools where detailed typing is not as critical. [web:24][web:27]
-- Do not use `unwrap()` / `expect()` in request paths or library code unless clearly safe and documented.
+- Use `Result<T, E>` with crate-specific typed error enums.
+- Use `thiserror` in libraries for concise error definitions.
+- Use `anyhow` only at top-level binaries or CLI tools.
+- Do not use `unwrap()` / `expect()` in request paths or library code unless clearly safe.
 
 ## Testing
 
-- Unit tests:
-    - Colocate inside modules with `#[cfg(test)] mod tests { ... }`.
-    - Test public behavior, avoid overfitting to private implementation.
-- Integration tests:
-    - Use `tests/` directory with one file per scenario or feature.
-    - For backend crates, write end-to-end tests that spin up in-memory/http servers where feasible. [web:18]
-- Shared test utilities:
-    - Move repeated fixtures/mocks into `crates/test-support` and depend on it from test targets.
+- Unit tests colocated inside modules with `#[cfg(test)] mod tests { ... }`.
+- Integration / API-level tests can also live inside the same source file as the router assembly (e.g., spinning up an in-memory server inside `#[cfg(test)]`).
+- Test public behavior, avoid testing private implementation details.
+- Shared test utilities across crates belong in a dedicated `test-support` package (if needed).
+- Test files and `tests/` directories are excluded from the 300-line rule.
 
 ## Tooling & Quality
 
-- Enable `rustfmt` and `clippy` for the workspace (`rustfmt.toml`, `clippy.toml` or `Cargo.toml` settings).
+- Enable `rustfmt` (`.rustfmt.toml`) and `clippy` (`clippy.toml`) for the workspace.
 - Keep builds warning-free; fix lints instead of disabling them globally.
-- Prefer safe Rust; use `unsafe` only with a clear comment on invariants.
-
-## Interop with TypeScript / Next.js
-
-- For WASM-oriented crates:
-    - Use `wasm-bindgen` or equivalent for bindings.
-    - Keep the JS-visible API surface small and ergonomic (plain structs, simple enums).
-- Expose explicit initialization functions and hide WASM module loading details behind TS helpers.
+- Prefer safe Rust; use `unsafe` only with a clear inline comment on invariants.
 
 ## Things to Avoid
 
-- God crates containing unrelated concerns.
-- Circular dependencies between crates; when this appears, extract shared contracts into separate crates. [web:19]
+- God files containing unrelated concerns — split by the 300-line rule.
+- Deep nested `mod.rs` hierarchies; prefer flat modules with explicit re-exports.
+- Circular dependencies between crates; extract shared contracts into a shared library package.
 - Overusing macros when traits/generics are sufficient.
