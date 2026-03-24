@@ -24,7 +24,7 @@ Use these exact versions — do not upgrade unless explicitly requested:
 
 ## Crate Layout
 
-- Apps live under `apps/` (`apps/bot`, `apps/exchange`); shared libraries under `packages/` (`packages/rust-shared`).
+- Apps live under `apps/`; shared libraries under `packages/`.
 - Each app or library crate follows:
     - `src/main.rs` — thin entry point: config loading, tracing setup, server start. Delegates everything to library code.
     - `src/lib.rs` — not required for app crates, but use it for library crates to export a clean public API.
@@ -37,27 +37,27 @@ Use these exact versions — do not upgrade unless explicitly requested:
 
     ```
     router/
-      mod.rs                 ← declares `mod api_set_strategy;`, re-exports `pub use ...`
-      api_set_strategy.rs    ← contains the `set_strategy` handler
-      api_kill_switch.rs     ← contains the `kill_switch` handler
+      mod.rs              ← declares sub-modules, re-exports `pub use ...`
+      api_<action>.rs     ← e.g. api_set_strategy.rs, contains the handler function
+      api_<action>.rs     ← e.g. api_kill_switch.rs, contains the handler function
     ```
 
 - For a module that itself needs helpers, create a sub-subfolder with the same pattern:
 
     ```
-    router/api_manual_hedge/
-      mod.rs                       ← `mod api_manual_hedge; mod update_pair_after_hedge;` + re-exports
-      api_manual_hedge.rs          ← handler entry point
-      update_pair_after_hedge.rs   ← internal helper, not re-exported
+    router/api_<action>/
+      mod.rs              ← declares sub-modules + re-exports the public entry point
+      api_<action>.rs     ← handler entry point (e.g. api_manual_hedge.rs)
+      <helper>.rs         ← internal helper, not re-exported
     ```
 
-- State split across multiple focused files inside a `state/` directory (e.g., `engine_state.rs`, `engine_payload.rs`, `engine_process_exchange.rs`), each under 300 lines. The `state/mod.rs` only declares modules and re-exports.
-- Name files after what they contain, using `snake_case`. Avoid generic names like `helpers.rs` or `utils.rs` — prefer `apply_ratio.rs` or similar.
+- Split large state or domain objects across multiple focused files inside a named directory (e.g., `engine_state.rs`, `engine_payload.rs`, `pair_state.rs`), each under 300 lines. The directory's `mod.rs` only declares modules and re-exports.
+- Name files after what they contain, using `snake_case`. Avoid generic names like `helpers.rs` — prefer a descriptive name that reflects the function (e.g., `apply_ratio.rs`).
 
 ## Naming Conventions
 
-- **Do not use a `handle*` prefix for handler functions.** Name functions after the action they perform: `kill_switch`, `set_strategy`, `manual_hedge`, `pause_pair`, `update_config`, `reset_state`.
-- Builder functions for routers or services are named `build_<thing>` (e.g., `build_api_app`, `build_ws_app`).
+- **Do not use a `handle*` prefix for handler functions.** Name functions after the action they perform, e.g. `kill_switch`, `set_strategy`, `pause_pair`.
+- Builder functions for routers or services are named `build_<thing>`, e.g. `build_api_app`, `build_ws_app`.
 
 ## Error Handling
 
@@ -69,9 +69,9 @@ Use these exact versions — do not upgrade unless explicitly requested:
 ## Testing
 
 - Unit tests colocated inside modules with `#[cfg(test)] mod tests { ... }`.
-- Integration / API-level tests can also live inside the same source file as the handler (see `api_app.rs` for an example of spinning up an in-memory server inside `#[cfg(test)]`).
+- Integration / API-level tests can also live inside the same source file as the router assembly (e.g., spinning up an in-memory server inside `#[cfg(test)]`).
 - Test public behavior, avoid testing private implementation details.
-- Shared test utilities across crates belong in a `packages/test-support` crate (if needed).
+- Shared test utilities across crates belong in a dedicated `test-support` package (if needed).
 - Test files and `tests/` directories are excluded from the 300-line rule.
 
 ## Tooling & Quality
@@ -84,5 +84,5 @@ Use these exact versions — do not upgrade unless explicitly requested:
 
 - God files containing unrelated concerns — split by the 300-line rule.
 - Deep nested `mod.rs` hierarchies; prefer flat modules with explicit re-exports.
-- Circular dependencies between crates; extract shared contracts into `packages/rust-shared`.
+- Circular dependencies between crates; extract shared contracts into a shared library package.
 - Overusing macros when traits/generics are sufficient.

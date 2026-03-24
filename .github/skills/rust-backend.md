@@ -2,28 +2,26 @@
 
 ## Scope
 
-These instructions apply to Rust HTTP/WebSocket backends (`apps/bot`, `apps/exchange`) that serve APIs for the Next.js dashboard or the exchange simulator.
+These instructions apply to Rust HTTP/WebSocket backends that serve APIs for the Next.js dashboard or other clients.
 
 ## Architecture
 
-- Two separate app crates: `apps/bot` (market-maker logic + API) and `apps/exchange` (simulated exchange).
-- Each app is structured as:
-    - `src/main.rs` — thin entry point: env/config loading, tracing init, Axum server start.
+- Each backend app crate is structured as:
+    - `src/main.rs` — thin entry point: env/config loading, tracing init, server start.
     - `src/models.rs` — all request/response types, shared data structs.
     - `src/utils.rs` — pure helper functions (math, formatting).
     - `src/router/` — HTTP and WebSocket routers (see below).
     - `src/state/` — in-memory engine state (see below).
-    - `src/db.rs` — database writes via `sqlx` (bot only).
+    - `src/db.rs` — database writes via `sqlx` (when applicable).
     - `src/init.rs` — startup configuration resolution.
-    - `src/exchange/` — exchange connectivity (bot only).
 
 ## Router Layout
 
 - One file per API endpoint inside `src/router/`:
-    - Name each file after the endpoint: `api_set_strategy.rs`, `api_kill_switch.rs`, `api_update_config.rs`, `api_pause_pair.rs`, `api_reset_state.rs`, `api_health.rs`.
+    - Name each file after the endpoint, e.g. `api_set_strategy.rs`, `api_kill_switch.rs`, `api_update_config.rs`.
     - For endpoints that require internal helpers, use a sub-directory (e.g., `router/api_manual_hedge/`) with its own `mod.rs`.
-    - `router/mod.rs` declares all sub-modules and re-exports only the two public builder functions: `build_api_app` and `build_ws_app`.
-- Each handler file exports exactly one `pub async fn` handler. **Do not use a `handle*` prefix.** Name the function after the action: `kill_switch`, `set_strategy`, `manual_hedge`, `pause_pair`, `update_config`, `reset_state`.
+    - `router/mod.rs` declares all sub-modules and re-exports only the public builder functions (e.g., `build_api_app`, `build_ws_app`).
+- Each handler file exports exactly one `pub async fn` handler. **Do not use a `handle*` prefix.** Name the function after the action it performs, e.g. `kill_switch`, `set_strategy`, `pause_pair`.
 
 ## HTTP Layer (Axum 0.8.8)
 
@@ -38,35 +36,34 @@ These instructions apply to Rust HTTP/WebSocket backends (`apps/bot`, `apps/exch
 - `AppState` (cheap to clone via `Arc<RwLock<EngineState>>`) holds:
     - `state: Arc<RwLock<EngineState>>` — the mutable engine state.
     - `stream_tx: broadcast::Sender<…>` — channel to push SSE/WS updates.
-    - `exchange_api_url: String` — runtime-resolved exchange endpoint.
-    - `db_pool: Option<sqlx::PgPool>` — optional DB pool (bot only).
-- `EngineState` is split across multiple focused files under `src/state/`:
+    - Additional fields for runtime config (e.g., external service URLs) and optional resources (e.g., DB pool).
+- Split `EngineState` across multiple focused files under `src/state/`, e.g.:
     - `engine_state.rs` — struct definition + `new()` + high-level methods.
     - `engine_payload.rs` — logic for building the broadcast payload.
-    - `engine_process_exchange.rs` — processing incoming exchange fills.
+    - `engine_process_exchange.rs` — processing incoming exchange data.
     - `engine_update_quotes.rs` — quote refresh logic.
     - `engine_reset.rs` — state reset logic.
-    - `engine_simulate_exchange_health.rs` — simulated health checks.
     - `pair_state.rs` — per-pair state struct.
     - `strategy.rs` — strategy preset definitions and config builders.
-    - `mod.rs` — declares all sub-modules and re-exports `AppState`, `EngineState`, `PairState`.
+    - `mod.rs` — declares all sub-modules and re-exports the public types.
 
 ## Persistence
 
-- DB writes (fills, quotes, inventory, PnL) are the bot's responsibility via `apps/bot/src/db.rs` using `sqlx`.
+- DB writes are the backend service's responsibility, not the web app's.
+- Use `sqlx` with a `PgPool` injected into `AppState`.
 - The web app only reads from the DB (via Prisma).
-- Set `DATABASE_URL` and `BOT_ID` in the bot's env file.
+- Configure via env vars (e.g., `DATABASE_URL`, `BOT_ID`).
 
 ## Configuration & Observability
 
 - Load all configuration from environment variables (use `dotenvy` for local dev, system env in production).
 - Use `tracing` for structured logging; initialize with `tracing-subscriber` in `main.rs`.
-- Log important lifecycle events (server start, exchange connect/disconnect, fill received).
+- Log important lifecycle events (server start, external service connect/disconnect, data received).
 
 ## Testing Backend Code
 
 - Unit tests colocated inside each handler file with `#[cfg(test)] mod tests { ... }`.
-- Integration tests (spinning up an in-memory Axum server) live in `src/router/api_app.rs` inside `#[cfg(test)]`.
+- Integration tests (spinning up an in-memory Axum server) live in the router assembly file (e.g., `api_app.rs`) inside `#[cfg(test)]`.
 - Helper pattern for integration tests:
     - `fn test_app_state(…) -> AppState` builds a minimal state.
     - `async fn spawn_api_server(…) -> (String, JoinHandle<()>)` binds to port 0 and returns the base URL.
