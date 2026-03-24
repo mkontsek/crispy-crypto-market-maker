@@ -43,6 +43,7 @@ Example:
 - Each `use*` hook gets its own dedicated file named `use-<action>.ts` (e.g., `use-strategy-mutation.ts`, `use-bot-quotes-query.ts`, `use-bounds-controller.ts`).
 - Place hooks that belong to a component in the same directory as that component; place reusable standalone hooks (e.g., `use-table-sort.ts`) in `lib/`.
 - **Do not use a `handle*` prefix for functions.** Name functions after the action they perform: `killSwitch`, `setStrategy`, `pausePair`, `updateConfig`, `resetState`.
+- **Reserve the `on*` prefix exclusively for props** (e.g. `onClose`, `onChange`). Internal event listeners or callbacks should be named after what they do, not how they are triggered (e.g. `closeOnPressEscape`, `submitLogin`, not `onKeydown` or `onSubmit`).
 
 ## Data Fetching
 
