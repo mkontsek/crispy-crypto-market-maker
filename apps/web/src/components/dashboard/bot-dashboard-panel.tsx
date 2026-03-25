@@ -22,6 +22,8 @@ import { StrategySection } from '@/components/dashboard/strategy-section';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { dedupeFills, dedupePnl } from '@/lib/bot-data-service';
+import { priceFromFp } from '@/lib/fixed-point';
+import { derivePnlBadge } from '@/lib/pnl-badge-service';
 import { cn } from '@/lib/utils';
 
 import { useBotFillsQuery } from './pnl/use-bot-fills-query';
@@ -65,6 +67,8 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
     const pendingPair = pairActionMutation.variables?.pair ?? null;
     const quoteHistoryEntries = quotesQuery.data?.quoteHistory ?? [];
     const latestPnl = pnl[0] ?? null;
+    const currentPnlValue = latestPnl ? priceFromFp(latestPnl.totalPnl) : null;
+    const pnlBadge = currentPnlValue !== null ? derivePnlBadge(currentPnlValue) : null;
 
     return (
         <motion.section
@@ -85,6 +89,13 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     <Badge tone={connected ? 'success' : 'danger'}>
                         {connected ? 'connected' : 'disconnected'}
                     </Badge>
+                    {pnlBadge !== null && currentPnlValue !== null && (
+                        <Badge tone={pnlBadge.tone}>
+                            {pnlBadge.arrow}{' '}
+                            {pnlBadge.sign}
+                            {currentPnlValue.toFixed(2)}
+                        </Badge>
+                    )}
                     <button
                         type="button"
                         aria-controls={`${bot.id}-section-content`}
