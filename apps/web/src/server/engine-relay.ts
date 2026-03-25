@@ -11,6 +11,7 @@ import {
 } from '@crispy/shared';
 import WebSocket from 'ws';
 
+import { dispatchAlertWebhook } from '@/server/alert-dispatch';
 import {
     getRuntimeTopology,
     resolveBotTopology,
@@ -34,6 +35,8 @@ type RelayState = {
     config: MMConfig | null;
     killSwitchEngaged: boolean;
     strategy: string;
+    /** IDs of alerts that are currently active — used to detect transitions and fire webhooks. */
+    activeAlertIds: Set<string>;
 };
 
 type BotRelay = {
@@ -59,6 +62,7 @@ function createRelayState(): RelayState {
         config: null,
         killSwitchEngaged: false,
         strategy: 'balanced',
+        activeAlertIds: new Set(),
     };
 }
 
@@ -125,6 +129,8 @@ function ingestPayload(botId: BotId, payload: EngineStreamPayload) {
     for (const listener of relay.listeners) {
         listener(payload);
     }
+
+    dispatchAlertWebhook(botId, payload.timestamp, relay.state);
 }
 
 function scheduleReconnect(botId: BotId) {
@@ -259,13 +265,18 @@ export function subscribeToEngineStream(
     };
 }
 
+/** Public snapshot of relay state exposed to API routes and SSE clients.
+ * `activeAlertIds` is intentionally omitted — it is internal bookkeeping
+ * used by the webhook notification system and must not be serialised to clients. */
+export type RelaySnapshot = Omit<RelayState, 'activeAlertIds'>;
+
 export function resetAllRelays() {
     for (const relay of relays.values()) {
         relay.state = createRelayState();
     }
 }
 
-export function getRelaySnapshot(botId: BotId): RelayState {
+export function getRelaySnapshot(botId: BotId): RelaySnapshot {
     pruneInactiveRelays();
     syncBotRelay(botId);
     const state = getRelay(botId).state;
