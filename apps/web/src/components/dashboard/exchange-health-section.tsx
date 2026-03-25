@@ -11,12 +11,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { priceFromFp } from '@/lib/fixed-point';
 import { ExchangeHealthInfoDialog } from './exchange-health-info-dialog';
 
-type ExchangeHealthSectionProps = { health: ExchangeHealth[]; loading: boolean; connected: boolean };
+type ExchangeHealthSectionProps = { health: ExchangeHealth[]; loading: boolean; stale: boolean };
 
 export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
     health,
     loading,
-    connected,
+    stale,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
 
@@ -37,6 +37,9 @@ export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
                         >
                             <InfoIcon />
                         </button>
+                        {stale && (
+                            <span className="text-amber-400" title="Stale data — reconnecting…" role="status" aria-label="Stale data - reconnecting">⚠</span>
+                        )}
                     </div>
                 </CardHeader>
                 <CardContent className="h-64 overflow-auto">
@@ -63,7 +66,7 @@ export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
                             {!loading && health.length === 0 && (
                                 <tr>
                                     <td colSpan={5} className="py-4 text-center text-sm text-slate-400">
-                                        {connected ? 'No exchange health data available.' : 'Waiting for bot data…'}
+                                        No exchange health data available.
                                     </td>
                                 </tr>
                             )}

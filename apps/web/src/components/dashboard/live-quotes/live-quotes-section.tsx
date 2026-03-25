@@ -16,12 +16,14 @@ import { StateInfoDialog } from './state-info-dialog';
 type LiveQuotesSectionProps = {
     quotes: QuoteSnapshot[];
     connected: boolean;
+    stale: boolean;
     loading: boolean;
 };
 
 export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
     quotes,
     connected,
+    stale,
     loading,
 }) => {
     const [sectionInfoOpen, setSectionInfoOpen] = useState(false);
@@ -46,6 +48,9 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                         >
                             <InfoIcon />
                         </button>
+                        {stale && (
+                            <span className="text-amber-400" title="Stale data — reconnecting…" role="status" aria-label="Stale data - reconnecting">⚠</span>
+                        )}
                     </div>
                     <Badge tone={connected ? 'success' : 'danger'}>
                         {connected ? 'stream connected' : 'stream disconnected'}
@@ -89,7 +94,7 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                             {!loading && quotes.length === 0 && (
                                 <tr>
                                     <td colSpan={8} className="py-4 text-center text-sm text-slate-400">
-                                        {connected ? 'No quotes available.' : 'Waiting for bot data…'}
+                                        No quotes available.
                                     </td>
                                 </tr>
                             )}

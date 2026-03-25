@@ -28,6 +28,7 @@ type RiskSectionProps = {
     config: MMConfig | null;
     killSwitchEngaged: boolean;
     connected: boolean;
+    stale: boolean;
     loading: boolean;
 };
 
@@ -77,6 +78,7 @@ export const RiskSection: FC<RiskSectionProps> = ({
     config,
     killSwitchEngaged,
     connected,
+    stale,
     loading,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
@@ -115,6 +117,9 @@ export const RiskSection: FC<RiskSectionProps> = ({
                         >
                             <InfoIcon />
                         </button>
+                        {stale && (
+                            <span className="text-amber-400" title="Stale data — reconnecting…" role="status" aria-label="Stale data - reconnecting">⚠</span>
+                        )}
                     </div>
                     {!loading && (
                         <Badge tone={statusTone(report.overallStatus)}>
@@ -135,7 +140,7 @@ export const RiskSection: FC<RiskSectionProps> = ({
 
                     {!loading && !hasData && (
                         <p className="text-sm text-slate-400">
-                            {connected ? 'No risk data available yet.' : 'Waiting for bot data…'}
+                            No risk data available yet.
                         </p>
                     )}
 

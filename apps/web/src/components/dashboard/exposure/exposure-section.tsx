@@ -18,7 +18,7 @@ type ExposureSectionProps = {
     quotes: QuoteSnapshot[];
     config: MMConfig | null;
     loading: boolean;
-    connected: boolean;
+    stale: boolean;
 };
 
 export const ExposureSection: FC<ExposureSectionProps> = ({
@@ -26,7 +26,7 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
     quotes,
     config,
     loading,
-    connected,
+    stale,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
     const rows = buildExposureRows(inventory, quotes, config);
@@ -52,6 +52,9 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
                         >
                             <InfoIcon />
                         </button>
+                        {stale && (
+                            <span className="text-amber-400" title="Stale data — reconnecting…" role="status" aria-label="Stale data - reconnecting">⚠</span>
+                        )}
                     </div>
                     <span className="text-xs text-slate-400">
                         Total notional:{' '}
@@ -86,7 +89,7 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
                             {!loading && rows.length === 0 && (
                                 <tr>
                                     <td colSpan={7} className="py-4 text-center text-sm text-slate-400">
-                                        {connected ? 'No exposure data available.' : 'Waiting for bot data…'}
+                                        No exposure data available.
                                     </td>
                                 </tr>
                             )}
