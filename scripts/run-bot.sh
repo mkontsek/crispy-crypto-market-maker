@@ -110,7 +110,7 @@ EXCHANGE_API_URL=${EXCHANGE_API_URL}
 DATABASE_URL=${DATABASE_URL}
 
 # Bot identity used when writing data to the database.
-BOT_ID=
+BOT_ID=${BOT_NAME}
 
 # Static location for the infrastructure map (optional).
 # Leave empty to auto-detect via IP geolocation on GET /geo.
