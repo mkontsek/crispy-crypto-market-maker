@@ -227,6 +227,10 @@ pnpm hooks:install   # Configure Git hooks to use .githooks/
         - `BOT_3_GEO_LAT`, `BOT_3_GEO_LNG`, `BOT_3_GEO_LABEL` — bot-3 map pin
         - `EXCHANGE_GEO_LAT`, `EXCHANGE_GEO_LNG`, `EXCHANGE_GEO_LABEL` — simulated exchange map pin
         - `DASHBOARD_GEO_LAT`, `DASHBOARD_GEO_LNG`, `DASHBOARD_GEO_LABEL` — dashboard/browser map pin
+    - Optional alert webhook (fires a POST when an alert appears or resolves):
+        - `ALERT_WEBHOOK_URL` — full URL of the webhook endpoint (Slack, Discord, Telegram, or custom)
+        - The payload is JSON: `{ botId, botName, newAlerts, resolvedAlertIds, timestamp }`
+        - See [Alert Webhooks](#alert-webhooks) for details.
 - Deploy from Git or with CLI:
 
 ```bash
@@ -421,3 +425,63 @@ The web app enforces this rule via the URL validation schema
 (`packages/shared/src/schemas.ts`): any bot or exchange URL that is not `localhost` /
 `127.0.0.1` / `::1` **must** use `https://` or `wss://` — the runtime topology API will
 reject `http://` for remote hosts.
+
+## Alert Webhooks
+
+The web app can push a JSON webhook to any URL whenever an alert fires or clears.
+Set `ALERT_WEBHOOK_URL` (in Vercel or your local `.env`) to enable it.
+
+```
+ALERT_WEBHOOK_URL=https://hooks.slack.com/services/xxx/yyy/zzz
+```
+
+The webhook fires server-side (from the Next.js backend / Vercel serverless runtime)
+whenever alert state changes for any bot — so you are notified even when the dashboard
+is not open.
+
+### Payload
+
+```json
+{
+  "botId": "bot-1",
+  "botName": "Joe",
+  "newAlerts": [
+    { "id": "exchange-disconnect", "severity": "critical", "message": "Feed disconnected: Binance (BTC/USDT)" }
+  ],
+  "resolvedAlertIds": ["feed-stale"],
+  "timestamp": "2026-01-01T12:00:00.000Z"
+}
+```
+
+| Field | Description |
+|---|---|
+| `botId` | Identifies which bot the alert belongs to |
+| `botName` | Human-readable bot name from topology |
+| `newAlerts` | Alerts that just became active (empty when only resolving) |
+| `resolvedAlertIds` | IDs of alerts that just cleared (empty when only firing) |
+| `timestamp` | ISO 8601 timestamp from the engine payload |
+
+### Alert IDs
+
+| ID | Severity | Condition |
+|---|---|---|
+| `kill-switch` | critical | Kill switch engaged — all quoting halted |
+| `exchange-disconnect` | critical | Exchange WebSocket feed disconnected |
+| `inv-crit-{pair}` | critical | Inventory > 90 % of hard limit |
+| `feed-stale` | warning | Feed staleness > 2 s |
+| `inv-warn-{pair}` | warning | Inventory 75–90 % of limit |
+| `adverse-high` | warning | Adverse selection rate > 40 % |
+| `fill-low` | warning | Fill rate < 2 % |
+| `all-paused` | warning | All pairs paused (kill switch off) |
+
+### Integrations
+
+**Slack Incoming Webhook** — create a webhook at <https://api.slack.com/messaging/webhooks>,
+then set `ALERT_WEBHOOK_URL` to the `https://hooks.slack.com/…` URL.  
+The raw payload is delivered as-is; use a Slack workflow or a thin proxy to format the message.
+
+**Discord** — use a Discord channel webhook URL (`https://discord.com/api/webhooks/…`).
+
+**Telegram** — run a small proxy that receives the POST and calls the Bot API.
+
+**Custom handler** — any HTTP endpoint that accepts a POST with `Content-Type: application/json`.
