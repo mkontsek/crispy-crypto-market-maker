@@ -17,11 +17,12 @@ export type QuoteHistoryEntry = QuoteSnapshot & {
     timestamp: string;
 };
 
-type QuoteHistorySectionProps = { entries: QuoteHistoryEntry[]; loading: boolean };
+type QuoteHistorySectionProps = { entries: QuoteHistoryEntry[]; loading: boolean; stale: boolean };
 
 export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
     entries,
     loading,
+    stale,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
     const [statusInfoOpen, setStatusInfoOpen] = useState(false);
@@ -45,6 +46,9 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                         >
                             <InfoIcon />
                         </button>
+                        {stale && (
+                            <span className="text-amber-400" title="Stale data — reconnecting…" role="status" aria-label="Stale data - reconnecting">⚠</span>
+                        )}
                     </div>
                 </CardHeader>
                 <CardContent className="h-[800px] overflow-y-auto">

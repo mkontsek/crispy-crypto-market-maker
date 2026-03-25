@@ -62,6 +62,8 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
     const health = quotesQuery.data?.exchangeHealth ?? [];
     const config = quotesQuery.data?.config ?? null;
     const connected = quotesQuery.data?.connected ?? false;
+    const updatedAt = quotesQuery.data?.updatedAt ?? null;
+    const stale = !connected && updatedAt !== null;
     const killSwitchEngaged = quotesQuery.data?.killSwitchEngaged ?? false;
     const serverStrategy = quotesQuery.data?.strategy ?? 'balanced';
     const strategy = serverStrategy;
@@ -144,11 +146,13 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     config={config}
                     killSwitchEngaged={killSwitchEngaged}
                     connected={connected}
+                    stale={stale}
                     loading={quotesLoading || inventoryLoading}
                 />
                 <LiveQuotesSection
                     quotes={quotes}
                     connected={connected}
+                    stale={stale}
                     loading={quotesLoading}
                 />
                 <div className="grid gap-4 xl:grid-cols-2">
@@ -157,6 +161,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                         quotes={quotes}
                         pendingPair={pendingPair}
                         loading={inventoryLoading}
+                        stale={stale}
                         onTogglePause={(pair, paused) =>
                             pairActionMutation.mutate({
                                 pair,
@@ -178,6 +183,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     inventory={inventory}
                     quotes={quotes}
                     config={config}
+                    stale={stale}
                     loading={inventoryLoading}
                 />
                 <div className="grid gap-4 xl:grid-cols-2">
@@ -192,6 +198,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     <QuoteHistorySection
                         entries={quoteHistoryEntries}
                         loading={quotesLoading}
+                        stale={stale}
                     />
                     <ConfigPanelSection
                         config={config}
@@ -200,7 +207,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                         onSubmit={(next) => configMutation.mutate(next)}
                     />
                 </div>
-                <ExchangeHealthSection health={health} loading={quotesLoading} />
+                <ExchangeHealthSection health={health} loading={quotesLoading} stale={stale} />
                 <EventLogSection
                     connected={connected}
                     quotes={quotes}

@@ -20,6 +20,7 @@ type InventoryMonitorSectionProps = {
     quotes: QuoteSnapshot[];
     pendingPair: string | null;
     loading: boolean;
+    stale: boolean;
     onTogglePause: (pair: string, paused: boolean) => void;
     onManualHedge: (pair: string) => void;
 };
@@ -29,6 +30,7 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
     quotes,
     pendingPair,
     loading,
+    stale,
     onTogglePause,
     onManualHedge,
 }) => {
@@ -56,6 +58,9 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                         >
                             <InfoIcon />
                         </button>
+                        {stale && (
+                            <span className="text-amber-400" title="Stale data — reconnecting…" role="status" aria-label="Stale data - reconnecting">⚠</span>
+                        )}
                     </div>
                 </CardHeader>
                 <CardContent>
