@@ -76,7 +76,8 @@ export const FillMetricsSection: FC<FillMetricsSectionProps> = ({
                         </button>
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent>
+                    <div className="h-[500px] space-y-4 overflow-y-auto">
                     {loading && fills.length === 0 && (
                         <div className="space-y-3">
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -176,6 +177,7 @@ export const FillMetricsSection: FC<FillMetricsSectionProps> = ({
                             </div>
                         </>
                     )}
+                    </div>
                 </CardContent>
             </Card>
             <FillMetricsInfoDialog

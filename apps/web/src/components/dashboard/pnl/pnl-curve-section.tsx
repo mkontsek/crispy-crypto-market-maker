@@ -46,7 +46,8 @@ export const PnlCurveSection: FC<PnlCurveSectionProps> = ({ pnl, loading }) => {
                         </button>
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent>
+                    <div className="h-[500px] space-y-3 overflow-y-auto">
                     {loading && pnl.length === 0 && (
                         <div className="space-y-3">
                             <Skeleton className="h-[100px] w-full" />
@@ -101,6 +102,7 @@ export const PnlCurveSection: FC<PnlCurveSectionProps> = ({ pnl, loading }) => {
                             </div>
                         </>
                     )}
+                    </div>
                 </CardContent>
             </Card>
             <PnlCurveInfoDialog

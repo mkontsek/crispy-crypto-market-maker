@@ -71,7 +71,7 @@ export const ConfigPanelSection: FC<ConfigPanelSectionProps> = ({
                             </button>
                         </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="h-[800px] overflow-y-auto">
                         {loading && (
                             <div className="space-y-3">
                                 <Skeleton className="h-4 w-24" />
@@ -116,7 +116,7 @@ export const ConfigPanelSection: FC<ConfigPanelSectionProps> = ({
                         {saving ? 'Saving...' : 'Save Config'}
                     </Button>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="h-[800px] space-y-4 overflow-y-auto">
                     {draft.pairs.map((pairConfig) => (
                         <PairConfigRow
                             key={pairConfig.pair}
