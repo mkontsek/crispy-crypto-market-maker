@@ -135,7 +135,7 @@ export const RiskSection: FC<RiskSectionProps> = ({
 
                     {!loading && !hasData && (
                         <p className="text-sm text-slate-400">
-                            No risk data available yet.
+                            {connected ? 'No risk data available yet.' : 'Waiting for bot data…'}
                         </p>
                     )}
 

@@ -11,11 +11,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { priceFromFp } from '@/lib/fixed-point';
 import { ExchangeHealthInfoDialog } from './exchange-health-info-dialog';
 
-type ExchangeHealthSectionProps = { health: ExchangeHealth[]; loading: boolean };
+type ExchangeHealthSectionProps = { health: ExchangeHealth[]; loading: boolean; connected: boolean };
 
 export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
     health,
     loading,
+    connected,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
 
@@ -62,7 +63,7 @@ export const ExchangeHealthSection: FC<ExchangeHealthSectionProps> = ({
                             {!loading && health.length === 0 && (
                                 <tr>
                                     <td colSpan={5} className="py-4 text-center text-sm text-slate-400">
-                                        No exchange health data available.
+                                        {connected ? 'No exchange health data available.' : 'Waiting for bot data…'}
                                     </td>
                                 </tr>
                             )}

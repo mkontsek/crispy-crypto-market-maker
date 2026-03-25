@@ -20,6 +20,7 @@ type InventoryMonitorSectionProps = {
     quotes: QuoteSnapshot[];
     pendingPair: string | null;
     loading: boolean;
+    connected: boolean;
     onTogglePause: (pair: string, paused: boolean) => void;
     onManualHedge: (pair: string) => void;
 };
@@ -29,6 +30,7 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
     quotes,
     pendingPair,
     loading,
+    connected,
     onTogglePause,
     onManualHedge,
 }) => {
@@ -72,7 +74,7 @@ export const InventoryMonitorSection: FC<InventoryMonitorSectionProps> = ({
                     ))}
                     {!loading && inventory.length === 0 && (
                         <p className="text-sm text-slate-400">
-                            No inventory data available.
+                            {connected ? 'No inventory data available.' : 'Waiting for bot data…'}
                         </p>
                     )}
                     {inventory.map((item) => {

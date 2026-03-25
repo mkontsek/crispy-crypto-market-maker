@@ -62,6 +62,8 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
     const health = quotesQuery.data?.exchangeHealth ?? [];
     const config = quotesQuery.data?.config ?? null;
     const connected = quotesQuery.data?.connected ?? false;
+    const updatedAt = quotesQuery.data?.updatedAt ?? null;
+    const stale = !connected && updatedAt !== null;
     const killSwitchEngaged = quotesQuery.data?.killSwitchEngaged ?? false;
     const serverStrategy = quotesQuery.data?.strategy ?? 'balanced';
     const strategy = serverStrategy;
@@ -116,6 +118,15 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                 id={`${bot.id}-section-content`}
                 className={cn('space-y-4', collapsed && 'hidden')}
             >
+                {stale && (
+                    <div className="flex items-center gap-2 rounded-md border border-amber-800/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-400">
+                        <span>⚠</span>
+                        <span>
+                            Stream disconnected — showing data last received at{' '}
+                            {new Date(updatedAt ?? '').toLocaleTimeString()} — reconnecting…
+                        </span>
+                    </div>
+                )}
                 <KillSwitchSection
                     engaged={killSwitchEngaged}
                     pending={killSwitchMutation.isPending}
@@ -157,6 +168,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                         quotes={quotes}
                         pendingPair={pendingPair}
                         loading={inventoryLoading}
+                        connected={connected}
                         onTogglePause={(pair, paused) =>
                             pairActionMutation.mutate({
                                 pair,
@@ -178,6 +190,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     inventory={inventory}
                     quotes={quotes}
                     config={config}
+                    connected={connected}
                     loading={inventoryLoading}
                 />
                 <div className="grid gap-4 xl:grid-cols-2">
@@ -192,6 +205,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     <QuoteHistorySection
                         entries={quoteHistoryEntries}
                         loading={quotesLoading}
+                        connected={connected}
                     />
                     <ConfigPanelSection
                         config={config}
@@ -200,7 +214,7 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                         onSubmit={(next) => configMutation.mutate(next)}
                     />
                 </div>
-                <ExchangeHealthSection health={health} loading={quotesLoading} />
+                <ExchangeHealthSection health={health} loading={quotesLoading} connected={connected} />
                 <EventLogSection
                     connected={connected}
                     quotes={quotes}

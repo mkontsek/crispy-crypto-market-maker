@@ -17,11 +17,12 @@ export type QuoteHistoryEntry = QuoteSnapshot & {
     timestamp: string;
 };
 
-type QuoteHistorySectionProps = { entries: QuoteHistoryEntry[]; loading: boolean };
+type QuoteHistorySectionProps = { entries: QuoteHistoryEntry[]; loading: boolean; connected: boolean };
 
 export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
     entries,
     loading,
+    connected,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
     const [statusInfoOpen, setStatusInfoOpen] = useState(false);
@@ -84,7 +85,7 @@ export const QuoteHistorySection: FC<QuoteHistorySectionProps> = ({
                             {!loading && entries.length === 0 && (
                                 <tr>
                                     <td colSpan={6} className="py-4 text-center text-sm text-slate-400">
-                                        No quote history yet.
+                                        {connected ? 'No quote history yet.' : 'Waiting for bot data…'}
                                     </td>
                                 </tr>
                             )}

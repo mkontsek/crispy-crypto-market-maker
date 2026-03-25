@@ -18,6 +18,7 @@ type ExposureSectionProps = {
     quotes: QuoteSnapshot[];
     config: MMConfig | null;
     loading: boolean;
+    connected: boolean;
 };
 
 export const ExposureSection: FC<ExposureSectionProps> = ({
@@ -25,6 +26,7 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
     quotes,
     config,
     loading,
+    connected,
 }) => {
     const [infoOpen, setInfoOpen] = useState(false);
     const rows = buildExposureRows(inventory, quotes, config);
@@ -84,7 +86,7 @@ export const ExposureSection: FC<ExposureSectionProps> = ({
                             {!loading && rows.length === 0 && (
                                 <tr>
                                     <td colSpan={7} className="py-4 text-center text-sm text-slate-400">
-                                        No exposure data available.
+                                        {connected ? 'No exposure data available.' : 'Waiting for bot data…'}
                                     </td>
                                 </tr>
                             )}

@@ -89,7 +89,7 @@ export const LiveQuotesSection: FC<LiveQuotesSectionProps> = ({
                             {!loading && quotes.length === 0 && (
                                 <tr>
                                     <td colSpan={8} className="py-4 text-center text-sm text-slate-400">
-                                        No quotes available.
+                                        {connected ? 'No quotes available.' : 'Waiting for bot data…'}
                                     </td>
                                 </tr>
                             )}
