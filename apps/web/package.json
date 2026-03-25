@@ -9,8 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "db:generate": "pnpm --filter @crispy/db prisma:generate",
-    "db:push": "pnpm --filter @crispy/db prisma:push"
+    "db:generate": "pnpm --filter @crispy/db db:generate",
+    "db:push": "pnpm --filter @crispy/db db:dev:migrate"
   },
   "dependencies": {
     "@crispy/db": "workspace:*",

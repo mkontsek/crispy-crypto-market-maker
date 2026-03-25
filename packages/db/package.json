@@ -11,10 +11,20 @@
     "scripts": {
         "build": "prisma generate",
         "lint": "echo 'db lint skipped'",
-        "typecheck": "pnpm run prisma:generate && tsc --noEmit -p tsconfig.json",
-        "prisma:generate": "prisma generate",
-        "prisma:push": "prisma db push",
-        "prisma:migrate": "prisma migrate deploy"
+        "typecheck": "pnpm run db:generate && tsc --noEmit -p tsconfig.json",
+        "db:generate": "prisma generate",
+        "db:dev:migrate": "prisma db push",
+        "db:prod:migrate": "prisma migrate deploy",
+        "db:dev:reset": "prisma db push --force-reset",
+        "db:dev:seed": "prisma db seed",
+        "db:prod:seed": "prisma db seed",
+        "db:seed": "prisma db seed",
+        "prisma:generate": "pnpm run db:generate",
+        "prisma:push": "pnpm run db:dev:migrate",
+        "prisma:migrate": "pnpm run db:prod:migrate"
+    },
+    "prisma": {
+        "seed": "node prisma/seed.mjs"
     },
     "dependencies": {
         "@prisma/adapter-pg": "7.4.2",

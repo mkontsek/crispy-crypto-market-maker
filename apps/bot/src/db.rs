@@ -38,13 +38,10 @@ pub async fn write_system_log(pool: &PgPool, bot_id: &str, level: &str, message:
 
 /// Convert a `rust_decimal::Decimal` to `f64`, logging a warning on failure.
 fn dec_to_f64(value: rust_decimal::Decimal, field: &str) -> f64 {
-    match f64::try_from(value) {
-        Ok(v) => v,
-        Err(err) => {
-            warn!("[db] decimal conversion failed for field '{field}': {err} — storing 0.0");
-            0.0
-        }
-    }
+    f64::try_from(value).unwrap_or_else(|err| {
+        warn!("[db] decimal conversion failed for field '{field}': {err} — storing 0.0");
+        0.0
+    })
 }
 
 /// Connect to Postgres using the `DATABASE_URL` environment variable.

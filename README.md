@@ -114,22 +114,42 @@ Copy web env template for local development:
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-### Database (PostgreSQL)
+### Database (PostgreSQL + Prisma)
 
-A `docker-compose.yml` is provided for spinning up a local Postgres instance and pushing Prisma schema:
+Prisma schema and client configuration live in `packages/db`.
+
+1. Copy root DB env templates:
 
 ```bash
-pnpm run db:up
+cp .env.example .env
+cp .env.prod.example .env.prod
 ```
 
-This starts Postgres on host port `55432` (mapped to container `5432`) with the default credentials
-(`postgres`/`postgres`/`postgres`) that match the local development fallback in
-`packages/db` (`postgresql://postgres:postgres@localhost:55432/postgres`).
+2. Start local Postgres and apply dev schema:
+
+```bash
+pnpm run db:dev:up
+```
+
+This starts Postgres on host port `55432` (mapped to container `5432`) with
+default credentials (`postgres`/`postgres`/`postgres`).
 
 If `55432` is busy on your machine, set `POSTGRES_HOST_PORT` when starting the DB:
 
 ```bash
-POSTGRES_HOST_PORT=55440 pnpm run db:up
+POSTGRES_HOST_PORT=55440 pnpm run db:dev:up
+```
+
+3. Useful DB commands:
+
+```bash
+pnpm run db:generate      # Prisma client generation
+pnpm run db:dev:migrate   # Dev schema sync
+pnpm run db:prod:migrate  # Production migration deploy
+pnpm run db:dev:seed      # Seed dev DB
+pnpm run db:prod:seed     # Seed prod DB
+pnpm run db:dev:reset     # Reset dev schema
+pnpm run db:dev:stop      # Stop local postgres container
 ```
 
 The web BFF automatically persists every engine stream event (fills, quotes,
@@ -217,10 +237,11 @@ pnpm hooks:install   # Configure Git hooks to use .githooks/
     - `BOT_3_NAME`, `BOT_3_HTTP_URL`, `BOT_3_WS_URL` (disconnected example bot defaults)
     - `EXCHANGE_HTTP_URL`, `EXCHANGE_WS_URL` (exchange endpoints)
     - `ENGINE_HTTP_URL`, `ENGINE_WS_URL` remain supported as bot-1 aliases
-    - `DATABASE_URL` (optional — only needed if you want the web app to serve
-      history / analytics data; DB writes are performed by the bot, not the web app)
-      - The app also accepts Vercel Postgres vars: `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, or `POSTGRES_URL`.
-      - In production, missing DB env vars now fail fast instead of falling back to localhost.
+- `DATABASE_URL` (optional — only needed if you want the web app to serve
+  history / analytics data; DB writes are performed by the bot, not the web app)
+    - The app also accepts Vercel Postgres vars: `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, or `POSTGRES_URL`.
+    - In production, missing DB env vars now fail fast instead of falling back to localhost.
+    - Store local/dev value in `.env`, and production value in `.env.prod` or the provider secret manager.
     - Optional static map locations (replaces geo API calls):
         - `BOT_1_GEO_LAT`, `BOT_1_GEO_LNG`, `BOT_1_GEO_LABEL` — bot-1 map pin
         - `BOT_2_GEO_LAT`, `BOT_2_GEO_LNG`, `BOT_2_GEO_LABEL` — bot-2 map pin
