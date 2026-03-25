@@ -1,7 +1,11 @@
 packages:
-    - apps/*
-    - packages/*
+  - apps/*
+  - packages/*
 
 ignoredBuiltDependencies:
-    - sharp
-    - unrs-resolver
+  - sharp
+  - unrs-resolver
+
+onlyBuiltDependencies:
+  - '@prisma/engines'
+  - prisma

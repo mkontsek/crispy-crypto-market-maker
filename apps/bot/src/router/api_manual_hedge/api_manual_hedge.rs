@@ -2,6 +2,7 @@ use axum::{extract::State, Json};
 use rust_decimal::Decimal;
 
 use crate::{
+    db,
     models::{ExchangeOrderRequest, ExchangeOrderResponse, HedgeRequest},
     state::AppState,
     utils::apply_ratio,
@@ -92,6 +93,19 @@ pub async fn manual_hedge(
 
         (inventory_after, hedge_cost)
     };
+
+    if let Some(pool) = &app_state.db_pool {
+        db::write_system_log(
+            pool,
+            &db::bot_id(),
+            "info",
+            &format!(
+                "manual hedge: {} {} {}",
+                payload.pair, order_response.side, hedge_size
+            ),
+        )
+        .await;
+    }
 
     Json(serde_json::json!({
         "pair": payload.pair,

@@ -11,6 +11,12 @@ enum Side {
   sell
 }
 
+enum LogLevel {
+  info
+  warn
+  error
+}
+
 model Fill {
   id               String   @id @default(cuid())
   botId            String?
@@ -98,4 +104,15 @@ model AdverseSelectionLog {
   fill Fill @relation(fields: [fillId], references: [id], onDelete: Cascade)
 
   @@index([pair, createdAt])
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  botId     String?
+  level     LogLevel
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([botId, createdAt])
+  @@index([createdAt])
 }

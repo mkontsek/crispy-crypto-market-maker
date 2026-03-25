@@ -2,6 +2,7 @@ use axum::{extract::State, Json};
 use rust_decimal_macros::dec;
 
 use crate::{
+    db,
     models::MMConfig,
     state::{AppState, PairState},
 };
@@ -10,18 +11,25 @@ pub async fn update_config(
     State(app_state): State<AppState>,
     Json(payload): Json<MMConfig>,
 ) -> Json<MMConfig> {
-    let mut state = app_state.state.write().await;
-    let pairs = payload.pairs.clone();
-    state.config = payload.clone();
-    for cfg in pairs {
-        state
-            .pairs
-            .entry(cfg.pair.clone())
-            .or_insert_with(|| PairState::new(dec!(1000)));
-        if let Some(pair_state) = state.pairs.get_mut(&cfg.pair) {
-            pair_state.paused = !cfg.enabled;
+    {
+        let mut state = app_state.state.write().await;
+        let pairs = payload.pairs.clone();
+        state.config = payload.clone();
+        for cfg in pairs {
+            state
+                .pairs
+                .entry(cfg.pair.clone())
+                .or_insert_with(|| PairState::new(dec!(1000)));
+            if let Some(pair_state) = state.pairs.get_mut(&cfg.pair) {
+                pair_state.paused = !cfg.enabled;
+            }
         }
     }
+
+    if let Some(pool) = &app_state.db_pool {
+        db::write_system_log(pool, &db::bot_id(), "info", "config updated").await;
+    }
+
     Json(payload)
 }
 

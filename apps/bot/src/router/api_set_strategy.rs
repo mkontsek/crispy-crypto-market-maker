@@ -1,14 +1,27 @@
 use axum::{extract::State, Json};
 
-use crate::{models::SetStrategyRequest, state::AppState};
+use crate::{db, models::SetStrategyRequest, state::AppState};
 
 pub async fn set_strategy(
     State(app_state): State<AppState>,
     Json(payload): Json<SetStrategyRequest>,
 ) -> Json<serde_json::Value> {
-    let mut state = app_state.state.write().await;
     let strategy_name = payload.strategy.as_str().to_string();
-    state.apply_strategy_preset(payload.strategy);
+    {
+        let mut state = app_state.state.write().await;
+        state.apply_strategy_preset(payload.strategy);
+    }
+
+    if let Some(pool) = &app_state.db_pool {
+        db::write_system_log(
+            pool,
+            &db::bot_id(),
+            "info",
+            &format!("strategy set to {strategy_name}"),
+        )
+        .await;
+    }
+
     Json(serde_json::json!({ "strategy": strategy_name }))
 }
 

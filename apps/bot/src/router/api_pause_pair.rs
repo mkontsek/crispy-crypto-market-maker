@@ -3,25 +3,39 @@ use axum::{
     Json,
 };
 
-use crate::{models::PauseRequest, state::AppState};
+use crate::{db, models::PauseRequest, state::AppState};
 
 pub async fn pause_pair(
     Path(pair): Path<String>,
     State(app_state): State<AppState>,
     Json(payload): Json<PauseRequest>,
 ) -> Json<serde_json::Value> {
-    let mut state = app_state.state.write().await;
-    if let Some(pair_state) = state.pairs.get_mut(&pair) {
-        pair_state.paused = payload.paused;
-        return Json(serde_json::json!({
-            "pair": pair,
-            "paused": pair_state.paused,
-        }));
-    }
+    let result = {
+        let mut state = app_state.state.write().await;
+        if let Some(pair_state) = state.pairs.get_mut(&pair) {
+            pair_state.paused = payload.paused;
+            Ok(pair_state.paused)
+        } else {
+            Err(format!("unknown pair: {pair}"))
+        }
+    };
 
-    Json(serde_json::json!({
-        "error": format!("unknown pair: {pair}"),
-    }))
+    match result {
+        Ok(paused) => {
+            if let Some(pool) = &app_state.db_pool {
+                let action = if paused { "paused" } else { "unpaused" };
+                db::write_system_log(
+                    pool,
+                    &db::bot_id(),
+                    "info",
+                    &format!("pair {pair} {action}"),
+                )
+                .await;
+            }
+            Json(serde_json::json!({ "pair": pair, "paused": paused }))
+        }
+        Err(msg) => Json(serde_json::json!({ "error": msg })),
+    }
 }
 
 #[cfg(test)]

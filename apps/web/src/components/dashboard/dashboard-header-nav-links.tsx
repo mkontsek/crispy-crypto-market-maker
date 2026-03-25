@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 type DashboardHeaderNavLinksProps = {
-    activePage: 'dashboard' | 'history';
+    activePage: 'dashboard' | 'history' | 'monitor';
 };
 
 const baseLinkClass =
@@ -37,6 +37,18 @@ export const DashboardHeaderNavLinks: FC<DashboardHeaderNavLinksProps> = ({
             )}
         >
             Historical data
+        </Link>
+        <Link
+            href="/monitor"
+            aria-current={activePage === 'monitor' ? 'page' : undefined}
+            className={cn(
+                baseLinkClass,
+                activePage === 'monitor'
+                    ? 'border-cyan-400 bg-cyan-400 text-slate-950 hover:bg-cyan-300'
+                    : 'border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800'
+            )}
+        >
+            System Monitor
         </Link>
     </div>
 );
