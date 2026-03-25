@@ -1,10 +1,17 @@
 use axum::{extract::State, Json};
 
-use crate::state::AppState;
+use crate::{db, state::AppState};
 
 pub async fn reset_state(State(app_state): State<AppState>) -> Json<serde_json::Value> {
-    let mut state = app_state.state.write().await;
-    state.reset_session();
+    {
+        let mut state = app_state.state.write().await;
+        state.reset_session();
+    }
+
+    if let Some(pool) = &app_state.db_pool {
+        db::write_system_log(pool, &db::bot_id(), "info", "state reset").await;
+    }
+
     Json(serde_json::json!({ "reset": true }))
 }
 

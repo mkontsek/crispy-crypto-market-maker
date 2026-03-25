@@ -4,6 +4,33 @@ use uuid::Uuid;
 
 use crate::models::EngineStreamPayload;
 
+/// Returns the configured bot ID from the `BOT_ID` environment variable.
+/// Falls back to `"bot"` if the variable is unset or empty.
+pub fn bot_id() -> String {
+    std::env::var("BOT_ID")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "bot".to_string())
+}
+
+/// Write a system log entry to the database.
+/// Errors are logged via tracing but never propagated — DB failures must not disrupt the bot.
+pub async fn write_system_log(pool: &PgPool, bot_id: &str, level: &str, message: &str) {
+    if let Err(err) = sqlx::query(
+        r#"INSERT INTO "SystemLog" (id, "botId", level, message) VALUES ($1, $2, $3::"LogLevel", $4)"#,
+    )
+    .bind(Uuid::new_v4().to_string())
+    .bind(bot_id)
+    .bind(level)
+    .bind(message)
+    .execute(pool)
+    .await
+    {
+        warn!("[db] write_system_log error: {err}");
+    }
+}
+
 /// Convert a `rust_decimal::Decimal` to `f64`, logging a warning on failure.
 fn dec_to_f64(value: rust_decimal::Decimal, field: &str) -> f64 {
     match f64::try_from(value) {

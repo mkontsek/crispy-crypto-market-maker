@@ -30,6 +30,9 @@ async fn main() {
     info!("exchange api url: {exchange_api_url}");
 
     let db_pool = db::connect_from_env().await;
+    if let Some(pool) = &db_pool {
+        db::write_system_log(pool, &db::bot_id(), "info", "bot started").await;
+    }
 
     let (stream_tx, _) = broadcast::channel(128);
     let app_state = AppState {
@@ -42,8 +45,9 @@ async fn main() {
     // Exchange WebSocket listener: subscribes to the exchange feed and updates
     // mid prices / volatility in bot state_engine whenever new market data arrives.
     let exchange_bot_state = app_state.state.clone();
+    let exchange_db_pool = app_state.db_pool.clone();
     tokio::spawn(async move {
-        exchange_ws_loop(exchange_ws_url, exchange_bot_state).await;
+        exchange_ws_loop(exchange_ws_url, exchange_bot_state, exchange_db_pool).await;
     });
 
     // Bot tick loop: every 250 ms, compute MM quotes, place orders on the exchange,

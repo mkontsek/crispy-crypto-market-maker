@@ -5,17 +5,26 @@ use tokio::sync::RwLock;
 use tokio_tungstenite::connect_async;
 use tracing::{error, info, warn};
 
+use crate::db;
 use crate::models::ExchangeFeedPayload;
 use crate::state::EngineState;
 
 /// Connects to the exchange WebSocket feed and keeps the bot StateEngine updated with
 /// the latest market prices. Reconnects automatically on disconnect.
-pub async fn exchange_ws_loop(exchange_ws_url: String, bot_state: Arc<RwLock<EngineState>>) {
+pub async fn exchange_ws_loop(
+    exchange_ws_url: String,
+    bot_state: Arc<RwLock<EngineState>>,
+    db_pool: Option<sqlx::PgPool>,
+) {
     loop {
         info!("connecting to exchange at {exchange_ws_url}");
         match connect_async(&exchange_ws_url).await {
             Ok((mut ws_stream, _)) => {
                 info!("connected to exchange");
+                if let Some(pool) = &db_pool {
+                    db::write_system_log(pool, &db::bot_id(), "info", "connected to exchange")
+                        .await;
+                }
                 while let Some(msg) = ws_stream.next().await {
                     match msg {
                         Ok(tokio_tungstenite::tungstenite::Message::Text(text)) => {
@@ -41,6 +50,10 @@ pub async fn exchange_ws_loop(exchange_ws_url: String, bot_state: Arc<RwLock<Eng
                     guard.exchange_connected = false;
                 }
                 warn!("exchange disconnected, reconnecting in 1s");
+                if let Some(pool) = &db_pool {
+                    db::write_system_log(pool, &db::bot_id(), "warn", "exchange disconnected")
+                        .await;
+                }
             }
             Err(e) => {
                 error!("exchange ws connect error: {e}");
@@ -102,7 +115,7 @@ mod tests {
         // Run the loop in a task; it will connect, receive one message, then disconnect
         let loop_state = state.clone();
         let loop_handle = tokio::spawn(async move {
-            exchange_ws_loop(ws_url, loop_state).await;
+            exchange_ws_loop(ws_url, loop_state, None).await;
         });
 
         // Give it time to connect, receive, and process
@@ -135,7 +148,7 @@ mod tests {
 
         let loop_state = state.clone();
         let loop_handle = tokio::spawn(async move {
-            exchange_ws_loop(ws_url, loop_state).await;
+            exchange_ws_loop(ws_url, loop_state, None).await;
         });
 
         // Wait for the disconnect to be processed
@@ -173,7 +186,7 @@ mod tests {
 
         let loop_state = state.clone();
         let loop_handle = tokio::spawn(async move {
-            exchange_ws_loop(ws_url, loop_state).await;
+            exchange_ws_loop(ws_url, loop_state, None).await;
         });
 
         tokio::time::sleep(Duration::from_millis(500)).await;

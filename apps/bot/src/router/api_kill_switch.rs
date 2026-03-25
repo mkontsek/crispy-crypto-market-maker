@@ -1,6 +1,6 @@
 use axum::{extract::State, Json};
 
-use crate::{models::KillSwitchRequest, state::AppState};
+use crate::{db, models::KillSwitchRequest, state::AppState};
 
 pub async fn kill_switch(
     State(app_state): State<AppState>,
@@ -11,8 +11,20 @@ pub async fn kill_switch(
     for pair in state.pairs.values_mut() {
         pair.paused = payload.engaged;
     }
+    let engaged = state.kill_switch_engaged;
+    drop(state);
+
+    if let Some(pool) = &app_state.db_pool {
+        let message = if engaged {
+            "kill switch engaged"
+        } else {
+            "kill switch disengaged"
+        };
+        db::write_system_log(pool, &db::bot_id(), "warn", message).await;
+    }
+
     Json(serde_json::json!({
-        "killSwitchEngaged": state.kill_switch_engaged,
+        "killSwitchEngaged": engaged,
     }))
 }
 
