@@ -53,7 +53,8 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                         </button>
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent>
+                    <div className="h-[500px] space-y-4 overflow-y-auto">
                     {isLoading && pnl.length === 0 && fills.length === 0 ? (
                         <div className="space-y-3">
                             <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -161,6 +162,7 @@ export const PnlPerformanceSection: FC<PnlPerformanceSectionProps> = ({
                     </div>
                         </>
                     )}
+                    </div>
                 </CardContent>
             </Card>
             <PnlPerformanceInfoDialog
