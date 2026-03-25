@@ -27,6 +27,17 @@ Use these root-level script names for DB workflows:
 
 These scripts should delegate to `@crispy/db` commands via `pnpm --filter @crispy/db ...`.
 
+## Local Development DB (Docker)
+
+- Use Docker Compose for local PostgreSQL lifecycle.
+- Start local DB + apply dev schema with:
+    - `pnpm run db:dev:up`
+- Stop local DB container with:
+    - `pnpm run db:dev:stop`
+- If port `55432` is occupied, override host port at runtime:
+    - `POSTGRES_HOST_PORT=55440 pnpm run db:dev:up`
+- Keep local Docker DB settings development-only; production should use managed or separately provisioned Postgres.
+
 ## Environment Conventions
 
 - `.env.example` contains development-safe defaults, including dev `DATABASE_URL`.
