@@ -15,8 +15,13 @@ pub fn bot_id() -> String {
 }
 
 /// Write a system log entry to the database.
+/// `level` must be one of `"info"`, `"warn"`, or `"error"`.
 /// Errors are logged via tracing but never propagated — DB failures must not disrupt the bot.
 pub async fn write_system_log(pool: &PgPool, bot_id: &str, level: &str, message: &str) {
+    if !matches!(level, "info" | "warn" | "error") {
+        warn!("[db] write_system_log: invalid level '{level}' — skipping");
+        return;
+    }
     if let Err(err) = sqlx::query(
         r#"INSERT INTO "SystemLog" (id, "botId", level, message) VALUES ($1, $2, $3::"LogLevel", $4)"#,
     )

@@ -6,13 +6,14 @@ pub async fn kill_switch(
     State(app_state): State<AppState>,
     Json(payload): Json<KillSwitchRequest>,
 ) -> Json<serde_json::Value> {
-    let mut state = app_state.state.write().await;
-    state.kill_switch_engaged = payload.engaged;
-    for pair in state.pairs.values_mut() {
-        pair.paused = payload.engaged;
-    }
-    let engaged = state.kill_switch_engaged;
-    drop(state);
+    let engaged = {
+        let mut state = app_state.state.write().await;
+        state.kill_switch_engaged = payload.engaged;
+        for pair in state.pairs.values_mut() {
+            pair.paused = payload.engaged;
+        }
+        state.kill_switch_engaged
+    };
 
     if let Some(pool) = &app_state.db_pool {
         let message = if engaged {
