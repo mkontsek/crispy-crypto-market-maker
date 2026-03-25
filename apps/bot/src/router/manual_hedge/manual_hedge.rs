@@ -10,6 +10,24 @@ use crate::{
 
 use super::update_pair_after_hedge;
 
+async fn submit_hedge_order(
+    client: &reqwest::Client,
+    exchange_api_url: &str,
+    order: &ExchangeOrderRequest,
+) -> Result<ExchangeOrderResponse, String> {
+    let response = client
+        .post(format!("{exchange_api_url}/orders"))
+        .json(order)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    let response = response.error_for_status().map_err(|e| e.to_string())?;
+    response
+        .json::<ExchangeOrderResponse>()
+        .await
+        .map_err(|e| e.to_string())
+}
+
 pub async fn manual_hedge(
     State(app_state): State<AppState>,
     Json(payload): Json<HedgeRequest>,
@@ -52,41 +70,20 @@ pub async fn manual_hedge(
         size: hedge_size,
     };
 
-    let order_response = match reqwest::Client::new()
-        .post(format!("{}/orders", app_state.exchange_api_url))
-        .json(&hedge_order)
-        .send()
-        .await
+    let order_response = match submit_hedge_order(
+        &reqwest::Client::new(),
+        &app_state.exchange_api_url,
+        &hedge_order,
+    )
+    .await
     {
-        Ok(response) => match response.error_for_status() {
-            Ok(response) => match response.json::<ExchangeOrderResponse>().await {
-                Ok(payload) => payload,
-                Err(error) => {
-                    return Err((
-                        StatusCode::BAD_GATEWAY,
-                        Json(serde_json::json!({
-                            "error": "failed to decode hedge order response",
-                            "details": error.to_string(),
-                        })),
-                    ));
-                }
-            },
-            Err(error) => {
-                return Err((
-                    StatusCode::BAD_GATEWAY,
-                    Json(serde_json::json!({
-                        "error": "failed to submit hedge order",
-                        "details": error.to_string(),
-                    })),
-                ));
-            }
-        },
+        Ok(resp) => resp,
         Err(error) => {
             return Err((
                 StatusCode::BAD_GATEWAY,
                 Json(serde_json::json!({
                     "error": "failed to submit hedge order",
-                    "details": error.to_string(),
+                    "details": error,
                 })),
             ));
         }

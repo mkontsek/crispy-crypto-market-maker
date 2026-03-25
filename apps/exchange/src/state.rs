@@ -82,7 +82,7 @@ impl ExchangeState {
     /// Attempt to match an incoming order. Returns a fill result.
     /// In fake mode, fills are probability-based. In real mode this would
     /// forward the order to the upstream exchange and return its response.
-    pub fn place_order(&self, req: &OrderRequest) -> OrderResponse {
+    pub fn place_order(&self, req: &OrderRequest) -> Result<OrderResponse, String> {
         let mut rng = rng();
 
         let volatility = self
@@ -90,22 +90,23 @@ impl ExchangeState {
             .get(&req.pair)
             .map_or(Decimal::ONE, |m| m.volatility);
 
-        let fill_probability = ((dec!(0.16) + volatility / dec!(15)).clamp(dec!(0.12), dec!(0.35))
+        let fill_probability_dec = ((dec!(0.16) + volatility / dec!(15)).clamp(dec!(0.12), dec!(0.35))
             * dec!(10_000))
-        .round()
-        .to_u32()
-        .expect("fill probability out of range");
+        .round();
+        let fill_probability = fill_probability_dec
+            .to_u32()
+            .ok_or_else(|| format!("fill probability {fill_probability_dec} out of u32 range"))?;
         let filled = self.fake && rng.random_ratio(fill_probability, 10_000);
         let adverse_selection = filled && rng.random_ratio(32, 100);
 
-        OrderResponse {
+        Ok(OrderResponse {
             pair: req.pair.clone(),
             side: req.side.clone(),
             filled,
             fill_price: req.price,
             fill_size: req.size,
             adverse_selection,
-        }
+        })
     }
 }
 
@@ -142,7 +143,7 @@ mod tests {
             price: dec!(62000),
             size: dec!(0.5),
         };
-        let resp = state.place_order(&req);
+        let resp = state.place_order(&req).expect("place_order should succeed");
         assert_eq!(resp.pair, "BTC/USDT");
         assert_eq!(resp.side, OrderSide::Buy);
         assert_eq!(resp.fill_price, dec!(62000));
@@ -160,7 +161,7 @@ mod tests {
         };
         // Run multiple times to cover random paths; the invariant must always hold.
         for _ in 0..200 {
-            let resp = state.place_order(&req);
+            let resp = state.place_order(&req).expect("place_order should succeed");
             if resp.adverse_selection {
                 assert!(
                     resp.filled,

@@ -103,8 +103,10 @@ async fn place_order(
     Json(payload): Json<OrderRequest>,
 ) -> Json<serde_json::Value> {
     let state = app_state.state.read().await;
-    let result = state.place_order(&payload);
-    Json(serde_json::to_value(&result).unwrap_or_default())
+    match state.place_order(&payload) {
+        Ok(result) => Json(serde_json::to_value(&result).unwrap_or_default()),
+        Err(err) => Json(serde_json::json!({ "error": err })),
+    }
 }
 
 async fn health(State(app_state): State<AppState>) -> Json<serde_json::Value> {
