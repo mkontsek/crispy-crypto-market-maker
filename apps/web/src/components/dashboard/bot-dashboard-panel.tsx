@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 
 import { AlertPanelSection } from '@/components/dashboard/alert-panel-section';
+import { RiskSection } from '@/components/dashboard/risk/risk-section';
 import { ConfigPanelSection } from '@/components/dashboard/config-panel/config-panel-section';
 import { EventLogSection } from '@/components/dashboard/event-log-section';
 import { ExchangeHealthSection } from '@/components/dashboard/exchange-health-section';
@@ -133,6 +134,17 @@ export const BotDashboardPanel: FC<BotDashboardPanelProps> = ({ bot }) => {
                     pnl={latestPnl}
                     killSwitchEngaged={killSwitchEngaged}
                     quotes={quotes}
+                />
+                <RiskSection
+                    inventory={inventory}
+                    quotes={quotes}
+                    fills={fills}
+                    pnl={latestPnl}
+                    health={health}
+                    config={config}
+                    killSwitchEngaged={killSwitchEngaged}
+                    connected={connected}
+                    loading={quotesLoading || inventoryLoading}
                 />
                 <LiveQuotesSection
                     quotes={quotes}
