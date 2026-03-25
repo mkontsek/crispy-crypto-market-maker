@@ -1,32 +1,30 @@
+use futures_util::future::join_all;
 use tracing::warn;
 
 use crate::models::{ExchangeOrderRequest, ExchangeOrderResponse};
 
-/// Sends a batch of orders to the exchange HTTP API and collects fill responses.
+/// Sends a batch of orders to the exchange HTTP API concurrently and collects fill responses.
 pub async fn place_exchange_orders(
     client: &reqwest::Client,
     exchange_api_url: &str,
     orders: Vec<ExchangeOrderRequest>,
 ) -> Vec<ExchangeOrderResponse> {
-    let mut fills = Vec::new();
-    for order in orders {
-        match client
-            .post(format!("{exchange_api_url}/orders"))
-            .json(&order)
-            .send()
-            .await
-        {
-            Ok(resp) => {
-                if let Ok(fill) = resp.json::<ExchangeOrderResponse>().await {
-                    fills.push(fill);
+    let url = format!("{exchange_api_url}/orders");
+    let futures = orders.into_iter().map(|order| {
+        let client = client.clone();
+        let url = url.clone();
+        async move {
+            match client.post(&url).json(&order).send().await {
+                Ok(resp) => resp.json::<ExchangeOrderResponse>().await.ok(),
+                Err(e) => {
+                    warn!("failed to place order: {e}");
+                    None
                 }
             }
-            Err(e) => {
-                warn!("failed to place order: {e}");
-            }
         }
-    }
-    fills
+    });
+
+    join_all(futures).await.into_iter().flatten().collect()
 }
 
 #[cfg(test)]
@@ -36,6 +34,7 @@ mod tests {
         routing::post,
         Json, Router,
     };
+    use crate::models::OrderSide;
     use rust_decimal_macros::dec;
     use serde_json::json;
     use std::net::SocketAddr;
@@ -72,7 +71,7 @@ mod tests {
 
         let orders = vec![ExchangeOrderRequest {
             pair: "BTC/USDT".to_string(),
-            side: "sell".to_string(),
+            side: OrderSide::Sell,
             price: dec!(62010),
             size: dec!(0.5),
         }];
@@ -109,13 +108,13 @@ mod tests {
         let orders = vec![
             ExchangeOrderRequest {
                 pair: "BTC/USDT".to_string(),
-                side: "sell".to_string(),
+                side: OrderSide::Sell,
                 price: dec!(100),
                 size: dec!(1),
             },
             ExchangeOrderRequest {
                 pair: "ETH/USDT".to_string(),
-                side: "buy".to_string(),
+                side: OrderSide::Buy,
                 price: dec!(200),
                 size: dec!(2),
             },
@@ -148,7 +147,7 @@ mod tests {
 
         let orders = vec![ExchangeOrderRequest {
             pair: "BTC/USDT".to_string(),
-            side: "sell".to_string(),
+            side: OrderSide::Sell,
             price: dec!(100),
             size: dec!(1),
         }];
@@ -164,7 +163,7 @@ mod tests {
         // Nothing is listening on this port
         let orders = vec![ExchangeOrderRequest {
             pair: "BTC/USDT".to_string(),
-            side: "sell".to_string(),
+            side: OrderSide::Sell,
             price: dec!(100),
             size: dec!(1),
         }];

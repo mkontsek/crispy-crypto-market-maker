@@ -2,7 +2,7 @@ use axum::Json;
 use rust_decimal::Decimal;
 
 use crate::{
-    models::ExchangeOrderResponse,
+    models::{ExchangeOrderResponse, OrderSide},
     state::EngineState,
     utils::quote_notional_rate,
 };
@@ -23,11 +23,11 @@ pub fn update_pair_after_hedge(
         100_000,
     );
 
-    if order_response.filled && order_response.side == "sell" {
+    if order_response.filled && order_response.side == OrderSide::Sell {
         pair_state.inventory -= order_response.fill_size;
     }
 
-    if order_response.filled && order_response.side == "buy" {
+    if order_response.filled && order_response.side == OrderSide::Buy {
         pair_state.inventory += order_response.fill_size;
     }
 
@@ -40,14 +40,14 @@ mod tests {
     use rust_decimal::Decimal;
     use rust_decimal_macros::dec;
 
-    use crate::{models::ExchangeOrderResponse, state::EngineState};
+    use crate::{models::{ExchangeOrderResponse, OrderSide}, state::EngineState};
 
     use super::update_pair_after_hedge;
 
-    fn make_order_response(side: &str, filled: bool, fill_size: Decimal) -> ExchangeOrderResponse {
+    fn make_order_response(side: OrderSide, filled: bool, fill_size: Decimal) -> ExchangeOrderResponse {
         ExchangeOrderResponse {
             pair: "BTC/USDT".to_string(),
-            side: side.to_string(),
+            side,
             filled,
             fill_price: dec!(100),
             fill_size,
@@ -64,7 +64,7 @@ mod tests {
             .expect("BTC/USDT should exist in EngineState::new()")
             .inventory = dec!(8);
 
-        let order = make_order_response("sell", true, dec!(6));
+        let order = make_order_response(OrderSide::Sell, true, dec!(6));
         let (inventory_after, hedge_cost) =
             update_pair_after_hedge(&mut state, "BTC/USDT", &order).expect("known pair");
 
@@ -82,7 +82,7 @@ mod tests {
             .expect("BTC/USDT should exist in EngineState::new()")
             .inventory = dec!(2);
 
-        let order = make_order_response("buy", true, dec!(3));
+        let order = make_order_response(OrderSide::Buy, true, dec!(3));
         let (inventory_after, _hedge_cost) =
             update_pair_after_hedge(&mut state, "BTC/USDT", &order).expect("known pair");
 
@@ -99,7 +99,7 @@ mod tests {
             .expect("BTC/USDT should exist in EngineState::new()")
             .inventory = dec!(8);
 
-        let order = make_order_response("sell", false, dec!(6));
+        let order = make_order_response(OrderSide::Sell, false, dec!(6));
         let (inventory_after, _hedge_cost) =
             update_pair_after_hedge(&mut state, "BTC/USDT", &order).expect("known pair");
 
@@ -110,7 +110,7 @@ mod tests {
     #[test]
     fn update_pair_after_hedge_returns_error_for_unknown_pair() {
         let mut state = EngineState::new();
-        let order = make_order_response("sell", true, dec!(1));
+        let order = make_order_response(OrderSide::Sell, true, dec!(1));
 
         let result = update_pair_after_hedge(&mut state, "UNKNOWN", &order);
         let Err(Json(payload)) = result else {

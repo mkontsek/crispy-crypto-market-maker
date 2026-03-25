@@ -3,7 +3,7 @@ use rust_decimal_macros::dec;
 use std::collections::HashMap;
 
 use crate::models::{
-    ExchangeFeedPayload, ExchangeOrderRequest, MMConfig, StrategyPreset, PAIRS,
+    ExchangeFeedPayload, ExchangeOrderRequest, MMConfig, OrderSide, StrategyPreset, PAIRS,
 };
 use crate::state::strategy::strategy_pair_configs;
 use crate::state::PairState;
@@ -115,13 +115,13 @@ impl EngineState {
             let order_size = dec!(0.5);
             orders.push(ExchangeOrderRequest {
                 pair: cfg.pair.clone(),
-                side: "buy".to_string(),
+                side: OrderSide::Buy,
                 price: pair.bid,
                 size: order_size,
             });
             orders.push(ExchangeOrderRequest {
                 pair: cfg.pair.clone(),
-                side: "sell".to_string(),
+                side: OrderSide::Sell,
                 price: pair.ask,
                 size: order_size,
             });
@@ -134,7 +134,7 @@ impl EngineState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ExchangeFeedPayload, ExchangePairData};
+    use crate::models::{ExchangeFeedPayload, ExchangePairData, OrderSide};
     use rust_decimal_macros::dec;
 
     #[test]
@@ -216,8 +216,8 @@ mod tests {
         assert_eq!(orders.len(), 6);
         let btc_orders: Vec<_> = orders.iter().filter(|o| o.pair == "BTC/USDT").collect();
         assert_eq!(btc_orders.len(), 2);
-        assert!(btc_orders.iter().any(|o| o.side == "buy"));
-        assert!(btc_orders.iter().any(|o| o.side == "sell"));
+        assert!(btc_orders.iter().any(|o| o.side == OrderSide::Buy));
+        assert!(btc_orders.iter().any(|o| o.side == OrderSide::Sell));
     }
 
     #[test]
@@ -233,11 +233,11 @@ mod tests {
         let orders = state.compute_orders();
         let buy = orders
             .iter()
-            .find(|o| o.pair == "BTC/USDT" && o.side == "buy")
+            .find(|o| o.pair == "BTC/USDT" && o.side == OrderSide::Buy)
             .expect("no buy order for BTC/USDT");
         let sell = orders
             .iter()
-            .find(|o| o.pair == "BTC/USDT" && o.side == "sell")
+            .find(|o| o.pair == "BTC/USDT" && o.side == OrderSide::Sell)
             .expect("no sell order for BTC/USDT");
         assert!(buy.price < sell.price, "bid must be below ask");
     }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crispy_shared::chrono_string;
+use crispy_shared::unix_ms;
 use rand::{rng, RngExt};
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
@@ -47,7 +47,7 @@ impl ExchangeState {
 
     pub fn tick(&mut self) -> MarketDataPayload {
         let mut rng = rng();
-        let now = chrono_string();
+        let now = unix_ms();
         let mut pair_data = Vec::new();
 
         for (pair_name, market) in &mut self.pairs {
@@ -112,7 +112,7 @@ impl ExchangeState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::OrderRequest;
+    use crate::models::{OrderRequest, OrderSide};
     use rust_decimal_macros::dec;
 
     #[test]
@@ -138,13 +138,13 @@ mod tests {
         let state = ExchangeState::new();
         let req = OrderRequest {
             pair: "BTC/USDT".to_string(),
-            side: "buy".to_string(),
+            side: OrderSide::Buy,
             price: dec!(62000),
             size: dec!(0.5),
         };
         let resp = state.place_order(&req);
         assert_eq!(resp.pair, "BTC/USDT");
-        assert_eq!(resp.side, "buy");
+        assert_eq!(resp.side, OrderSide::Buy);
         assert_eq!(resp.fill_price, dec!(62000));
         assert_eq!(resp.fill_size, dec!(0.5));
     }
@@ -154,7 +154,7 @@ mod tests {
         let state = ExchangeState::new();
         let req = OrderRequest {
             pair: "BTC/USDT".to_string(),
-            side: "sell".to_string(),
+            side: OrderSide::Sell,
             price: dec!(62100),
             size: dec!(1),
         };
@@ -176,6 +176,6 @@ mod tests {
         let payload = state.tick();
         assert_eq!(payload.pairs.len(), 3);
         assert!(payload.fake);
-        assert!(!payload.timestamp.is_empty());
+        assert!(payload.timestamp > 0);
     }
 }

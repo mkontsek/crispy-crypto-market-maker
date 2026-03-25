@@ -1,5 +1,4 @@
-use rand::rng;
-use crispy_shared::chrono_string;
+use crispy_shared::unix_ms;
 use rust_decimal::Decimal;
 
 use super::EngineState;
@@ -13,14 +12,14 @@ impl EngineState {
         &mut self,
         exchange_fills: Vec<ExchangeOrderResponse>,
     ) -> EngineStreamPayload {
-        let mut rng = rng();
-        let now = chrono_string();
+        let mut rng = rand::rng();
+        let now = unix_ms();
 
-        let fills = self.process_exchange_fills(exchange_fills, &now);
+        let fills = self.process_exchange_fills(exchange_fills, now);
 
         let pair_configs = self.config.pairs.clone();
         let (quotes, inventory, exchange_health) =
-            self.update_quotes_and_inventory(&pair_configs, &now, &mut rng);
+            self.update_quotes_and_inventory(&pair_configs, now, &mut rng);
 
         let fill_rate = if self.total_quotes == 0 {
             Decimal::ZERO
@@ -35,7 +34,7 @@ impl EngineState {
         };
 
         let pnl = PnLSnapshot {
-            timestamp: now.clone(),
+            timestamp: now,
             total_pnl: self.total_realized_spread - self.hedging_costs,
             realized_spread: self.total_realized_spread,
             hedging_costs: self.hedging_costs,
@@ -52,7 +51,7 @@ impl EngineState {
             exchange_health,
             config: self.config.clone(),
             kill_switch_engaged: self.kill_switch_engaged,
-            strategy: self.active_strategy.as_str().to_string(),
+            strategy: self.active_strategy.clone(),
         }
     }
 }
@@ -102,10 +101,10 @@ mod tests {
         }
     }
 
-    fn make_fill_response(pair: &str, side: &str, price: Decimal, size: Decimal) -> ExchangeOrderResponse {
+    fn make_fill_response(pair: &str, side: crate::models::OrderSide, price: Decimal, size: Decimal) -> ExchangeOrderResponse {
         ExchangeOrderResponse {
             pair: pair.to_string(),
-            side: side.to_string(),
+            side,
             filled: true,
             fill_price: price,
             fill_size: size,
@@ -124,14 +123,14 @@ mod tests {
         assert_eq!(payload.quotes.len(), 1);
         assert_eq!(payload.inventory.len(), 1);
         assert!(!payload.kill_switch_engaged);
-        assert_eq!(payload.strategy, "balanced");
+        assert_eq!(payload.strategy, StrategyPreset::Balanced);
     }
 
     #[test]
     fn build_payload_with_fills_populates_pnl() {
         let mut state = test_engine_state("BTC/USDT", dec!(100));
         state.total_quotes = 10;
-        let resp = make_fill_response("BTC/USDT", "sell", dec!(105), dec!(2));
+        let resp = make_fill_response("BTC/USDT", crate::models::OrderSide::Sell, dec!(105), dec!(2));
 
         let payload = state.build_payload(vec![resp]);
 
@@ -150,9 +149,9 @@ mod tests {
         let mut state = test_engine_state("BTC/USDT", dec!(100));
         state.total_quotes = 4;
 
-        let mut r1 = make_fill_response("BTC/USDT", "sell", dec!(101), dec!(1));
+        let mut r1 = make_fill_response("BTC/USDT", crate::models::OrderSide::Sell, dec!(101), dec!(1));
         r1.adverse_selection = true;
-        let r2 = make_fill_response("BTC/USDT", "sell", dec!(102), dec!(1));
+        let r2 = make_fill_response("BTC/USDT", crate::models::OrderSide::Sell, dec!(102), dec!(1));
 
         let payload = state.build_payload(vec![r1, r2]);
 
@@ -170,7 +169,7 @@ mod tests {
 
         let payload = state.build_payload(vec![]);
 
-        assert_eq!(payload.strategy, "aggressive");
+        assert_eq!(payload.strategy, StrategyPreset::Aggressive);
         assert_eq!(payload.config.pairs.len(), 1);
         assert_eq!(payload.config.pairs[0].pair, "BTC/USDT");
     }
@@ -189,7 +188,7 @@ mod tests {
         let mut state = test_engine_state("BTC/USDT", dec!(100));
         assert_eq!(state.total_quotes, 0);
 
-        let resp = make_fill_response("BTC/USDT", "sell", dec!(101), dec!(1));
+        let resp = make_fill_response("BTC/USDT", crate::models::OrderSide::Sell, dec!(101), dec!(1));
         let payload = state.build_payload(vec![resp]);
 
         // Avoid division by zero: fill_rate should be 0

@@ -39,7 +39,7 @@ pub async fn bot_tick_once(
     exchange_api_url: &str,
     http_client: &reqwest::Client,
     db_pool: &Option<sqlx::PgPool>,
-) {
+) -> Result<(), serde_json::Error> {
     // 1. Compute orders to place (requires write lock to update bid/ask).
     let orders = {
         let mut guard = state.write().await;
@@ -49,7 +49,7 @@ pub async fn bot_tick_once(
     // 2. Place orders on the exchange (async, no lock held).
     let exchange_fills = place_exchange_orders(http_client, exchange_api_url, orders).await;
 
-    publish_tick_payload(state, stream_tx, exchange_fills, db_pool).await;
+    publish_tick_payload(state, stream_tx, exchange_fills, db_pool).await
 }
 
 async fn publish_tick_payload(
@@ -57,16 +57,15 @@ async fn publish_tick_payload(
     stream_tx: broadcast::Sender<String>,
     exchange_fills: Vec<ExchangeOrderResponse>,
     db_pool: &Option<sqlx::PgPool>,
-) {
+) -> Result<(), serde_json::Error> {
     // 3. Apply fills and build the stream payload (write lock).
     let payload = {
         let mut guard = state.write().await;
         guard.build_payload(exchange_fills)
     };
 
-    if let Ok(serialized) = serde_json::to_string(&payload) {
-        let _ = stream_tx.send(serialized);
-    }
+    let serialized = serde_json::to_string(&payload)?;
+    let _ = stream_tx.send(serialized);
 
     // 4. Persist payload to DB (fire-and-forget; errors are logged in db module).
     if let Some(pool) = db_pool {
@@ -82,6 +81,8 @@ async fn publish_tick_payload(
         };
         db::persist_payload(pool, &bot_id, &payload).await;
     }
+
+    Ok(())
 }
 
 pub fn spawn_bot_tick_loop(
@@ -96,14 +97,17 @@ pub fn spawn_bot_tick_loop(
 
         loop {
             interval.tick().await;
-            bot_tick_once(
+            if let Err(err) = bot_tick_once(
                 state.clone(),
                 stream_tx.clone(),
                 exchange_api_url.as_str(),
                 &http_client,
                 &db_pool,
             )
-            .await;
+            .await
+            {
+                tracing::error!("bot tick error: {err}");
+            }
         }
     });
 }
@@ -160,7 +164,9 @@ mod tests {
         let (tx, mut rx) = broadcast::channel(8);
         let client = reqwest::Client::new();
 
-        bot_tick_once(state.clone(), tx.clone(), "http://127.0.0.1:1", &client, &None).await;
+        bot_tick_once(state.clone(), tx.clone(), "http://127.0.0.1:1", &client, &None)
+            .await
+            .expect("tick should not fail");
 
         let message = timeout(Duration::from_secs(1), rx.recv())
             .await

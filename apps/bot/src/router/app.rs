@@ -6,13 +6,13 @@ use crispy_shared::geo;
 
 use crate::{
     router::{
-        api_health::health,
-        api_kill_switch::kill_switch,
-        api_manual_hedge::manual_hedge,
-        api_pause_pair::pause_pair,
-        api_reset_state::reset_state,
-        api_set_strategy::set_strategy,
-        api_update_config::update_config,
+        health::health,
+        kill_switch::kill_switch,
+        manual_hedge::manual_hedge,
+        pause_pair::pause_pair,
+        reset_state::reset_state,
+        set_strategy::set_strategy,
+        update_config::update_config,
     },
     state::AppState,
 };

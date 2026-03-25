@@ -10,7 +10,7 @@ impl EngineState {
     pub(super) fn update_quotes_and_inventory(
         &mut self,
         pair_configs: &[PairConfig],
-        now: &str,
+        now: u64,
         rng: &mut impl RngExt,
     ) -> (Vec<QuoteSnapshot>, Vec<InventorySnapshot>, Vec<ExchangeHealth>) {
         let mut quotes = Vec::new();
@@ -37,13 +37,13 @@ impl EngineState {
                     quote_refresh_rate: pair.quote_refresh_rate,
                     volatility: pair.volatility,
                     paused: true,
-                    updated_at: now.to_string(),
+                    updated_at: now,
                 });
                 inventory.push(InventorySnapshot {
                     pair: cfg.pair.clone(),
                     inventory: pair.inventory,
                     normalized_skew: normalize_inventory(pair.inventory, cfg.max_inventory),
-                    timestamp: now.to_string(),
+                    timestamp: now,
                 });
                 continue;
             }
@@ -69,14 +69,14 @@ impl EngineState {
                 quote_refresh_rate: pair.quote_refresh_rate,
                 volatility: pair.volatility,
                 paused: pair.paused,
-                updated_at: now.to_string(),
+                updated_at: now,
             });
 
             inventory.push(InventorySnapshot {
                 pair: cfg.pair.clone(),
                 inventory: pair.inventory,
                 normalized_skew: normalize_inventory(pair.inventory, cfg.max_inventory),
-                timestamp: now.to_string(),
+                timestamp: now,
             });
 
             exchange_health.extend(self.simulate_exchange_health(&cfg.pair, rng));
@@ -141,7 +141,7 @@ mod tests {
         let expected_exchange_count = crate::models::EXCHANGES.len();
 
         let (quotes, inventory, health) =
-            state.update_quotes_and_inventory(&configs, "now", &mut rng);
+            state.update_quotes_and_inventory(&configs, 0, &mut rng);
 
         assert_eq!(quotes.len(), 1);
         assert_eq!(quotes[0].pair, "BTC/USDT");
@@ -165,7 +165,7 @@ mod tests {
         let mut rng = rand::rng();
 
         let (quotes, inventory, health) =
-            state.update_quotes_and_inventory(&configs, "now", &mut rng);
+            state.update_quotes_and_inventory(&configs, 0, &mut rng);
 
         assert_eq!(quotes.len(), 1);
         assert!(quotes[0].paused);
@@ -181,7 +181,7 @@ mod tests {
         let configs = state.config.pairs.clone();
         let mut rng = rand::rng();
 
-        let (quotes, _, _) = state.update_quotes_and_inventory(&configs, "now", &mut rng);
+        let (quotes, _, _) = state.update_quotes_and_inventory(&configs, 0, &mut rng);
 
         assert!(quotes[0].paused);
         assert!(state.pairs["BTC/USDT"].paused);
@@ -199,7 +199,7 @@ mod tests {
         let configs = state.config.pairs.clone();
         let mut rng = rand::rng();
 
-        let (quotes, _, _) = state.update_quotes_and_inventory(&configs, "now", &mut rng);
+        let (quotes, _, _) = state.update_quotes_and_inventory(&configs, 0, &mut rng);
 
         assert!(state.pairs["BTC/USDT"].paused);
         assert!(quotes[0].paused);
@@ -220,7 +220,7 @@ mod tests {
         let mut rng = rand::rng();
 
         let old_hedging_costs = state.hedging_costs;
-        state.update_quotes_and_inventory(&configs, "now", &mut rng);
+        state.update_quotes_and_inventory(&configs, 0, &mut rng);
 
         // Hedging cost should have increased
         assert!(state.hedging_costs > old_hedging_costs);
@@ -247,7 +247,7 @@ mod tests {
         let configs = state.config.pairs.clone();
         let mut rng = rand::rng();
 
-        let (quotes, inventory, _) = state.update_quotes_and_inventory(&configs, "now", &mut rng);
+        let (quotes, inventory, _) = state.update_quotes_and_inventory(&configs, 0, &mut rng);
 
         // Only the existing BTC/USDT pair produces snapshots
         assert_eq!(quotes.len(), 1);

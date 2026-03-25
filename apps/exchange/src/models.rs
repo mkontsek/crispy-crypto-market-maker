@@ -2,6 +2,8 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 
+pub use crispy_shared::OrderSide;
+
 pub fn default_pairs() -> [(&'static str, Decimal); 3] {
     [
         ("BTC/USDT", dec!(62000)),
@@ -29,7 +31,7 @@ pub struct PairMarketData {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketDataPayload {
-    pub timestamp: String,
+    pub timestamp: u64,
     pub fake: bool,
     pub pairs: Vec<PairMarketData>,
 }
@@ -38,7 +40,7 @@ pub struct MarketDataPayload {
 #[serde(rename_all = "camelCase")]
 pub struct OrderRequest {
     pub pair: String,
-    pub side: String,
+    pub side: OrderSide,
     #[serde(with = "rust_decimal::serde::str")]
     pub price: Decimal,
     #[serde(with = "rust_decimal::serde::str")]
@@ -49,7 +51,7 @@ pub struct OrderRequest {
 #[serde(rename_all = "camelCase")]
 pub struct OrderResponse {
     pub pair: String,
-    pub side: String,
+    pub side: OrderSide,
     pub filled: bool,
     #[serde(with = "rust_decimal::serde::str")]
     pub fill_price: Decimal,

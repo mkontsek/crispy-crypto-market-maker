@@ -1,18 +1,35 @@
 use std::env;
 
 use axum::{http::StatusCode, Json};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tracing::warn;
 
 const GEO_API_URL: &str = "https://ipwho.is/";
 
-pub fn chrono_string() -> String {
+/// Returns the current Unix timestamp in milliseconds.
+pub fn unix_ms() -> u64 {
     use std::time::{SystemTime, UNIX_EPOCH};
-    let now = SystemTime::now()
+    SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
-        .as_nanos();
-    now.to_string()
+        .as_millis() as u64
+}
+
+/// Order side: buy or sell.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OrderSide {
+    Buy,
+    Sell,
+}
+
+impl OrderSide {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            OrderSide::Buy => "buy",
+            OrderSide::Sell => "sell",
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -205,9 +222,8 @@ mod tests {
     }
 
     #[test]
-    fn chrono_string_is_non_empty_and_numeric() {
-        let ts = chrono_string();
-        assert!(!ts.is_empty());
-        assert!(ts.parse::<u128>().is_ok(), "timestamp is not numeric: {ts}");
+    fn unix_ms_returns_positive_value() {
+        let ts = unix_ms();
+        assert!(ts > 0, "unix_ms should be a positive timestamp");
     }
 }

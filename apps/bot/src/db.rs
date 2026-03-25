@@ -134,7 +134,7 @@ async fn write_fills(
             ON CONFLICT (id) DO NOTHING
             "#,
         )
-        .bind(&fill.id)
+        .bind(fill.id.to_string())
         .bind(bot_id)
         .bind(&fill.pair)
         .bind(fill.side.as_str())
